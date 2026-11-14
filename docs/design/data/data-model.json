@@ -61,7 +61,7 @@
           "coins": "number",
           "owned": "string[] shop item ids",
           "equipped": "{helmet, suit, pet|null, room:{window, wall, floor}}",
-          "state": "'idle'|'walking'|'happy'|'tired'|'sleepy'|'sad' · drives the animation state machine"
+          "state": "'idle'|'walking'|'happy'|'tired'|'sleepy'|'sad' · one input of the animation state machine; Bolt's statuses are derived from this + logs (sleep, mood, injuries, meals, exercise) — see ANIMATIONS.md"
         },
         "onboardingDone": "boolean"
       }

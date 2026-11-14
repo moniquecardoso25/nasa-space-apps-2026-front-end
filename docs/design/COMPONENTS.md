@@ -26,7 +26,7 @@ Values come from `tokens/tokens.ts`.
 | `Callout` | `icon, label, value, level, onPress` | 120×56 box linked by a line to a body point |
 | `DayScrubber` | `days[], selected, onSelect` | 7 buttons with vertical fill bar = logs done |
 | `LogMenu` | `items[], open` | dropdown under the Log button; rows with Done / Log now |
-| `Astronaut` (Bolt) | `state, equipped` | two-eyed side astronaut; walking = legs/arm swing + bob; respects reduced motion |
+| `Astronaut` (Bolt) | `state, equipped` | two-eyed side astronaut; walking = legs/arm swing + bob; respects reduced motion. Built as `BoltFigure` (SVG layers per body part) + `BoltActor` (state machine, see `ANIMATIONS.md`) |
 | `OrbiDrone` | — | small floating drone with two eyes |
 | `ChatBubble` | `author, text, meta, progress?` | me = lilac right, other = glass left; ETA bar for in-transit |
 

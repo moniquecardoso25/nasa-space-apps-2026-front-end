@@ -1,18 +1,9 @@
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useIsFocused } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, {
-  cancelAnimation,
-  Easing,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Astronaut, BoltShadow, OrbiDrone } from '@/components/Astronaut';
+import { OrbiDrone } from '@/components/Astronaut';
 import { ProgressBar, Ring } from '@/components/Charts';
 import { Icon } from '@/components/Icon';
 import { LogMenu, type LogMenuItem } from '@/components/LogMenu';
@@ -21,7 +12,9 @@ import { CoinsPill, levelColor } from '@/components/Pills';
 import { PetArt } from '@/components/ShopArt';
 import { StationProps, StationWall, StationWindow, WINDOW } from '@/components/StationScene';
 import { Txt } from '@/components/Txt';
-import { firstName, getAstronaut, getDailySummary, getMission, isLoggedToday, overallLabel } from '@/data/api';
+import { BoltActor } from '@/avatar/BoltActor';
+import { deriveStatuses } from '@/avatar/status';
+import { firstName, getAstronaut, getDailySummary, getLastSaved, getMission, isLoggedToday, overallLabel } from '@/data/api';
 import { orbiNudge } from '@/data/derived';
 import { boltColors } from '@/data/shopArt';
 import { session } from '@/data/session';
@@ -39,47 +32,10 @@ const MENU: { key: string; type: LogType | null; label: string; icon: LogMenuIte
   { key: 'relax', type: null, label: 'Relax', icon: 'leaf', href: '/logs/relax' },
 ];
 
-const BOLT_W = 100;
-const WALK_MS = 18000;
-
-/** Bolt walking left ↔ right across the floor (AppHome keyframes). Static when reduced motion is on. */
-function WalkingBolt({ sceneW, colors }: { sceneW: number; colors: ReturnType<typeof boltColors> }) {
-  const reduced = useReducedMotion();
-  const p = useSharedValue(0);
-  const max = Math.max(40, sceneW - 120);
-  useEffect(() => {
-    cancelAnimation(p);
-    if (reduced) {
-      p.value = 0;
-      return;
-    }
-    p.value = 0;
-    p.value = withRepeat(withTiming(1, { duration: WALK_MS, easing: Easing.linear }), -1, false);
-    return () => cancelAnimation(p);
-  }, [reduced, p]);
-  const style = useAnimatedStyle(() => {
-    const v = p.value;
-    let x = 10;
-    let flip = 1;
-    if (v < 0.45) x = 10 + (max - 10) * (v / 0.45);
-    else if (v < 0.5) x = max;
-    else if (v < 0.95) {
-      x = max - (max - 10) * ((v - 0.5) / 0.45);
-      flip = -1;
-    } else flip = -1;
-    return { transform: [{ translateX: x }, { scaleX: flip }] };
-  });
-  return (
-    <Animated.View pointerEvents="none" style={[styles.walker, style]}>
-      <Astronaut state={reduced ? 'idle' : 'walking'} colors={colors} />
-      <BoltShadow />
-    </Animated.View>
-  );
-}
-
 export default function Home() {
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+  const focused = useIsFocused();
   const [dismissedAt, setDismissedAt] = useState(0);
   const [size, setSize] = useState({ w: 390, h: 764 });
   const data = useData(() => {
@@ -91,6 +47,8 @@ export default function Home() {
       mission: getMission(),
       nudge: orbiNudge(),
       fill: session.orbiFill,
+      statuses: deriveStatuses(),
+      lastSavedAt: getLastSaved()?.at,
       done: Object.fromEntries(MENU.map((m) => [m.key, m.type ? isLoggedToday(m.type) : false])),
     };
   });
@@ -151,7 +109,14 @@ export default function Home() {
           <OrbiDrone />
         </View>
 
-        <WalkingBolt sceneW={size.w} colors={boltColors(me.avatar.equipped)} />
+        <BoltActor
+          width={size.w}
+          spots={{ window: WINDOW.left + winW / 2 - 50, console: 70, plant: size.w - 184, pet: size.w - 230 }}
+          statuses={data.statuses}
+          colors={boltColors(me.avatar.equipped)}
+          hasPet={!!me.avatar.equipped.pet}
+          celebrateKey={focused ? (data.lastSavedAt ?? 0) : 0}
+        />
 
         <View style={styles.bottom}>
           <View style={{ gap: 4, flex: 1 }}>
@@ -304,7 +269,6 @@ const styles = StyleSheet.create({
   },
   drone: { position: 'absolute', left: 282 },
   pet: { position: 'absolute', right: 96, bottom: 132 },
-  walker: { position: 'absolute', left: 0, bottom: 110, alignItems: 'center', width: BOLT_W },
   bottom: {
     position: 'absolute',
     left: 16,

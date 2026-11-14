@@ -163,3 +163,23 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - A category that already has a log today is never asked; mood answered here when it doesn't exist yet counts as the daily check-in (streak/+50 bonus rules apply).
 - Speech language is `en-US`; the parser also understands Portuguese keywords.
 - Voice needs a development build on phones (`npx expo run:android|ios`); Expo Go falls back to text.
+
+---
+
+## Etapa 8 · Bolt animation state machine — done
+
+**Done**
+- `src/avatar/` with a reducer state machine (`machine.ts`), catalogue (`animations.ts`: 14 idle, 11 status, 1 event), status derivation from data (`status.ts`) and the Reanimated runner `BoltActor.tsx`. Documented in `docs/design/ANIMATIONS.md`.
+- Idle: walk, wave, stretch, float, look out the window, drink coffee, use the console, water the plant, play with the pet, read the tablet, jump, spin, sit, small yawn — weighted random with duration ranges, walking to the right spot first.
+- Status (priority over idle): tired → yawn / slow walk / nap; low mood → sit and look at Earth; happy → dance / cheer; stress → pacing; leg injury → limp; arm injury → hold the arm; back/neck → hold the back; low exercise → stretch; menu fatigue → poke the food; just saved → short celebration (when Home regains focus).
+- A new top status interrupts an idle animation; transitions blend every channel in 280 ms; reduced motion = static pose of the current status (verified: two frames 2.5 s apart are identical).
+- Art stays the design's Bolt in react-native-svg (two eyes, visor, backpack) with animatable head, arms, legs, body; new hand props (cup, tablet, watering can, food tray) and overlays (zzz, sparkles, notes, sweat).
+- `/dev/components` › "Bolt animations": force any animation, Auto mode, simulate statuses, current animation + reason.
+- Home uses `BoltActor` (Ana today: arm-injury + tired statuses → holds her arm, yawns, naps, mixed with a little idle life).
+- Docs: SCREENS.md, COMPONENTS.md and data-model.json point to ANIMATIONS.md.
+
+**Decisions**
+- Reducer instead of XState (no new dependency, pure and easy to test).
+- Status animations may repeat; idle ones never repeat back to back. Idle weight ×0.05 while a status is active.
+- "Celebrate" is triggered by Home focus after a new save (not while the form is open), once per save.
+- Shared values are written with `.set()` (React Compiler friendly).

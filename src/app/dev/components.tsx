@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { ANIMATIONS, STATUS_LABEL, STATUS_PRIORITY, byId } from '@/avatar/animations';
+import { BoltActor } from '@/avatar/BoltActor';
+import type { BoltState } from '@/avatar/machine';
+import type { StatusKey } from '@/avatar/types';
 import { Astronaut, OrbiDrone } from '@/components/Astronaut';
 import { LogStateButton, PrimaryButton, RewardChip, SecondaryButton } from '@/components/Buttons';
 import { Card, CardTitle, InfoNote, StatTile } from '@/components/Card';
@@ -33,6 +37,53 @@ const CALLOUTS: CalloutSpec[] = [
   { side: 'left', slot: 3, point: 'legL', icon: 'activity', label: 'Exercise', value: '60 / 90 min', level: 'warn' },
   { side: 'right', slot: 2, point: 'wristR', icon: 'moon', label: 'Sleep · wrist', value: '5h 20m', level: 'warn' },
 ];
+
+/** Bolt animation state machine lab: force any animation or simulate statuses. */
+function AnimationLab() {
+  const [forced, setForced] = useState<string | null>(null);
+  const [sim, setSim] = useState<StatusKey[]>([]);
+  const [st, setSt] = useState<BoltState | null>(null);
+  const [w, setW] = useState(330);
+  const toggle = (k: StatusKey) => setSim((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]));
+  return (
+    <Section title={`Bolt animations (${ANIMATIONS.length})`}>
+      <View nativeID="bolt-lab" style={styles.lab} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+        <View style={styles.labFloor} />
+        <View style={styles.labConsole} />
+        <BoltActor
+          width={w}
+          spots={{ window: w / 2 - 50, console: 30, plant: w - 120, pet: w - 150 }}
+          statuses={sim}
+          forced={forced}
+          hasPet
+          bottom={20}
+          scale={0.9}
+          onState={setSt}
+        />
+      </View>
+      <Txt size={tokens.font.size.caption} color={C.muted}>
+        Now: <Txt weight="700" size={tokens.font.size.caption}>{st ? byId(st.anim).label : '—'}</Txt> · reason {st?.reason ?? '—'}
+      </Txt>
+      <Txt weight="700" size={tokens.font.size.small} color={C.muted}>
+        Force an animation
+      </Txt>
+      <View style={styles.wrap}>
+        <Chip label="Auto (state machine)" selected={!forced} onPress={() => setForced(null)} />
+        {ANIMATIONS.map((a) => (
+          <Chip key={a.id} label={a.label} tone={a.kind === 'idle' ? 'teal' : 'primary'} selected={forced === a.id} onPress={() => setForced(a.id)} />
+        ))}
+      </View>
+      <Txt weight="700" size={tokens.font.size.small} color={C.muted}>
+        Simulate status (Auto mode)
+      </Txt>
+      <View style={styles.wrap}>
+        {STATUS_PRIORITY.filter((k) => k !== 'saved').map((k) => (
+          <Chip key={k} label={STATUS_LABEL[k]} selected={sim.includes(k)} onPress={() => toggle(k)} />
+        ))}
+      </View>
+    </Section>
+  );
+}
 
 /** Dev catalogue of every shared component (COMPONENTS.md). */
 export default function ComponentsScreen() {
@@ -168,6 +219,8 @@ export default function ComponentsScreen() {
         <Chip label={walk ? 'Walking' : 'Idle'} selected onPress={() => setWalk(!walk)} />
       </Section>
 
+      <AnimationLab />
+
       <Section title="ChatBubble">
         <ChatBubble author="other" text="Maintenance will check that fan tomorrow." meta="Mission Control · arrived 07:40" />
         <ChatBubble author="me" text="Thanks!" meta="Delivered 20:02" metaColor={C.holoOk} metaIcon="check" />
@@ -196,4 +249,7 @@ const styles = StyleSheet.create({
   stageWrap: { marginHorizontal: -14, alignItems: 'center', overflow: 'hidden' },
   stage: { width: 390, height: 372 },
   icon: { width: 70, alignItems: 'center', gap: 4 },
+  lab: { height: 230, borderRadius: tokens.radius.item, overflow: 'hidden', backgroundColor: C.bgScene, borderWidth: 1, borderColor: C.border },
+  labFloor: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 70, backgroundColor: C.floor, borderTopWidth: 2, borderTopColor: C.teal },
+  labConsole: { position: 'absolute', left: 12, bottom: 70, width: 60, height: 50, borderTopLeftRadius: tokens.radius.small, borderTopRightRadius: tokens.radius.small, backgroundColor: C.track },
 });

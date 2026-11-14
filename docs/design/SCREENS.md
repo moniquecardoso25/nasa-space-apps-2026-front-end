@@ -35,7 +35,7 @@ All onboarding screens: progress bar (5 steps), back button, sticky bottom butto
 | Avatar · Pets | `?tab=pets` | AppAvatarPets | 2-column pet grid; equipped pet shows in the stage |
 | Leaderboard | `/leaderboard` | AppLeaderboard | Tabs **Daily logs / Coins**, podium top 3, list, note on how it counts |
 
-Data: `astronauts[].avatar`, `shop`, `logs` (counts). Avatar animation state machine driven by `avatar.state` (idle, walking, happy, tired, sleepy, sad).
+Data: `astronauts[].avatar`, `shop`, `logs` (counts). Avatar animation state machine driven by `avatar.state` (idle, walking, happy, tired, sleepy, sad) **plus the astronaut's logs/summaries** — see `ANIMATIONS.md` (14 idle animations, status animations with priority, celebrate after saving, reduced-motion static pose).
 
 ## 4 · Logs (overview → add)
 

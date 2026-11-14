@@ -74,7 +74,7 @@ type BoltProps = {
   colors?: BoltColors;
   scale?: number;
   /** Optional prop held in the front hand (cup, tablet…). */
-  holding?: 'cup' | 'tablet' | 'can' | null;
+  holding?: 'cup' | 'tablet' | 'can' | 'tray' | null;
 };
 
 /**
@@ -152,7 +152,19 @@ export function BoltFigure({ rig, colors = DEFAULT_BOLT, scale = 1, holding = nu
               </>
             )}
             {holding === 'tablet' && <Rect x={64} y={84} width={20} height={14} rx={2} fill={X.consoleBar} stroke={C.teal} strokeWidth={1.5} />}
-            {holding === 'can' && <Rect x={70} y={84} width={9} height={14} rx={2} fill={C.teal} />}
+            {holding === 'can' && (
+              <>
+                <Rect x={68} y={84} width={12} height={14} rx={2} fill={C.teal} />
+                <Path d="M80 87l8 4" stroke={C.teal} strokeWidth={2.5} strokeLinecap="round" />
+              </>
+            )}
+            {holding === 'tray' && (
+              <>
+                <Rect x={62} y={88} width={26} height={5} rx={2} fill={X.suitShade} />
+                <Circle cx={70} cy={86} r={4} fill={C.warning} />
+                <Circle cx={78} cy={86} r={3.5} fill={X.plantMid} />
+              </>
+            )}
           </Part>
         </Animated.View>
       </View>
