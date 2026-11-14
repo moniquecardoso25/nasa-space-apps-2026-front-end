@@ -233,3 +233,10 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - Native testing on devices (only bundles were built here); voice needs a development build.
 - Ground dashboard: only "Crew overview" is implemented; Environments/Alerts/Schedule/Messages sidebar items are static.
 - Calendar and Relax content (coming soon by design); notifications/reminders.
+
+## Follow-up · animated backgrounds, no Bolt shadow
+
+- Stars twinkle and move in two parallax layers (sway on login, wrapping drift in the Home window).
+- Home window Earth turns: land and clouds (wind, faster) scroll inside the round clip; the planet floats. Login/Relax Earth floats.
+- Bolt's floor shadow removed (`BoltShadow` deleted).
+- Decision: speeds and amplitudes are motion values, not colors/sizes, so they live next to the components (documented in ANIMATIONS.md). Reduced motion keeps every background static (verified: identical frames).

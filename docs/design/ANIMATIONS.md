@@ -95,3 +95,14 @@ Priority (strongest first): `saved` › `injuryLeg` › `injuryArm` › `injuryB
 - **Home**: `BoltActor` with spots taken from the scene (window center, console, plant, pet), statuses from `deriveStatuses()` and `celebrateKey = lastSaved.at` while Home is focused.
 - **`/dev/components` › Bolt animations**: force any animation (chips), "Auto (state machine)", and simulate statuses to watch the machine choose. Shows the current animation and reason.
 - Previews (onboarding, avatar stage) use the light `Astronaut` (idle bob / walk) for performance.
+- Bolt has no floor shadow (removed on request).
+
+## Animated backgrounds (parallax)
+
+All in `src/components/Space.tsx` and `StationScene.tsx`, with the `useLoop` (0→1 linear) and `useSway` (−1…1 ease) hooks. Reduced motion → everything static.
+
+| Element | Motion |
+|---|---|
+| `Stars` | Each star twinkles (opacity down to 30 % and back, 1.4–3.2 s, staggered). Two depth layers: big stars (size ≥ 3) are *near*, small ones *far*. Login: layers sway (near ±10 px / 7 s, far ±4 px / 11 s). Window (`driftWidth`): layers drift sideways and wrap (near 60 s, far 120 s per window width) |
+| `WindowEarth` (Home window) | Land turns (strip wraps every 90 s), clouds move faster with the wind (50 s), the planet floats ±4 px / 9 s. Night side and city lights stay fixed |
+| `LoginEarth` (login, relax) | Floats ±6 px vertical / ±3 px horizontal over 10 s |

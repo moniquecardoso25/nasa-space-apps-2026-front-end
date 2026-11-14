@@ -12,7 +12,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
-import { BOLT_W, BoltFigure, BoltShadow, useBoltRig, type BoltColors, type BoltRig } from '@/components/Astronaut';
+import { BOLT_W, BoltFigure, useBoltRig, type BoltColors, type BoltRig } from '@/components/Astronaut';
 import { Txt } from '@/components/Txt';
 import { C, tokens } from '@/theme/tokens';
 
@@ -259,7 +259,6 @@ export function BoltActor({ width, spots, statuses, colors, hasPet = false, forc
       <Animated.View style={flip}>
         <BoltFigure rig={rig} colors={colors} scale={scale} holding={holding} />
       </Animated.View>
-      <BoltShadow width={70 * scale} />
       <OverlayMark kind={overlay} />
       <View accessibilityLabel={`Bolt: ${def.label}`} />
     </Animated.View>

@@ -1,10 +1,11 @@
 import { View } from 'react-native';
-import Svg, { Circle, Defs, Ellipse, G, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
+import Svg, { Circle, Defs, Ellipse, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { C, X, tokens } from '@/theme/tokens';
 
 import { Surface, WindowView, floorSpec, wallSpec } from './ShopArt';
-import { Stars } from './Space';
+import { Stars, useLoop, useSway } from './Space';
 
 /** Window frame in AppHome: 334×340, 8px track border, radius 44. */
 export const WINDOW = { left: 28, top: 84, width: 334, height: 340 };
@@ -45,45 +46,81 @@ const CITY: [number, number][] = [
   [400, 70],
 ];
 
-/** Earth seen from the window (gradient planet, land, clouds, night side, city lights). */
+const EARTH = 480;
+
+/** A strip two Earths wide (the art drawn twice) that scrolls sideways forever inside the round clip. */
+function SpinStrip({ t, children }: { t: SharedValue<number>; children: (dx: number) => React.ReactNode }) {
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: (t.value - 1) * EARTH }] }));
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: EARTH * 2, height: EARTH }, style]}>
+      <Svg width={EARTH * 2} height={EARTH}>
+        {children(0)}
+        {children(EARTH)}
+      </Svg>
+    </Animated.View>
+  );
+}
+
+/**
+ * Earth seen from the window (gradient planet, land, clouds, night side, city lights).
+ * Animated: the planet turns (land drifts), clouds move faster with the wind,
+ * and the whole planet floats a little (parallax against the drifting stars).
+ * Reduced motion → static.
+ */
 export function WindowEarth({ innerW, innerH }: { innerW: number; innerH: number }) {
   // Earth box (480) at left -70, top 196 of the 334×340 window; keep it anchored to the window bottom.
   const ox = -70 + (innerW - 318) / 2;
   const oy = 196 + (innerH - 324);
+  const land = useLoop(90000);
+  const wind = useLoop(50000);
+  const float = useSway(9000);
+  const bob = useAnimatedStyle(() => ({ transform: [{ translateY: float.value * 4 }] }));
   return (
-    <>
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: innerW, height: innerH }, bob]}>
       <View
         pointerEvents="none"
-        style={{ position: 'absolute', left: ox, top: oy, width: 480, height: 480, borderRadius: 240, boxShadow: `0 -8px 40px 10px ${X.earthGlowHome}` }}
+        style={{ position: 'absolute', left: ox, top: oy, width: EARTH, height: EARTH, borderRadius: EARTH / 2, boxShadow: `0 -8px 40px 10px ${X.earthGlowHome}` }}
       />
-      <Svg width={innerW} height={innerH} style={{ position: 'absolute', left: 0, top: 0 }}>
-        <Defs>
-          <RadialGradient id="earth" cx="40%" cy="15%" r="100%" fx="40%" fy="15%">
-            <Stop offset="0" stopColor={X.earthLight} />
-            <Stop offset="0.26" stopColor={X.earthMid} />
-            <Stop offset="0.55" stopColor={X.earthDeep} />
-            <Stop offset="0.75" stopColor={X.earthEdge} />
-          </RadialGradient>
-          <LinearGradient id="night" x1="0" y1="0.41" x2="1" y2="0.59">
-            <Stop offset="0.55" stopColor={X.space} stopOpacity={0} />
-            <Stop offset="0.72" stopColor={X.space} stopOpacity={0.75} />
-          </LinearGradient>
-        </Defs>
-        <G transform={`translate(${ox} ${oy})`}>
+      <View style={{ position: 'absolute', left: ox, top: oy, width: EARTH, height: EARTH, borderRadius: EARTH / 2, overflow: 'hidden' }}>
+        <Svg width={EARTH} height={EARTH} style={{ position: 'absolute', left: 0, top: 0 }}>
+          <Defs>
+            <RadialGradient id="earth" cx="40%" cy="15%" r="100%" fx="40%" fy="15%">
+              <Stop offset="0" stopColor={X.earthLight} />
+              <Stop offset="0.26" stopColor={X.earthMid} />
+              <Stop offset="0.55" stopColor={X.earthDeep} />
+              <Stop offset="0.75" stopColor={X.earthEdge} />
+            </RadialGradient>
+          </Defs>
           <Circle cx={240} cy={240} r={240} fill="url(#earth)" />
-          {LAND.map(([l, t, w, h, c, o, r], i) => (
-            <Ellipse key={i} cx={l + w / 2} cy={t + h / 2} rx={w / 2} ry={h / 2} fill={c} opacity={o} transform={`rotate(${r} ${l + w / 2} ${t + h / 2})`} />
-          ))}
-          {CLOUDS.map(([l, t, w, r], i) => (
-            <Rect key={i} x={l} y={t} width={w} height={10} rx={5} fill={X.white} opacity={0.55} transform={`rotate(${r} ${l + w / 2} ${t + 5})`} />
-          ))}
+        </Svg>
+        <SpinStrip t={land}>
+          {(dx) =>
+            LAND.map(([l, t, w, h, c, o, r], i) => (
+              <Ellipse key={`${dx}-${i}`} cx={dx + l + w / 2} cy={t + h / 2} rx={w / 2} ry={h / 2} fill={c} opacity={o} transform={`rotate(${r} ${dx + l + w / 2} ${t + h / 2})`} />
+            ))
+          }
+        </SpinStrip>
+        <SpinStrip t={wind}>
+          {(dx) =>
+            CLOUDS.map(([l, t, w, r], i) => (
+              <Rect key={`${dx}-${i}`} x={dx + l} y={t} width={w} height={10} rx={5} fill={X.white} opacity={0.55} transform={`rotate(${r} ${dx + l + w / 2} ${t + 5})`} />
+            ))
+          }
+        </SpinStrip>
+        <Svg width={EARTH} height={EARTH} style={{ position: 'absolute', left: 0, top: 0 }}>
+          <Defs>
+            <LinearGradient id="night" x1="0" y1="0.41" x2="1" y2="0.59">
+              <Stop offset="0.55" stopColor={X.space} stopOpacity={0} />
+              <Stop offset="0.72" stopColor={X.space} stopOpacity={0.75} />
+            </LinearGradient>
+          </Defs>
           <Circle cx={240} cy={240} r={240} fill="url(#night)" />
           {CITY.map(([x, y], i) => (
             <Circle key={i} cx={x + 1.5} cy={y + 1.5} r={1.5} fill={C.gold} />
           ))}
-        </G>
-      </Svg>
-    </>
+        </Svg>
+      </View>
+    </Animated.View>
   );
 }
 
@@ -117,13 +154,13 @@ export function StationWindow({
       }}>
       {view === 'window-earth-day' ? (
         <>
-          <Stars stars={WINDOW_STARS} />
+          <Stars stars={WINDOW_STARS} driftWidth={innerW} />
           <WindowEarth innerW={innerW} innerH={innerH} />
         </>
       ) : (
         <>
           <WindowView id={view} width={innerW} height={innerH} />
-          <Stars stars={WINDOW_STARS} />
+          <Stars stars={WINDOW_STARS} driftWidth={innerW} />
         </>
       )}
     </View>

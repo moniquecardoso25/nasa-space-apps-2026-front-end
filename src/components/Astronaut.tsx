@@ -172,11 +172,6 @@ export function BoltFigure({ rig, colors = DEFAULT_BOLT, scale = 1, holding = nu
   );
 }
 
-/** Floor shadow under Bolt. */
-export function BoltShadow({ width = 70 }: { width?: number }) {
-  return <View style={{ width, height: 10, marginTop: -5, borderRadius: width, backgroundColor: X.overlay }} />;
-}
-
 /**
  * Simple Astronaut: walking = legs/arm swing + bob; idle = gentle bob.
  * Respects reduced motion (static pose). Home uses the full state machine
