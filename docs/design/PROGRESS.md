@@ -183,3 +183,18 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - Status animations may repeat; idle ones never repeat back to back. Idle weight ×0.05 while a status is active.
 - "Celebrate" is triggered by Home focus after a new save (not while the form is open), once per save.
 - Shared values are written with `.set()` (React Compiler friendly).
+
+---
+
+## Etapa 9 · Injuries on the Crew status hologram — done
+
+**Done**
+- `getDailySummary().areas` now merges injuries: every injury logged up to that day with status `active` or `healing` sets its area to `alert` (pink `holoAlert`). Mapping in `injuryAreas()` (`src/data/api.ts`): head/neck → head, back → torso, arm/hand → armL/armR by side, leg/knee/foot → legL/legR by side ("center" → both). Documented in data-model.json.
+- Crew status adds one callout per open injury ("Injury · Left hand" / "Healing" or "Active", pink) in an extra row below the body on the injury's side, linked by a dashed line to the hurt area; tapping opens `/logs/body/injury?id=…` (status Active/Healing/Resolved can be updated there).
+- Verified: Ana's left-hand bruise (healing, day 9) turns the left arm pink with the callout; marking it Resolved returns the arm to green and removes the callout. The day scrubber shows it from day 9 on.
+- The Bolt state machine already reads the same injuries (arm injury → guards the arm).
+- SCREENS.md updated.
+
+**Decisions**
+- Injury status is not versioned in the mock, so past days use the current status (an injury resolved today disappears from past days too).
+- Up to 4 injury callouts (2 per side); the stage grows by 92 px per extra row.

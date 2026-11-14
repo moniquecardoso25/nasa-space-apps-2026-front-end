@@ -70,11 +70,18 @@ export const BODY_POINTS = {
   wristR: { x: 248, y: 205 },
   legL: { x: 180, y: 300 },
   legR: { x: 220, y: 300 },
+  // injury anchor points (hologram coordinates + stage offset 130, 22)
+  injHead: { x: 195, y: 62 },
+  injTorso: { x: 195, y: 160 },
+  injArmL: { x: 153, y: 206 },
+  injArmR: { x: 237, y: 206 },
+  injLegL: { x: 180, y: 262 },
+  injLegR: { x: 210, y: 262 },
 } as const;
 export type BodyPoint = keyof typeof BODY_POINTS;
 
-/** The 4 callout slots per side in AppStatus. */
-export const CALLOUT_SLOTS = [26, 118, 210, 302];
+/** The 4 callout slots per side in AppStatus, plus extra rows below for injuries. */
+export const CALLOUT_SLOTS = [26, 118, 210, 302, 394, 486];
 
 export type CalloutSpec = {
   side: 'left' | 'right';
@@ -88,18 +95,20 @@ export type CalloutSpec = {
 };
 
 /** Lines from callouts to body points (drawn behind callouts). */
-export function CalloutLines({ callouts }: { callouts: CalloutSpec[] }) {
+export function CalloutLines({ callouts, height = STAGE_H }: { callouts: CalloutSpec[]; height?: number }) {
   return (
-    <Svg width={STAGE_W} height={380} viewBox="0 0 390 380" style={{ position: 'absolute', left: 0, top: -8 }} pointerEvents="none">
+    <Svg width={STAGE_W} height={height + 8} viewBox={`0 0 390 ${height + 8}`} style={{ position: 'absolute', left: 0, top: -8 }} pointerEvents="none">
       {callouts.map((c, i) => {
         const y = CALLOUT_SLOTS[c.slot] + 28 + 8 - 8; // middle of the box (svg is shifted -8)
         const ex = c.side === 'left' ? 128 : 262;
         const mx = c.side === 'left' ? 142 : 248;
         const p = BODY_POINTS[c.point];
         const col = levelColor(c.level);
+        // Injury rows sit below the body: route the line up along the side, then in.
+        const path = c.slot > 3 ? `${ex},${y} ${mx},${y} ${mx},${p.y} ${p.x},${p.y}` : `${ex},${y} ${mx},${y} ${p.x},${p.y}`;
         return (
           <G key={i}>
-            <Polyline points={`${ex},${y} ${mx},${y} ${p.x},${p.y}`} fill="none" stroke={col} strokeWidth={1.5} strokeOpacity={0.8} />
+            <Polyline points={path} fill="none" stroke={col} strokeWidth={1.5} strokeOpacity={0.8} strokeDasharray={c.slot > 3 ? '4 3' : undefined} />
             <Circle cx={p.x} cy={p.y} r={4} fill={col} />
             <Circle cx={p.x} cy={p.y} r={9} fill={col} fillOpacity={0.22} />
           </G>

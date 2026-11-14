@@ -153,14 +153,14 @@
     },
     "daily_summaries.json": {
       "type": "DailySummary[]",
-      "$comment": "Derived (can be computed on the fly). Feeds the Status day scrubber and the Home log menu.",
+      "$comment": "Derived (computed on the fly in src/data/api.ts getDailySummary). Feeds the Status day scrubber, the hologram and the Home log menu. logsDone is recomputed from logs; areas include open injuries.",
       "fields": {
         "astronautId": "string",
         "missionDay": "number",
         "logsDone": "string[] of types",
         "logsDoneCount": "0..7 (mood, sleep, radiation, measurement, meal, exercise, injury not counted)",
         "overallScore": "0..100",
-        "areas": "{head, torso, armL, armR, legL, legR}: 'ok'|'warn'|'alert' → hologram colors"
+        "areas": "{head, torso, armL, armR, legL, legR}: 'ok'|'warn'|'alert' → hologram colors. Computed = stored areas, then every injury (logged up to that day) with status 'active' or 'healing' sets its area(s) to 'alert' (holoAlert). Mapping: head/neck → head, back → torso, arm/hand → armL/armR by side, leg/knee/foot → legL/legR by side ('center' → both). Left/right = the astronaut's side shown on the viewer's left/right column of the hologram (armL left, armR right)."
       }
     },
     "environment_readings.json": {

@@ -2,6 +2,8 @@ import { getDb, setDb } from './store';
 import type {
   AiMessage,
   Areas,
+  BodyArea,
+  InjuryData,
   Astronaut,
   CalendarEvent,
   ChatMode,
@@ -233,6 +235,31 @@ export const getLastSaved = () => lastSaved;
 const EMPTY_AREAS: Areas = { head: 'ok', torso: 'ok', armL: 'ok', armR: 'ok', legL: 'ok', legR: 'ok' };
 
 /**
+ * Hologram areas hit by an injury. head/neck → head, back → torso,
+ * arm/hand → armL/armR, leg/knee/foot → legL/legR (side; "center" marks both).
+ */
+export function injuryAreas(d: Pick<InjuryData, 'bodyPart' | 'side'>): BodyArea[] {
+  const both = (l: BodyArea, r: BodyArea): BodyArea[] => (d.side === 'left' ? [l] : d.side === 'right' ? [r] : [l, r]);
+  switch (d.bodyPart) {
+    case 'head':
+    case 'neck':
+      return ['head'];
+    case 'back':
+      return ['torso'];
+    case 'arm':
+    case 'hand':
+      return both('armL', 'armR');
+    default:
+      return both('legL', 'legR');
+  }
+}
+
+/** Injuries reported up to a day that are still active or healing. */
+export function getOpenInjuries(day: number = getToday(), astronautId?: string) {
+  return getLogs({ type: 'injury', astronautId, toDay: day }).filter((l) => l.data.status !== 'resolved');
+}
+
+/**
  * Daily summary. The mock file is the base (score, areas); logsDone is always
  * recomputed from logs so new logs show up immediately. Each new log after the
  * stored snapshot adds +2 to the score (cap 100).
@@ -251,8 +278,14 @@ export function getDailySummary(day: number = getToday(), astronautId: string = 
     logsDoneCount: logsDone.length,
     logsTotal: LOGS_TOTAL,
     overallScore,
-    areas: { ...(stored?.areas ?? EMPTY_AREAS) },
+    areas: withInjuries({ ...(stored?.areas ?? EMPTY_AREAS) }, day, astronautId),
   };
+}
+
+/** Active/healing injuries paint their area as `alert` (holoAlert). */
+function withInjuries(areas: Areas, day: number, astronautId: string): Areas {
+  for (const inj of getOpenInjuries(day, astronautId)) for (const a of injuryAreas(inj.data)) areas[a] = 'alert';
+  return areas;
 }
 
 export function getDailySummaries(fromDay: number, toDay: number = getToday(), astronautId?: string) {

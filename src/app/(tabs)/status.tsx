@@ -27,25 +27,25 @@ import {
 import { Icon } from '@/components/Icon';
 import { CoinsPill, Legend, levelColor } from '@/components/Pills';
 import { Txt } from '@/components/Txt';
-import { firstName, getAstronaut, getCheckinStreak, getDailySummary, getToday, isLoggedToday, overallLabel } from '@/data/api';
-import { dayVitals, lastSyncIso } from '@/data/derived';
+import { firstName, getAstronaut, getCheckinStreak, getDailySummary, getOpenInjuries, getToday, injuryAreas, isLoggedToday, overallLabel } from '@/data/api';
+import { dayVitals, injuryTitle, lastSyncIso } from '@/data/derived';
 import { hhmm } from '@/data/format';
 import { useData } from '@/data/store';
 import type { Level } from '@/data/types';
 import { C, X, tokens } from '@/theme/tokens';
 
 /** Grid + beam + scanlines + platform behind the hologram. */
-function HoloBackdrop() {
+function HoloBackdrop({ height = STAGE_H }: { height?: number }) {
   return (
     <>
-      <Svg width={STAGE_W} height={STAGE_H} style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg width={STAGE_W} height={height} style={StyleSheet.absoluteFill} pointerEvents="none">
         <Defs>
           <Pattern id="grid" width={22} height={22} patternUnits="userSpaceOnUse">
             <Line x1={0} y1={0} x2={22} y2={0} stroke={X.holoGrid} strokeWidth={1} />
             <Line x1={0} y1={0} x2={0} y2={22} stroke={X.holoGrid} strokeWidth={1} />
           </Pattern>
         </Defs>
-        <Rect width={STAGE_W} height={STAGE_H} fill="url(#grid)" />
+        <Rect width={STAGE_W} height={height} fill="url(#grid)" />
       </Svg>
       <View pointerEvents="none" style={styles.platform}>
         <Svg width={174} height={32}>
@@ -112,6 +112,7 @@ export default function Status() {
       streak: getCheckinStreak(),
       checkedIn: isLoggedToday('mood'),
       sync: lastSyncIso(sel),
+      injuries: getOpenInjuries(sel),
     };
   }, [sel, today]);
 
@@ -133,6 +134,27 @@ export default function Status() {
     { side: 'right', slot: 2, point: 'wristR', icon: 'moon', ...pick(vitals.sleep, 'Sleep · wrist'), onPress: go(vitals.sleep.pending ? '/logs/sleep/add' : '/logs/sleep') },
     { side: 'right', slot: 3, point: 'legR', icon: 'bone', ...pick(vitals.bone, 'Bone density'), onPress: go('/logs/body') },
   ];
+
+  // Injury callouts: one extra row per side below the body (left injuries on the left column).
+  const POINT = { head: 'injHead', torso: 'injTorso', armL: 'injArmL', armR: 'injArmR', legL: 'injLegL', legR: 'injLegR' } as const;
+  const used = { left: 4, right: 4 };
+  d.injuries.slice(0, 4).forEach((inj) => {
+    const area = injuryAreas(inj.data)[0];
+    const side: 'left' | 'right' = area.endsWith('R') ? 'right' : area.endsWith('L') ? 'left' : used.left <= used.right ? 'left' : 'right';
+    if (used[side] > 5) return;
+    callouts.push({
+      side,
+      slot: used[side]++,
+      point: POINT[area],
+      icon: 'bandage',
+      label: `Injury · ${injuryTitle(inj.data)}`,
+      value: inj.data.status === 'active' ? 'Active' : 'Healing',
+      level: 'alert',
+      onPress: go(`/logs/body/injury?id=${inj.id}`),
+    });
+  });
+  const rows = Math.max(used.left, used.right);
+  const stageH = rows > 4 ? STAGE_H + (rows - 4) * 92 : STAGE_H;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -205,13 +227,13 @@ export default function Status() {
         </View>
 
         <View style={styles.stageWrap}>
-          <View style={styles.stage}>
-            <HoloBackdrop />
+          <View style={[styles.stage, { height: stageH }]}>
+            <HoloBackdrop height={stageH} />
             <FloatingHolo>
               <HologramBody areas={summary.areas} />
             </FloatingHolo>
             <Scanlines />
-            <CalloutLines callouts={callouts} />
+            <CalloutLines callouts={callouts} height={stageH} />
             {callouts.map((c, i) => (
               <Callout key={i} {...c} />
             ))}
