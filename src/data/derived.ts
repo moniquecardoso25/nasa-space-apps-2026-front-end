@@ -5,6 +5,7 @@ import type { Level, LogOf, Metric } from './types';
 /** Mood level → label shown in the UI. */
 export const MOOD_TITLE: Record<number, string> = { 5: 'Great', 4: 'Good', 3: 'Okay', 2: 'Tired', 1: 'Stressed' };
 const STRESS_TAGS = ['anxious', 'overloaded', 'stressed'];
+export const MOOD_TAGS = ['calm', 'focused', 'motivated', 'homesick', 'lonely', 'anxious', 'overloaded'];
 
 export function moodLevelToLevel(level: number): Level {
   return level >= 3 ? 'ok' : level === 2 ? 'warn' : 'alert';
@@ -122,3 +123,120 @@ export function lastSyncIso(day: number): string | undefined {
   const alert = getAlerts().find((a) => a.timestamp.slice(0, 10) === (t ?? '').slice(0, 10));
   return [t, alert?.timestamp].filter(Boolean).sort().at(-1);
 }
+
+// ---------------------------------------------------------------- body measurements
+
+export type BodyMetricDef = {
+  metric: Metric;
+  label: string;
+  short: string;
+  cadence: 'daily' | 'weekly';
+  icon: 'heart' | 'bone' | 'muscle' | 'zap' | 'activity';
+  unit: string;
+  baseline: (a: ReturnType<typeof getAstronaut>) => number;
+};
+
+export const BODY_METRICS: BodyMetricDef[] = [
+  { metric: 'blood_pressure', label: 'Blood pressure', short: 'Blood pressure', cadence: 'daily', icon: 'heart', unit: 'mmHg', baseline: () => 0 },
+  { metric: 'bone_density', label: 'Bone density', short: 'Bone density', cadence: 'weekly', icon: 'bone', unit: 'g/cm²', baseline: (a) => a.baseline.boneDensity },
+  { metric: 'muscle_mass', label: 'Muscle mass', short: 'Muscle mass', cadence: 'weekly', icon: 'muscle', unit: 'kg', baseline: (a) => a.baseline.muscleMassKg },
+  { metric: 'strength', label: 'Strength test', short: 'Strength', cadence: 'weekly', icon: 'zap', unit: 'score', baseline: (a) => a.baseline.strengthScore },
+  { metric: 'aerobic', label: 'Aerobic test', short: 'Aerobic', cadence: 'weekly', icon: 'activity', unit: 'score', baseline: (a) => a.baseline.aerobicScore },
+];
+
+/** Daily metrics are up to date when logged today; weekly ones when logged in the last 7 days. */
+export function measurementStatus(def: BodyMetricDef) {
+  const today = getToday();
+  const last = latestMeasurement(def.metric);
+  const upToDate = !!last && (def.cadence === 'daily' ? last.missionDay === today : last.missionDay > today - 7);
+  let text: string;
+  if (upToDate) text = last!.missionDay === today ? 'Logged today' : `Logged ${weekdayOfDayLocal(last!.missionDay)}`;
+  else text = def.cadence === 'daily' ? 'Not logged today' : 'Due today';
+  return { upToDate, last, text };
+}
+
+function weekdayOfDayLocal(day: number) {
+  const d = new Date(getMission().startDate + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + day - 1);
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getUTCDay()];
+}
+
+/** % change vs the pre-flight baseline (negative = loss). */
+export function deltaVsBaseline(def: BodyMetricDef, value: number) {
+  const base = def.baseline(getAstronaut());
+  return base ? Math.round((value / base - 1) * 1000) / 10 : null;
+}
+
+// ---------------------------------------------------------------- injuries
+
+export const INJURY_PART_LABEL: Record<string, string> = {
+  head: 'Head',
+  neck: 'Neck',
+  back: 'Back',
+  arm: 'Arm',
+  hand: 'Hand',
+  leg: 'Leg',
+  knee: 'Knee',
+  foot: 'Foot',
+};
+export const INJURY_KIND_LABEL: Record<string, string> = { bruise: 'Bruise', cut: 'Cut', strain: 'Strain', burn: 'Burn', pain: 'Pain, no cause' };
+
+export function injuryTitle(d: { bodyPart: string; side: string }) {
+  const part = INJURY_PART_LABEL[d.bodyPart] ?? d.bodyPart;
+  return d.side === 'center' ? part : `${d.side === 'left' ? 'Left' : 'Right'} ${part.toLowerCase()}`;
+}
+
+export function injuryStatusLevel(status: 'active' | 'healing' | 'resolved'): Level {
+  return status === 'active' ? 'alert' : status === 'healing' ? 'warn' : 'ok';
+}
+
+// ---------------------------------------------------------------- meals
+
+/** Daily macro targets shown in AppMeals (not in mission.goals). */
+export const MACRO_GOALS = { proteinG: 90, carbsG: 300, fatG: 80 };
+
+/** Quick picks for the meal form with an approximate kcal each (ISS-style menu). */
+export const MEAL_PICKS: { name: string; kcal: number }[] = [
+  { name: 'Shrimp cocktail', kcal: 180 },
+  { name: 'Beef stew', kcal: 520 },
+  { name: 'Tortilla', kcal: 260 },
+  { name: 'Fresh lettuce', kcal: 20 },
+  { name: 'Coffee', kcal: 10 },
+  { name: 'Rehydrated soup', kcal: 300 },
+  { name: 'Oatmeal', kcal: 300 },
+  { name: 'Nuts', kcal: 290 },
+];
+
+/** Macros estimated from kcal (15% protein, 55% carbs, 30% fat) when not entered. */
+export function estimateMacros(kcal: number) {
+  return {
+    proteinG: Math.round((kcal * 0.15) / 4),
+    carbsG: Math.round((kcal * 0.55) / 4),
+    fatG: Math.round((kcal * 0.3) / 9),
+  };
+}
+
+/**
+ * Menu fatigue: the same meal on 3+ consecutive days with a falling/low taste
+ * rating (NASA "menu fatigue"), or an Orbi menu_fatigue alert.
+ */
+export function menuFatigue(): string | null {
+  const meals = getLogs({ type: 'meal' });
+  const today = getToday();
+  const names = [...new Set(meals.map((m) => m.data.name))];
+  for (const name of names) {
+    const days = new Set(meals.filter((m) => m.data.name === name).map((m) => m.missionDay));
+    let run = 0;
+    for (let d = today; d >= 1 && (days.has(d) || d === today); d--) {
+      if (days.has(d)) run++;
+      else if (d !== today) break;
+    }
+    const ratings = meals.filter((m) => m.data.name === name).slice(-3).map((m) => m.data.tasteRating);
+    const low = ratings.length > 0 && ratings.reduce((a, b) => a + b, 0) / ratings.length <= 3;
+    if (run >= 3 && low) return `${name} ${run} days in a row and ratings are dropping. Try something new to avoid menu fatigue.`;
+  }
+  const alert = getAlerts().find((a) => a.type === 'menu_fatigue');
+  return alert ? `${alert.text} Try something new to avoid menu fatigue.` : null;
+}
+
+export const EFFORT_LABEL = ['', 'very easy', 'easy', 'moderate', 'hard', 'max effort'];

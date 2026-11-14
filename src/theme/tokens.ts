@@ -103,6 +103,11 @@ export const tokens = {
       goldBanner: 'rgba(255,201,77,0.12)', // Messages delay banner bg
       goldBannerBorder: 'rgba(255,201,77,0.4)',
       dangerIcon: 'rgba(255,122,147,0.12)', // injury icon tile
+      dangerNote: 'rgba(255,122,147,0.10)', // severe-injury note bg
+      dangerNoteBorder: 'rgba(255,122,147,0.4)',
+      warningSoft: 'rgba(255,159,90,0.12)', // menu-fatigue note bg
+      sleepDeep: '#5B4FD9', // deep-sleep stage bar
+      playGlow: 'rgba(139,124,255,0.6)', // Relax play button
       dangerSoft: 'rgba(255,122,147,0.14)',
       shadowDeep: 'rgba(5,5,25,0.7)',
       overlay: 'rgba(0,0,0,0.45)', // Bolt floor shadow
@@ -154,6 +159,7 @@ export const tokens = {
       label: 14, // card titles, menu rows
       stat: 20, // stat numbers, greeting
       h1: 24, // onboarding headings
+      hero: 32, // big log numbers (5h 20m, 0.48 mSv, 1,840 kcal)
       brand: 26, // login wordmark
     },
     radius: {

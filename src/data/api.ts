@@ -149,6 +149,7 @@ export interface AddLogOptions {
 export function addLog<T extends LogType>(type: T, data: LogDataMap[T], opts: AddLogOptions = {}): LogOf<T> {
   const me = getCurrentAstronautId();
   let created!: LogOf<T>;
+  lastSaved = { type, at: Date.now(), coins: COINS_PER_LOG };
   setDb((db) => {
     created = {
       id: nextLogId(db),
@@ -169,19 +170,18 @@ export function addLog<T extends LogType>(type: T, data: LogDataMap[T], opts: Ad
       ),
     };
   });
-  lastSaved = { type, at: Date.now() };
   return created;
 }
 
 /** Edits an existing log (no extra coins). */
 export function updateLog<T extends LogType>(id: string, data: LogDataMap[T], opts: AddLogOptions = {}) {
+  lastSaved = { type: getDb().logs.find((l) => l.id === id)?.type ?? 'mood', at: Date.now(), coins: 0 };
   setDb((db) => ({
     ...db,
     logs: db.logs.map((l) =>
       l.id === id ? ({ ...l, data, note: opts.note !== undefined ? opts.note : l.note } as Log) : l,
     ),
   }));
-  lastSaved = { type: getDb().logs.find((l) => l.id === id)?.type ?? 'mood', at: Date.now() };
 }
 
 /**
@@ -197,8 +197,9 @@ export function saveDailyLog<T extends LogType>(type: T, data: LogDataMap[T], op
   const log = addLog(type, data, opts);
   let coins = COINS_PER_LOG;
   if (type === 'mood' && getCheckinStreak() % 7 === 0) {
-    addCoins(DAILY_CHECKIN_COINS);
     coins += DAILY_CHECKIN_COINS;
+    lastSaved = { type, at: Date.now(), coins };
+    addCoins(DAILY_CHECKIN_COINS);
   }
   return { log, coins };
 }
@@ -223,8 +224,8 @@ export function getCheckinStreak(astronautId?: string) {
   return streak;
 }
 
-let lastSaved: { type: LogType; at: number } | null = null;
-/** Last log saved in this session (drives the avatar "celebrate" animation). */
+let lastSaved: { type: LogType; at: number; coins: number } | null = null;
+/** Last log saved in this session (drives the "Saved +10" banner and Bolt's celebrate animation). */
 export const getLastSaved = () => lastSaved;
 
 // ---------------------------------------------------------------- daily summaries

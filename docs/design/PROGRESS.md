@@ -72,3 +72,29 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - Callouts: Muscle uses `muscle_mass` deltas, falling back to `strength` (the mock has no muscle_mass logs). Levels: bone ≤−1.5% warn / ≤−3% alert; strength/aerobic ≤−5% warn / ≤−10% alert; sleep ≥7 h ok / ≥5 h warn; exercise ≥90 min ok; BP ≥130 warn / ≥140 alert; stress from mood level + tags. Radiation = cumulative personal dose (illustrative, never alert).
 - Viewer's right = `armR`/`legR` on the hologram (matches AppStatus + mock).
 - Known dev-only quirk: loading `http://localhost:8081/status` directly hits Metro's own `/status` endpoint. In-app navigation and exported builds are fine.
+
+---
+
+## Etapa 4 · Logs (overview → add) — done
+
+**Done**
+- Shared kit `src/components/LogKit.tsx`: LogScreen (header + sticky footer), SavedBanner ("Saved · logged today +10" / "Changes saved", 5 s), ListRow, MetricTile, Stars (display + input), Note (info/warning/danger), ComingSoon, Greyed, Stepper, Group, ChipRow.
+- Every overview uses `LogStateButton`: not logged → `Log today +10`; logged → green `✓ Logged today` + `Edit` (meals/exercise/body: `Add`). Matches the `*Todo` / `*Done` PNGs.
+- Mood: Week/Month/Mission tabs, mood line chart with faces, trend, average · best day · check-ins, Orbi insight, "Shared with Orbi" journal entries. Add: draggable vertical slider (responder system, mouse/touch/pen, a11y increment/decrement) + tags; edits today's check-in when it exists.
+- Sleep: last night (duration vs 7 h target, bed/quality/woke, illustrative stage bar), week bars vs target, ARCHeR band tiles, 16-sunrises tip. Add: bed/wake prefilled from the band, total, rested 1–5, wake-ups, note.
+- Radiation: mission total (illustrative badge), daily dose bars, area monitor from `environment_readings` with neutron mix, recent readings. Add: personal/area, value, read at, µSv/mSv, simulated "Scan badge".
+- Body: 5 measurements with cadence + status (Not logged today / Logged Fri / Due today), trend vs baseline (dashed = −10%), injuries (Healing/Resolved/Active) + Report button. Add: Measurement tab (metric chips, already-logged greyed with ✓, BP systolic/diastolic/pulse or value + unit, % vs baseline computed); Injury tab (where + side, what, severity, pain 1–5, description, simulated photo, severe → `flaggedToGround`). `?id=` opens an existing injury to update its status (no coins).
+- Meals: kcal vs goal + macros, meals today with stars, week kcal bars, menu-fatigue warning. Add: what you ate + quick picks (fill name and kcal), kcal, time, 1–5 stars.
+- Exercise: ring today (min vs 90), week strip (done / missed / today / future), sessions today, week minutes vs 90. Add: type, equipment, duration stepper, effort 1–5.
+- Relax: "Coming soon" banner, content greyed (opacity 0.4 + grayscale) and not interactive, but reachable.
+- Every save = +10 coins (`addLog`), "Logged today" updates everywhere (Home menu ring, Status, overviews). Verified via CDP: drag slider → Save "Great"; meal save → +10 banner → Home coins 1,250 → 1,260, ring 3/7 → 4/7, Meals "Done".
+
+**Decisions**
+- Once-a-day logs (mood, sleep, radiation) are edited in place when they already exist today (no extra coins); meals, exercise, measurements and injuries add a new log each time (+10).
+- Saving returns to the screen that opened the form (overview, Home or Status).
+- Meal macros are estimated from kcal (15/55/30 %) because the form has no macro inputs; macro goals 90/300/80 g come from AppMeals (constant `MACRO_GOALS`).
+- Menu fatigue = same meal 3+ days in a row with average taste ≤ 3, or an Orbi `menu_fatigue` alert.
+- Weekly measurement is "up to date" when logged in the last 7 days; BP (daily) when logged today. Value color follows the status (green logged / gold due), as in AppBody.
+- Exercise week strip uses the calendar week (Mon–Sun); other week charts use the last 7 mission days.
+- Sleep stage bar is illustrative (built from duration + wake-ups); the data model has no sleep stages.
+- Time inputs are plain `HH:MM` text fields with a mask (no native time picker yet).

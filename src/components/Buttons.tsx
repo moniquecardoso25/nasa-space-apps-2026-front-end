@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { C, X, tokens } from '@/theme/tokens';
 
@@ -98,9 +99,14 @@ export function RewardChip({ amount = 10, color = C.text }: { amount?: number; c
   );
 }
 
-/** Gold coin drawn as in the design (dark text on primary buttons needs a gold coin). */
+/** Filled gold coin with dark outline (reward chips on buttons, AppSleep footer). */
 export function CoinIcon({ size = 18 }: { size?: number }) {
-  return <Icon name="coin" size={size} color={C.gold} />;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={12} cy={12} r={9} fill={C.gold} stroke={C.onGold} strokeWidth={1.5} />
+      <Path d="M12 8v8M9.5 10h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4" fill="none" stroke={C.onGold} strokeWidth={1.6} strokeLinecap="round" />
+    </Svg>
+  );
 }
 
 type LogStateProps = {
