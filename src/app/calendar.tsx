@@ -1,0 +1,14 @@
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Card, Heading, Label, Muted, Screen } from '@/components/cosmo-ui';
+import { C, LOG_PATH } from '@/constants/cosmo';
+
+const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const tasks = [{ time: '10:00', title: 'Aerobic fitness test', detail: 'Weekly · due today', module: 'body' as const }, { time: '21:00', title: 'Wind-down', detail: 'Cabin lights dim', module: 'relax' as const }, { time: 'Mon', title: 'Bone density scan', detail: 'Weekly · Nov 16', module: 'body' as const }, { time: 'Thu', title: 'Family video call', detail: 'Nov 19 · 18:00', module: 'messages' as const }];
+
+export default function CalendarScreen() {
+  return <Screen><Heading title="Mission calendar" subtitle="Mission day 12 · November 2026" /><Card><View style={styles.month}><Label>November 2026</Label><Muted>Days 1–28</Muted></View><View style={styles.grid}>{days.map((day, i) => <Text key={`${day}-${i}`} style={styles.dayLabel}>{day}</Text>)}{Array.from({ length: 35 }, (_, i) => { const day = i - 5; const valid = day > 0 && day <= 30; return <View key={i} style={[styles.date, day === 14 && styles.today]}><Text style={[styles.dateText, day === 14 && { color: C.text }]}>{valid ? day : ''}</Text>{valid && [7, 10, 14, 19].includes(day) ? <View style={styles.dot} /> : null}</View>; })}</View><Muted>✓ Check-in done     • Mission event</Muted></Card><Label>Today · Sat 14</Label>{tasks.map((task) => <Pressable key={task.title} onPress={() => task.module === 'messages' ? router.push('/messages') : router.push(LOG_PATH[task.module] as never)} style={styles.task}><Text style={styles.time}>{task.time}</Text><View style={{ flex: 1 }}><Text style={styles.taskTitle}>{task.title}</Text><Text style={styles.taskDetail}>{task.detail}</Text></View><Text style={{ color: C.muted }}>›</Text></Pressable>)}<Label>Coming up</Label><Muted>Weekly measurements and crew events will appear here as mission plans are updated.</Muted></Screen>;
+}
+
+const styles = StyleSheet.create({ month: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, grid: { flexDirection: 'row', flexWrap: 'wrap' }, dayLabel: { width: '14.285%', textAlign: 'center', color: C.muted, paddingVertical: 7, fontSize: 11 }, date: { width: '14.285%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 12 }, today: { backgroundColor: C.elevated, borderWidth: 1, borderColor: C.purple }, dateText: { color: C.muted, fontSize: 12 }, dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.teal, position: 'absolute', bottom: 5 }, task: { minHeight: 59, flexDirection: 'row', alignItems: 'center', gap: 13, borderBottomWidth: 1, borderColor: C.border }, time: { color: C.teal, width: 43, fontWeight: '700' }, taskTitle: { color: C.text, fontWeight: '700' }, taskDetail: { color: C.muted, fontSize: 11, marginTop: 3 },
+});
