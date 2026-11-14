@@ -68,7 +68,6 @@ export default function Orbi() {
     else if (a.send) send(a.send);
   };
 
-  let lastDay = -1;
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -125,10 +124,9 @@ export default function Orbi() {
             {mode === 'private' ? 'Say anything. This conversation is not stored.' : 'Say hi to Orbi.'}
           </Txt>
         ) : null}
-        {msgs.map((m) => {
+        {msgs.map((m, i) => {
           const day = dayOfDate(m.timestamp);
-          const sep = day !== lastDay;
-          lastDay = day;
+          const sep = i === 0 || day !== dayOfDate(msgs[i - 1].timestamp);
           return (
             <View key={m.id} style={{ gap: 10 }}>
               {sep ? (

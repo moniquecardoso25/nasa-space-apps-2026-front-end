@@ -32,8 +32,8 @@ export function sleepLevel(min: number): Level {
 }
 
 /** Total personal dose in mSv up to a day (illustrative). */
-export function radiationTotalMsv(upToDay = getToday()) {
-  const usv = getLogs({ type: 'radiation', toDay: upToDay })
+export function radiationTotalMsv(upToDay = getToday(), astronautId?: string) {
+  const usv = getLogs({ type: 'radiation', toDay: upToDay, astronautId })
     .filter((l) => l.data.source === 'personal')
     .reduce((s, l) => s + l.data.doseUsv, 0);
   return usv / 1000;

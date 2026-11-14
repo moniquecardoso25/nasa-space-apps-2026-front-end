@@ -9,10 +9,9 @@ import { Segmented } from '@/components/Inputs';
 import { LogScreen, SavedBanner } from '@/components/LogKit';
 import { MoodFace } from '@/components/Mood';
 import { Txt } from '@/components/Txt';
-import { getAlerts, getJournal, getLogs, getToday, isLoggedToday } from '@/data/api';
+import { dayOfDate, getAlerts, getJournal, getLogs, getToday, isLoggedToday } from '@/data/api';
 import { capitalize, relativeDay, weekdayOfDay } from '@/data/format';
 import { useData } from '@/data/store';
-import { dayOfDate } from '@/data/api';
 import { fontFamily } from '@/theme/fonts';
 import { C, tokens } from '@/theme/tokens';
 

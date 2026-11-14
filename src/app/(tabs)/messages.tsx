@@ -45,7 +45,6 @@ export default function Messages() {
     setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
   };
 
-  let lastDay = -1;
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -74,10 +73,9 @@ export default function Messages() {
       </View>
 
       <ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={styles.thread} onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: false })}>
-        {msgs.map((m) => {
+        {msgs.map((m, i) => {
           const day = dayOfDate(m.sentAt);
-          const sep = day !== lastDay;
-          lastDay = day;
+          const sep = i === 0 || day !== dayOfDate(msgs[i - 1].sentAt);
           const eta = etaOf(m);
           const arrived = now >= eta.getTime();
           const mine = m.from === 'astronaut';

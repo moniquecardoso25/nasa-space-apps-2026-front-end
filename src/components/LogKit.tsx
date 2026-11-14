@@ -48,18 +48,15 @@ export function SaveButton({ label, onPress, reward = 10, disabled }: { label: s
 
 /** "Saved · +10" banner shown on an overview right after a save (5 s). */
 export function SavedBanner({ types }: { types: LogType[] }) {
-  const [info, setInfo] = useState<{ coins: number } | null>(null);
   const saved = useData(() => getLastSaved());
-  const at = saved?.at;
+  const [now, setNow] = useState(() => Date.now());
+  const at = saved?.at ?? 0;
   useEffect(() => {
-    const s = getLastSaved();
-    if (s && types.includes(s.type) && Date.now() - s.at < 5000) {
-      setInfo({ coins: s.coins });
-      const t = setTimeout(() => setInfo(null), 5000 - (Date.now() - s.at));
-      return () => clearTimeout(t);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Re-render once the 5 s window has passed so the banner hides.
+    const t = setTimeout(() => setNow(Date.now()), Math.max(0, at + 5000 - Date.now()) + 50);
+    return () => clearTimeout(t);
   }, [at]);
+  const info = saved && types.includes(saved.type) && now - saved.at < 5000 ? { coins: saved.coins } : null;
   if (!info) return null;
   return (
     <View accessibilityLiveRegion="polite" style={styles.saved}>

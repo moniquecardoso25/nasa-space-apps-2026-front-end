@@ -121,3 +121,24 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - Orbi quick replies change with the last answer; the default set is the one in AppOrbi.
 - Leaderboard uses the 4 mock astronauts (the PNG shows a 5th, "Sam", that is not in the mock).
 - Message status is derived from the clock (`now ≥ ETA` → Delivered), not from the stored `status` field.
+
+---
+
+## Etapa 6 · Review — done
+
+**Done**
+- Swept every route in a headless browser (CDP, 390×844): `/`, `/login`, `/onboarding/1–5`, `/home`, `/status` (via tab), `/orbi`, `/messages`, `/avatar?tab=helmet|suit|room|pets`, `/calendar`, `/leaderboard`, `/ground`, all `/logs/*` overviews and forms, `/logs/body/injury?id=…`, `/logs/relax`, `/dev/components`. No console errors or warnings.
+- Ground dashboard `/ground` built (it is in navigation.json): sidebar, crew table (overall, mood, sleep, radiation*, Orbi alert), Orbi alerts with evidence + "Schedule check-up" toggle, sleep 7-day averages, environment readings per module with filter. Fluid width (the phone frame is skipped for this route).
+- `npx tsc --noEmit` clean, `npx expo lint` clean (fixed React Compiler lint rules: no render-time mutation, Reanimated `.set()`, no setState in effect bodies), `npx expo-doctor` 20/20, Android bundle exports (`expo export -p android`).
+- AGENTS.md got the "UI work" line suggested by README.
+
+### Summary after stage 6
+
+**Ready**
+- All screens of SCREENS.md sections 1–5 with live mock data, the overview → add pattern with +10 coins, Home scene with log menu and walking Bolt, Crew status hologram with 7-day scrubber, Orbi journal/private chat, messages with comm delay/ETA, avatar shop (buy/equip, items reflected on Bolt and in the Home room), leaderboard, greyed Calendar/Relax, ground dashboard.
+
+**Simplified**
+- Data is in memory (resets on reload). Orbi replies are rule-based. Device pairing, badge scan and photo are simulated. Shop items are SVG drawings (no sprites). Sleep stages bar is illustrative. Time inputs are masked text fields.
+
+**Missing (at this point)**
+- Real backend/persistence and auth; native run on a device was not tested here (only the Android bundle build); voice input; ground dashboard navigation items other than "Crew overview" are static.

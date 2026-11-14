@@ -41,6 +41,8 @@ export function useData<T>(read: () => T, deps: unknown[] = []): T {
     () => version,
     () => version,
   );
+  const key = JSON.stringify(deps);
+  // `read` is a fresh closure every render; recompute only when the db or deps change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(read, [v, ...deps]);
+  return useMemo(() => read(), [v, key]);
 }

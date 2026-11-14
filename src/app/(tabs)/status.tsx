@@ -36,7 +36,6 @@ import { C, X, tokens } from '@/theme/tokens';
 
 /** Grid + beam + scanlines + platform behind the hologram. */
 function HoloBackdrop() {
-  const lines = Array.from({ length: 85 }, (_, i) => i * 4);
   return (
     <>
       <Svg width={STAGE_W} height={STAGE_H} style={StyleSheet.absoluteFill} pointerEvents="none">

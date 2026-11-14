@@ -185,25 +185,25 @@ export function Astronaut({
     const all = [rig.legL, rig.legR, rig.armF, rig.body];
     all.forEach((v) => cancelAnimation(v));
     if (reduced) {
-      all.forEach((v) => (v.value = 0));
+      all.forEach((v) => v.set(0));
       return;
     }
     const ease = Easing.inOut(Easing.ease);
     if (state === 'walking') {
       const swing = (from: number) =>
         withRepeat(withSequence(withTiming(-from, { duration: 250, easing: ease }), withTiming(from, { duration: 250, easing: ease })), -1);
-      rig.legL.value = 14;
-      rig.legL.value = swing(14);
-      rig.legR.value = -14;
-      rig.legR.value = swing(-14);
-      rig.armF.value = -14;
-      rig.armF.value = swing(-14);
-      rig.body.value = withRepeat(withSequence(withTiming(-3, { duration: 250 }), withTiming(0, { duration: 250 })), -1);
+      rig.legL.set(14);
+      rig.legL.set(swing(14));
+      rig.legR.set(-14);
+      rig.legR.set(swing(-14));
+      rig.armF.set(-14);
+      rig.armF.set(swing(-14));
+      rig.body.set(withRepeat(withSequence(withTiming(-3, { duration: 250 }), withTiming(0, { duration: 250 })), -1));
     } else {
-      rig.legL.value = 0;
-      rig.legR.value = 0;
-      rig.armF.value = 0;
-      rig.body.value = withRepeat(withSequence(withTiming(-2, { duration: 1200, easing: ease }), withTiming(0, { duration: 1200, easing: ease })), -1);
+      rig.legL.set(0);
+      rig.legR.set(0);
+      rig.armF.set(0);
+      rig.body.set(withRepeat(withSequence(withTiming(-2, { duration: 1200, easing: ease }), withTiming(0, { duration: 1200, easing: ease })), -1));
     }
     return () => all.forEach((v) => cancelAnimation(v));
   }, [state, reduced, rig.legL, rig.legR, rig.armF, rig.body]);
@@ -216,10 +216,10 @@ export function OrbiDrone({ size = 42, float = true }: { size?: number; float?: 
   const reduced = useReducedMotion();
   useEffect(() => {
     if (reduced || !float) {
-      y.value = 0;
+      y.set(0);
       return;
     }
-    y.value = withRepeat(withSequence(withTiming(-8, { duration: 1500, easing: Easing.inOut(Easing.ease) }), withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })), -1);
+    y.set(withRepeat(withSequence(withTiming(-8, { duration: 1500, easing: Easing.inOut(Easing.ease) }), withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.ease) })), -1));
     return () => cancelAnimation(y);
   }, [reduced, float, y]);
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));

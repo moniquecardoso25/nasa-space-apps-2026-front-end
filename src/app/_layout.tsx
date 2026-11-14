@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { DarkTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, ThemeProvider, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import Stack from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
@@ -20,6 +20,7 @@ const theme = {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontAssets);
+  const pathname = usePathname();
   const ready = loaded || !!error;
 
   useEffect(() => {
@@ -33,6 +34,8 @@ export default function RootLayout() {
     Platform.OS === 'web' && typeof window !== 'undefined'
       ? Number(new URLSearchParams(window.location.search).get('frame')) || 430
       : undefined;
+  // The ground dashboard is a fluid web page (1440 wide), not a phone screen.
+  const fluid = pathname.startsWith('/ground');
 
   return (
     <GestureHandlerRootView style={styles.root}>
@@ -40,7 +43,7 @@ export default function RootLayout() {
         <ThemeProvider value={theme}>
           <StatusBar style="light" />
           {/* On web the app keeps a phone-like width (design base 390). */}
-          <View style={[styles.frame, frameW ? { maxWidth: frameW } : null]}>
+          <View style={[styles.frame, fluid ? { maxWidth: '100%' } : frameW ? { maxWidth: frameW } : null]}>
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
           </View>
         </ThemeProvider>
