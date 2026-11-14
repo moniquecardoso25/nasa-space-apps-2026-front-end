@@ -32,6 +32,16 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "CosmoMedic uses the microphone so you can fill your health logs by voice with Orbi.",
+          "speechRecognitionPermission": "CosmoMedic turns your voice answers into log entries.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
       ]
     ],
     "experiments": {

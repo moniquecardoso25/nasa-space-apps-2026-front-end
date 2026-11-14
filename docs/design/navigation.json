@@ -18,7 +18,7 @@
     },
     "Onb1": {
       "route": "/onboarding/1",
-      "title": "Onboarding 1 \u00b7 Welcome",
+      "title": "Onboarding 1 · Welcome",
       "screenshot": "screenshots/AppOnb1.png",
       "source": "source/AppOnb1.dc.html",
       "linksTo": [
@@ -28,7 +28,7 @@
     },
     "Onb2": {
       "route": "/onboarding/2",
-      "title": "Onboarding 2 \u00b7 Body",
+      "title": "Onboarding 2 · Body",
       "screenshot": "screenshots/AppOnb2.png",
       "source": "source/AppOnb2.dc.html",
       "linksTo": [
@@ -38,7 +38,7 @@
     },
     "Onb3": {
       "route": "/onboarding/3",
-      "title": "Onboarding 3 \u00b7 Vitals",
+      "title": "Onboarding 3 · Vitals",
       "screenshot": "screenshots/AppOnb3.png",
       "source": "source/AppOnb3.dc.html",
       "linksTo": [
@@ -48,7 +48,7 @@
     },
     "Onb4": {
       "route": "/onboarding/4",
-      "title": "Onboarding 4 \u00b7 Devices",
+      "title": "Onboarding 4 · Devices",
       "screenshot": "screenshots/AppOnb4.png",
       "source": "source/AppOnb4.dc.html",
       "linksTo": [
@@ -58,7 +58,7 @@
     },
     "Onb5": {
       "route": "/onboarding/5",
-      "title": "Onboarding 5 \u00b7 Companion",
+      "title": "Onboarding 5 · Companion",
       "screenshot": "screenshots/AppOnb5.png",
       "source": "source/AppOnb5.dc.html",
       "linksTo": [
@@ -84,7 +84,8 @@
         "/logs/radiation",
         "/logs/relax",
         "/logs/sleep",
-        "/(tabs)/status"
+        "/(tabs)/status",
+        "/logs/orbi-fill"
       ]
     },
     "HomeClosed": {
@@ -105,7 +106,8 @@
         "/logs/radiation",
         "/logs/relax",
         "/logs/sleep",
-        "/(tabs)/status"
+        "/(tabs)/status",
+        "/logs/orbi-fill"
       ]
     },
     "Status": {
@@ -137,7 +139,8 @@
         "/(tabs)/messages",
         "/logs/mood",
         "/(tabs)/orbi",
-        "/(tabs)/status"
+        "/(tabs)/status",
+        "/logs/orbi-fill"
       ]
     },
     "Messages": {
@@ -167,7 +170,7 @@
     },
     "Avatar": {
       "route": "/(tabs)/avatar?tab=helmet",
-      "title": "Avatar \u00b7 Helmet",
+      "title": "Avatar · Helmet",
       "screenshot": "screenshots/AppAvatar.png",
       "source": "source/AppAvatar.dc.html",
       "linksTo": [
@@ -184,7 +187,7 @@
     },
     "AvatarSuit": {
       "route": "/(tabs)/avatar?tab=suit",
-      "title": "Avatar \u00b7 Suit",
+      "title": "Avatar · Suit",
       "screenshot": "screenshots/AppAvatarSuit.png",
       "source": "source/AppAvatarSuit.dc.html",
       "linksTo": [
@@ -201,7 +204,7 @@
     },
     "AvatarRoom": {
       "route": "/(tabs)/avatar?tab=room",
-      "title": "Avatar \u00b7 Room",
+      "title": "Avatar · Room",
       "screenshot": "screenshots/AppAvatarRoom.png",
       "source": "source/AppAvatarRoom.dc.html",
       "linksTo": [
@@ -218,7 +221,7 @@
     },
     "AvatarPets": {
       "route": "/(tabs)/avatar?tab=pets",
-      "title": "Avatar \u00b7 Pets",
+      "title": "Avatar · Pets",
       "screenshot": "screenshots/AppAvatarPets.png",
       "source": "source/AppAvatarPets.dc.html",
       "linksTo": [
@@ -255,7 +258,7 @@
     },
     "MoodAdd": {
       "route": "/logs/mood/add",
-      "title": "Mood \u00b7 add",
+      "title": "Mood · add",
       "screenshot": "screenshots/AppMoodAdd.png",
       "source": "source/AppMoodAdd.dc.html",
       "linksTo": [
@@ -274,7 +277,7 @@
     },
     "SleepAdd": {
       "route": "/logs/sleep/add",
-      "title": "Sleep \u00b7 add",
+      "title": "Sleep · add",
       "screenshot": "screenshots/AppSleepAdd.png",
       "source": "source/AppSleepAdd.dc.html",
       "linksTo": [
@@ -293,7 +296,7 @@
     },
     "RadiationAdd": {
       "route": "/logs/radiation/add",
-      "title": "Radiation \u00b7 add",
+      "title": "Radiation · add",
       "screenshot": "screenshots/AppRadiationAdd.png",
       "source": "source/AppRadiationAdd.dc.html",
       "linksTo": [
@@ -313,7 +316,7 @@
     },
     "BodyAdd": {
       "route": "/logs/body/add",
-      "title": "Body \u00b7 add",
+      "title": "Body · add",
       "screenshot": "screenshots/AppBodyAdd.png",
       "source": "source/AppBodyAdd.dc.html",
       "linksTo": [
@@ -334,7 +337,7 @@
     },
     "MealsAdd": {
       "route": "/logs/meals/add",
-      "title": "Meals \u00b7 add",
+      "title": "Meals · add",
       "screenshot": "screenshots/AppMealsAdd.png",
       "source": "source/AppMealsAdd.dc.html",
       "linksTo": [
@@ -353,7 +356,7 @@
     },
     "ExerciseAdd": {
       "route": "/logs/exercise/add",
-      "title": "Exercise \u00b7 add",
+      "title": "Exercise · add",
       "screenshot": "screenshots/AppExerciseAdd.png",
       "source": "source/AppExerciseAdd.dc.html",
       "linksTo": [
@@ -385,7 +388,7 @@
     },
     "MoodTodo": {
       "route": "/logs/mood",
-      "title": "Mood \u00b7 not logged yet",
+      "title": "Mood · not logged yet",
       "screenshot": "screenshots/AppMoodTodo.png",
       "source": "source/AppMoodTodo.dc.html",
       "linksTo": [
@@ -396,7 +399,7 @@
     },
     "SleepTodo": {
       "route": "/logs/sleep",
-      "title": "Sleep \u00b7 not logged yet",
+      "title": "Sleep · not logged yet",
       "screenshot": "screenshots/AppSleepTodo.png",
       "source": "source/AppSleepTodo.dc.html",
       "linksTo": [
@@ -406,7 +409,7 @@
     },
     "RadiationTodo": {
       "route": "/logs/radiation",
-      "title": "Radiation \u00b7 not logged yet",
+      "title": "Radiation · not logged yet",
       "screenshot": "screenshots/AppRadiationTodo.png",
       "source": "source/AppRadiationTodo.dc.html",
       "linksTo": [
@@ -416,7 +419,7 @@
     },
     "BodyDone": {
       "route": "/logs/body",
-      "title": "Body \u00b7 all logged",
+      "title": "Body · all logged",
       "screenshot": "screenshots/AppBodyDone.png",
       "source": "source/AppBodyDone.dc.html",
       "linksTo": [
@@ -427,7 +430,7 @@
     },
     "MealsDone": {
       "route": "/logs/meals",
-      "title": "Meals \u00b7 logged",
+      "title": "Meals · logged",
       "screenshot": "screenshots/AppMealsDone.png",
       "source": "source/AppMealsDone.dc.html",
       "linksTo": [
@@ -437,7 +440,7 @@
     },
     "ExerciseDone": {
       "route": "/logs/exercise",
-      "title": "Exercise \u00b7 goal reached",
+      "title": "Exercise · goal reached",
       "screenshot": "screenshots/AppExerciseDone.png",
       "source": "source/AppExerciseDone.dc.html",
       "linksTo": [
@@ -447,7 +450,7 @@
     },
     "BodyInjury": {
       "route": "/logs/body/injury",
-      "title": "Body \u00b7 report injury",
+      "title": "Body · report injury",
       "screenshot": "screenshots/AppBodyInjury.png",
       "source": "source/AppBodyInjury.dc.html",
       "linksTo": [
@@ -455,6 +458,17 @@
         "/logs/body/add",
         "/logs/body/injury"
       ]
+    },
+    "OrbiFill": {
+      "route": "/logs/orbi-fill",
+      "title": "Fill with Orbi (voice-guided logging)",
+      "screenshot": null,
+      "source": null,
+      "linksTo": [
+        "/(tabs)/home",
+        "/logs/mood/add"
+      ],
+      "$comment": "New (no PNG). Orbi asks only the categories not logged today; answers by voice or text; editable draft cards; Confirm & save calls addLog per category."
     }
   }
 }

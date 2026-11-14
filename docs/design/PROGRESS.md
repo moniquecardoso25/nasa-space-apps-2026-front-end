@@ -142,3 +142,24 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 **Missing (at this point)**
 - Real backend/persistence and auth; native run on a device was not tested here (only the Android bundle build); voice input; ground dashboard navigation items other than "Crew overview" are static.
+
+---
+
+## Etapa 7 · "Fill with Orbi" (voice-guided logging) — done
+
+**Done**
+- New route `/logs/orbi-fill` in the Orbi chat style: header with Orbi, step chips (one per open category), chat bubbles, editable draft cards, composer with **active teal mic** + text + send, "Skip" and (for mood) "Use the slider".
+- Entry points: top row of the Home log menu ("Fill with Orbi · N to go", teal mic icon) and Orbi's quick replies ("Fill today's logs"). The normal Orbi chat mic stays greyed.
+- Orbi asks only the categories not logged today, in order mood → sleep → radiation → blood pressure → meal → exercise. If an answer is not understood it asks once more with an example, then uses defaults and flags them.
+- Every answer becomes an editable confirmation card (dashed teal border, "Orbi guessed: … Please check." for defaulted fields, Remove). Mood card: 5 faces + tags + "Use the slider instead" (vertical MoodSlider inline).
+- Nothing is saved until **Confirm & save N logs +N×10**: `saveDrafts` calls `addLog` / `saveDailyLog` per category (+10 each), so "Logged today" updates everywhere; then Home shows "Orbi saved N logs · … +N" (dismissable).
+- Voice: `expo-speech-recognition` via `src/voice/speech.ts` (native module in dev builds, Web Speech API on web). When it is unavailable (Expo Go, unsupported browser) the mic is hidden and only text is used. Permissions configured in `app.json`.
+- Parser isolated in `src/data/orbiParser.ts` behind `OrbiFillParser` (`parse(category, text, ctx) → { draft, understood, assumed, skipped }`); rule-based numbers, clock times, durations and EN/PT keywords ("bem", "cansado", "dormi 6 horas e meia", "125 por 82, pulso 70", "45 min on the treadmill, hard"). Swap `orbiParser` for an LLM later.
+- Verified in the browser: Ana (3 open categories, one unclear answer → retry) → Confirm → Home 3/7 → 6/7, coins +30, summary card; Leo (all 6 open, one skipped) → 5 logs saved. Sleep parsing checked with 4 phrasings (6h30, 6h45, 7h, 8h).
+- Docs updated: SCREENS.md (new row), navigation.json (`OrbiFill` + links from Home/Orbi), data-model.json (`fillWithOrbi`).
+
+**Decisions**
+- "Body" in the interview = blood pressure (the daily measurement); weekly metrics stay in the Body form.
+- A category that already has a log today is never asked; mood answered here when it doesn't exist yet counts as the daily check-in (streak/+50 bonus rules apply).
+- Speech language is `en-US`; the parser also understands Portuguese keywords.
+- Voice needs a development build on phones (`npx expo run:android|ios`); Expo Go falls back to text.

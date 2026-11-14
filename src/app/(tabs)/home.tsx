@@ -16,6 +16,7 @@ import { Astronaut, BoltShadow, OrbiDrone } from '@/components/Astronaut';
 import { ProgressBar, Ring } from '@/components/Charts';
 import { Icon } from '@/components/Icon';
 import { LogMenu, type LogMenuItem } from '@/components/LogMenu';
+import { CoinIcon } from '@/components/Buttons';
 import { CoinsPill, levelColor } from '@/components/Pills';
 import { PetArt } from '@/components/ShopArt';
 import { StationProps, StationWall, StationWindow, WINDOW } from '@/components/StationScene';
@@ -23,6 +24,7 @@ import { Txt } from '@/components/Txt';
 import { firstName, getAstronaut, getDailySummary, getMission, isLoggedToday, overallLabel } from '@/data/api';
 import { orbiNudge } from '@/data/derived';
 import { boltColors } from '@/data/shopArt';
+import { session } from '@/data/session';
 import { useData } from '@/data/store';
 import type { Level, LogType } from '@/data/types';
 import { C, X, tokens } from '@/theme/tokens';
@@ -78,6 +80,7 @@ function WalkingBolt({ sceneW, colors }: { sceneW: number; colors: ReturnType<ty
 export default function Home() {
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+  const [dismissedAt, setDismissedAt] = useState(0);
   const [size, setSize] = useState({ w: 390, h: 764 });
   const data = useData(() => {
     const me = getAstronaut();
@@ -87,6 +90,7 @@ export default function Home() {
       summary,
       mission: getMission(),
       nudge: orbiNudge(),
+      fill: session.orbiFill,
       done: Object.fromEntries(MENU.map((m) => [m.key, m.type ? isLoggedToday(m.type) : false])),
     };
   });
@@ -99,13 +103,25 @@ export default function Home() {
   const winW = Math.min(WINDOW.width, size.w - WINDOW.left * 2 + 2);
   const winBottom = WINDOW.top + winH;
 
-  const items: LogMenuItem[] = MENU.map((m) => ({
-    key: m.key,
-    label: m.label,
-    icon: m.icon,
-    href: m.href,
-    state: m.type === null ? 'soon' : data.done[m.key] ? 'done' : 'todo',
-  }));
+  const open6 = MENU.filter((m) => m.type && !data.done[m.key]).length;
+  const items: LogMenuItem[] = [
+    {
+      key: 'orbi-fill',
+      label: 'Fill with Orbi',
+      icon: 'mic',
+      href: '/logs/orbi-fill',
+      state: 'special',
+      hint: open6 ? `${open6} to go` : 'All done',
+    },
+    ...MENU.map((m) => ({
+      key: m.key,
+      label: m.label,
+      icon: m.icon,
+      href: m.href,
+      state: (m.type === null ? 'soon' : data.done[m.key] ? 'done' : 'todo') as LogMenuItem['state'],
+    })),
+  ];
+  const fill = data.fill && data.fill.at !== dismissedAt ? data.fill : null;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -185,6 +201,31 @@ export default function Home() {
           <CoinsPill amount={me.avatar.coins} />
         </View>
 
+        {fill && !open ? (
+          <View style={styles.fillCard} accessibilityLiveRegion="polite">
+            <Icon name="check" size={18} color={C.holoOk} strokeWidth={3} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Txt weight="700" size={tokens.font.size.small} color={C.holoOk}>
+                Orbi saved {fill.saved.length} log{fill.saved.length === 1 ? '' : 's'}
+              </Txt>
+              <Txt size={tokens.font.size.caption} color={C.muted} numberOfLines={2}>
+                {fill.saved.join(' · ')}
+              </Txt>
+            </View>
+            <View style={styles.coinsRow}>
+              <Txt weight="700" size={tokens.font.size.small}>
+                +{fill.coins}
+              </Txt>
+              <CoinIcon size={16} />
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" hitSlop={8} onPress={() => setDismissedAt(fill.at)}>
+              <Txt weight="700" size={tokens.font.size.body} color={C.muted}>
+                ×
+              </Txt>
+            </Pressable>
+          </View>
+        ) : null}
+
         <View style={styles.menu} pointerEvents="box-none">
           <LogMenu open={open} items={items} onNavigate={() => setOpen(false)} />
         </View>
@@ -232,6 +273,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   menu: { position: 'absolute', left: 16, top: 70, zIndex: 6 },
+  fillCard: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: 74,
+    zIndex: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: tokens.radius.item,
+    backgroundColor: X.menu,
+    borderWidth: 1,
+    borderColor: C.holoOk,
+    boxShadow: tokens.ext.shadow.menu,
+  },
+  coinsRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   bubble: {
     position: 'absolute',
     right: 16,

@@ -41,6 +41,7 @@ export default function Orbi() {
     lastActions ??
     (mode === 'journal'
       ? [
+          { label: "Fill today's logs", href: '/logs/orbi-fill' },
           { label: 'Make a wind-down plan', send: 'Make a wind-down plan' },
           { label: 'Log mood', href: '/logs/mood/add' },
           { label: 'Message ground team', href: '/messages' },

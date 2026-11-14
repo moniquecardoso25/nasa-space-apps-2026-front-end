@@ -227,5 +227,20 @@
     "leaderboard": "rank astronauts by total logs (tab 'Daily logs') or avatar.coins (tab 'Coins')",
     "logToday[type]": "logs.some(l => l.astronautId===me && l.type===type && l.missionDay===today)",
     "baselineDelta": "(latest measurement value / baseline value − 1) × 100; alert thresholds: bone −1.5%/month, strength/aerobic −10% (NASA HRP averages)"
+  },
+  "fillWithOrbi": {
+    "$comment": "'Fill with Orbi' (route /logs/orbi-fill). Not stored as its own file: it produces normal logs. Parser lives in src/data/orbiParser.ts behind an interface so it can be replaced by an LLM.",
+    "categories": "'mood'|'sleep'|'radiation'|'body'|'meal'|'exercise' (body = blood pressure). Only categories with no log today are asked (FILL_ORDER).",
+    "parserInterface": "OrbiFillParser.parse(category, text, ctx) → { draft, understood: boolean, assumed: string[] (fields filled with defaults), skipped?: boolean }",
+    "parseContext": "{ now:'HH:MM', lastBed?, lastWake?, restingBp?, restingHr?, lastDoseUsv? }",
+    "drafts": {
+      "mood": "{ level: 1..5, tags: string[] } → mood log",
+      "sleep": "{ bed:'HH:MM', wake:'HH:MM', quality: 1..5, wakeUps } → sleep log (durationMin = wake − bed)",
+      "radiation": "{ value, unit:'uSv'|'mSv', source, readAt:'HH:MM' } → radiation log",
+      "body": "{ systolic, diastolic, pulse } → measurement log (metric blood_pressure)",
+      "meal": "{ name, kcal, taste: 1..5, time:'HH:MM' } → meal log (macros estimated from kcal)",
+      "exercise": "{ modality, equipment, minutes, effort: 1..5 } → exercise log"
+    },
+    "save": "Confirm → addLog / saveDailyLog per draft (+10 coins each, logs get 'Logged today'); summary { saved: string[], coins } shown once on Home (session only)."
   }
 }

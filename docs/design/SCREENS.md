@@ -50,6 +50,7 @@ Pattern for every log: **Overview** = header with back → today summary → wee
 | Meals | `/logs/meals` · AppMeals, AppMealsDone | `/logs/meals/add` · AppMealsAdd | kcal vs goal + macros, meals today with taste stars, week kcal bars, menu-fatigue warning | What you ate + quick picks, kcal, time, **taste 1–5 stars** |
 | Exercise | `/logs/exercise` · AppExercise, AppExerciseDone | `/logs/exercise/add` · AppExerciseAdd | Ring today (60/90), week strip (done/missed/today), sessions today, week minutes vs 90 | Type, equipment, duration stepper, effort 1–5 |
 | Relax | `/logs/relax` · AppRelax | — | Coming soon banner, content greyed (featured session, list) | — |
+| Fill with Orbi (new, no PNG) | — | `/logs/orbi-fill` | Opened from the top row of the Home log menu ("Fill with Orbi · N to go") and from Orbi's quick replies. Orbi-chat style: Orbi asks only the categories not logged today (mood, sleep, radiation, blood pressure, meal, exercise); answer by voice (teal mic, `expo-speech-recognition`; hidden when unsupported) or text, or "skip". Each answer becomes an **editable confirmation card** (dashed teal, "Orbi guessed: …" for defaults); mood keeps the vertical slider as manual option. Sticky **Confirm & save N logs +N×10** → addLog per category → Home shows "Orbi saved N logs +N". Nothing is saved before confirming | Parser: `src/data/orbiParser.ts` (rule-based, EN + PT keywords, swappable for AI) |
 
 ## 5 · Ground dashboard (web)
 
