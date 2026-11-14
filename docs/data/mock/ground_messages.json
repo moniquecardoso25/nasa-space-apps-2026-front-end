@@ -1,0 +1,57 @@
+[
+  {
+    "id": "gm-001",
+    "astronautId": "ast-01",
+    "from": "ground",
+    "text": "Hi Ana, your logs show short sleep 3 nights in a row. We moved cabin lights to dim at 21:00 for the crew.",
+    "urgent": false,
+    "sentAt": "2026-11-13T19:10:00Z",
+    "estimatedArrivalAt": "2026-11-13T19:30:00Z",
+    "status": "read",
+    "attachments": []
+  },
+  {
+    "id": "gm-002",
+    "astronautId": "ast-01",
+    "from": "astronaut",
+    "text": "Thanks! The fan in the sleep quarters is loud, my band logged 52 dB.",
+    "urgent": false,
+    "sentAt": "2026-11-13T19:42:00Z",
+    "estimatedArrivalAt": "2026-11-13T20:02:00Z",
+    "status": "delivered",
+    "attachments": []
+  },
+  {
+    "id": "gm-003",
+    "astronautId": "ast-01",
+    "from": "ground",
+    "text": "Maintenance will check that fan tomorrow. Keep logging sleep so we can compare.",
+    "urgent": false,
+    "sentAt": "2026-11-14T07:20:00Z",
+    "estimatedArrivalAt": "2026-11-14T07:40:00Z",
+    "status": "read",
+    "attachments": []
+  },
+  {
+    "id": "gm-004",
+    "astronautId": "ast-01",
+    "from": "astronaut",
+    "text": "Can I book a family video call on Thursday evening?",
+    "urgent": false,
+    "sentAt": "2026-11-14T10:14:00Z",
+    "estimatedArrivalAt": "2026-11-14T10:34:00Z",
+    "status": "in_transit",
+    "attachments": []
+  },
+  {
+    "id": "gm-005",
+    "astronautId": "ast-04",
+    "from": "ground",
+    "text": "Leo, please rest the knee today and skip the treadmill. Check-up at 15:00.",
+    "urgent": true,
+    "sentAt": "2026-11-14T08:00:00Z",
+    "estimatedArrivalAt": "2026-11-14T08:20:00Z",
+    "status": "delivered",
+    "attachments": []
+  }
+]

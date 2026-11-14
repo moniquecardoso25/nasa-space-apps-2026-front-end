@@ -1,0 +1,42 @@
+{
+  "id": "orbit-3",
+  "name": "Orbit-3",
+  "destination": "LEO",
+  "startDate": "2026-11-03",
+  "lengthDays": 30,
+  "today": 12,
+  "commDelaySec": 1200,
+  "$comment": "commDelaySec set to Mars-like 20 min to demo the delay UX",
+  "goals": {
+    "exerciseMinPerDay": 90,
+    "exerciseDaysPerWeek": 6,
+    "sleepHours": 7,
+    "kcalPerDay": 2500
+  },
+  "environments": [
+    {
+      "id": "lab",
+      "name": "Lab module",
+      "type": "lab",
+      "areaM2": 18
+    },
+    {
+      "id": "sleep",
+      "name": "Sleep quarters",
+      "type": "sleep",
+      "areaM2": 8
+    },
+    {
+      "id": "gym",
+      "name": "Gym",
+      "type": "gym",
+      "areaM2": 10
+    },
+    {
+      "id": "galley",
+      "name": "Galley",
+      "type": "galley",
+      "areaM2": 9
+    }
+  ]
+}

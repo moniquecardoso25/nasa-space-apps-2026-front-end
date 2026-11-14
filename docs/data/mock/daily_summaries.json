@@ -1,0 +1,1038 @@
+[
+  {
+    "astronautId": "ast-01",
+    "missionDay": 1,
+    "logsDone": [
+      "exercise",
+      "measurement",
+      "mood",
+      "sleep"
+    ],
+    "logsDoneCount": 4,
+    "logsTotal": 7,
+    "overallScore": 86,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 2,
+    "logsDone": [
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 84,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 3,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 86,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 4,
+    "logsDone": [
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 69,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "warn",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 5,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 85,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 6,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 79,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 7,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 77,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 8,
+    "logsDone": [
+      "exercise",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 83,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 9,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 79,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 10,
+    "logsDone": [
+      "meal",
+      "mood",
+      "radiation"
+    ],
+    "logsDoneCount": 3,
+    "logsTotal": 7,
+    "overallScore": 69,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "warn",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 11,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 78,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-01",
+    "missionDay": 12,
+    "logsDone": [
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 3,
+    "logsTotal": 7,
+    "overallScore": 71,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 1,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 91,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 2,
+    "logsDone": [
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 87,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 3,
+    "logsDone": [
+      "exercise",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 4,
+    "logsTotal": 7,
+    "overallScore": 90,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 4,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 86,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 5,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 87,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 6,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 90,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 7,
+    "logsDone": [
+      "meal",
+      "measurement",
+      "mood",
+      "sleep"
+    ],
+    "logsDoneCount": 4,
+    "logsTotal": 7,
+    "overallScore": 77,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "warn",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 8,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 90,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 9,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 85,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 10,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 87,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 11,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 91,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-02",
+    "missionDay": 12,
+    "logsDone": [
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 79,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "warn",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 1,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 85,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 2,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 84,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 3,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 86,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 4,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 83,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 5,
+    "logsDone": [
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 69,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "warn",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 6,
+    "logsDone": [
+      "meal",
+      "measurement",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 4,
+    "logsTotal": 7,
+    "overallScore": 83,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 7,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 76,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 8,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 76,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 9,
+    "logsDone": [
+      "meal",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 4,
+    "logsTotal": 7,
+    "overallScore": 68,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "warn",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 10,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 70,
+    "areas": {
+      "head": "warn",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "ok",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 11,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 69,
+    "areas": {
+      "head": "warn",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "warn",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-03",
+    "missionDay": 12,
+    "logsDone": [
+      "mood"
+    ],
+    "logsDoneCount": 1,
+    "logsTotal": 7,
+    "overallScore": 63,
+    "areas": {
+      "head": "warn",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "warn",
+      "legR": "ok"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 1,
+    "logsDone": [
+      "exercise",
+      "measurement",
+      "mood",
+      "radiation"
+    ],
+    "logsDoneCount": 4,
+    "logsTotal": 7,
+    "overallScore": 84,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 2,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 6,
+    "logsTotal": 7,
+    "overallScore": 78,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 3,
+    "logsDone": [
+      "meal",
+      "radiation"
+    ],
+    "logsDoneCount": 2,
+    "logsTotal": 7,
+    "overallScore": 67,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "ok",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 4,
+    "logsDone": [
+      "measurement",
+      "mood",
+      "radiation"
+    ],
+    "logsDoneCount": 3,
+    "logsTotal": 7,
+    "overallScore": 71,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 5,
+    "logsDone": [
+      "meal",
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 5,
+    "logsTotal": 7,
+    "overallScore": 61,
+    "areas": {
+      "head": "warn",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 6,
+    "logsDone": [
+      "meal",
+      "radiation"
+    ],
+    "logsDoneCount": 2,
+    "logsTotal": 7,
+    "overallScore": 70,
+    "areas": {
+      "head": "ok",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 7,
+    "logsDone": [
+      "meal",
+      "sleep"
+    ],
+    "logsDoneCount": 2,
+    "logsTotal": 7,
+    "overallScore": 60,
+    "areas": {
+      "head": "warn",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 8,
+    "logsDone": [
+      "exercise",
+      "meal",
+      "measurement",
+      "sleep"
+    ],
+    "logsDoneCount": 4,
+    "logsTotal": 7,
+    "overallScore": 61,
+    "areas": {
+      "head": "warn",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "warn",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 9,
+    "logsDone": [
+      "measurement",
+      "mood",
+      "radiation",
+      "sleep"
+    ],
+    "logsDoneCount": 4,
+    "logsTotal": 7,
+    "overallScore": 55,
+    "areas": {
+      "head": "alert",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "alert",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 10,
+    "logsDone": [
+      "mood",
+      "sleep"
+    ],
+    "logsDoneCount": 2,
+    "logsTotal": 7,
+    "overallScore": 58,
+    "areas": {
+      "head": "warn",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "alert",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 11,
+    "logsDone": [
+      "measurement",
+      "mood",
+      "radiation"
+    ],
+    "logsDoneCount": 3,
+    "logsTotal": 7,
+    "overallScore": 55,
+    "areas": {
+      "head": "alert",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "alert",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  },
+  {
+    "astronautId": "ast-04",
+    "missionDay": 12,
+    "logsDone": [],
+    "logsDoneCount": 0,
+    "logsTotal": 7,
+    "overallScore": 54,
+    "areas": {
+      "head": "alert",
+      "torso": "ok",
+      "armL": "ok",
+      "armR": "alert",
+      "legL": "alert",
+      "legR": "alert"
+    }
+  }
+]

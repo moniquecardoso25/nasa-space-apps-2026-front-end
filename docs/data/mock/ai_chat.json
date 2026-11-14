@@ -1,0 +1,156 @@
+{
+  "messages": [
+    {
+      "id": "msg-001",
+      "astronautId": "ast-01",
+      "author": "orbi",
+      "text": "Good morning, Ana. How did you sleep?",
+      "timestamp": "2026-11-14T08:12:00Z",
+      "mode": "journal"
+    },
+    {
+      "id": "msg-002",
+      "astronautId": "ast-01",
+      "author": "astronaut",
+      "text": "Not great. Woke up twice and felt tired all morning.",
+      "timestamp": "2026-11-14T08:13:00Z",
+      "mode": "journal"
+    },
+    {
+      "id": "msg-003",
+      "astronautId": "ast-01",
+      "author": "orbi",
+      "text": "Your wrist band shows 5h 20m and low light exposure in the evening. That often shifts sleep on station.",
+      "timestamp": "2026-11-14T08:13:00Z",
+      "mode": "journal"
+    },
+    {
+      "id": "msg-004",
+      "astronautId": "ast-01",
+      "author": "orbi",
+      "text": "Want me to set a 21:00 wind-down and dim the cabin lights?",
+      "timestamp": "2026-11-14T08:14:00Z",
+      "mode": "journal"
+    },
+    {
+      "id": "msg-010",
+      "astronautId": "ast-03",
+      "author": "astronaut",
+      "text": "Missed talking to my family today. Everything tastes the same.",
+      "timestamp": "2026-11-13T21:00:00Z",
+      "mode": "journal"
+    }
+  ],
+  "journal": [
+    {
+      "id": "jr-001",
+      "astronautId": "ast-01",
+      "timestamp": "2026-11-14T08:14:00Z",
+      "summary": "Long lab shift, but felt in control. Slept badly, woke twice.",
+      "moodLevel": 3,
+      "sourceMessageIds": [
+        "msg-002"
+      ]
+    },
+    {
+      "id": "jr-002",
+      "astronautId": "ast-01",
+      "timestamp": "2026-11-13T20:00:00Z",
+      "summary": "Productive day in the station. Felt more focused.",
+      "moodLevel": 4,
+      "sourceMessageIds": []
+    },
+    {
+      "id": "jr-003",
+      "astronautId": "ast-03",
+      "timestamp": "2026-11-13T21:01:00Z",
+      "summary": "Homesick; menu feels repetitive.",
+      "moodLevel": 2,
+      "sourceMessageIds": [
+        "msg-010"
+      ]
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alr-01",
+      "astronautId": "ast-01",
+      "type": "poor_sleep",
+      "level": "medium",
+      "text": "Low light exposure before sleep, 3 short nights.",
+      "evidence": [
+        "log-0066",
+        "log-0080",
+        "log-0092"
+      ],
+      "timestamp": "2026-11-14T08:30:00Z",
+      "sentToGround": true
+    },
+    {
+      "id": "alr-02",
+      "astronautId": "ast-03",
+      "type": "low_mood",
+      "level": "medium",
+      "text": "Mood dip 3 days in a row.",
+      "evidence": [
+        "jr-003"
+      ],
+      "timestamp": "2026-11-14T09:00:00Z",
+      "sentToGround": true
+    },
+    {
+      "id": "alr-03",
+      "astronautId": "ast-03",
+      "type": "menu_fatigue",
+      "level": "low",
+      "text": "Same lunch 4 days, taste ratings dropping.",
+      "evidence": [
+        "log-0289",
+        "log-0290",
+        "log-0291"
+      ],
+      "timestamp": "2026-11-14T13:00:00Z",
+      "sentToGround": false
+    },
+    {
+      "id": "alr-04",
+      "astronautId": "ast-04",
+      "type": "poor_sleep",
+      "level": "high",
+      "text": "Sleep below 5h for 3 nights and high stress.",
+      "evidence": [
+        "log-0334",
+        "log-0341",
+        "log-0345"
+      ],
+      "timestamp": "2026-11-14T07:00:00Z",
+      "sentToGround": true
+    },
+    {
+      "id": "alr-05",
+      "astronautId": "ast-04",
+      "type": "fitness_drop",
+      "level": "high",
+      "text": "Aerobic fitness −11% vs. baseline (NASA avg 10–12%).",
+      "evidence": [
+        "log-0349",
+        "log-0350",
+        "log-0351"
+      ],
+      "timestamp": "2026-11-13T11:00:00Z",
+      "sentToGround": true
+    },
+    {
+      "id": "alr-06",
+      "astronautId": "ast-04",
+      "type": "injury",
+      "level": "medium",
+      "text": "Right knee strain still active.",
+      "evidence": [
+        "log-0352"
+      ],
+      "timestamp": "2026-11-12T14:05:00Z",
+      "sentToGround": true
+    }
+  ]
+}

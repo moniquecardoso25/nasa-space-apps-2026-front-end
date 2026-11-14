@@ -1,0 +1,231 @@
+{
+  "$comment": "CosmoMedic data model v1. camelCase, ISO-8601 UTC timestamps. Each top-level key is one local JSON file in data/mock/ (or one table/collection later). Values marked illustrative have no official NASA limit.",
+  "conventions": {
+    "ids": "string with prefix, e.g. ast-01, log-0001",
+    "timestamps": "ISO-8601 UTC string",
+    "missionDay": "integer, Day 1 = mission start (no Sols: Sol is a Mars day)",
+    "coins": "integer, every saved log = +10"
+  },
+  "files": {
+    "mission.json": {
+      "type": "object",
+      "fields": {
+        "id": "string",
+        "name": "string",
+        "destination": "'LEO' | 'ISS' | 'Moon' | 'Mars'",
+        "startDate": "date",
+        "lengthDays": "number",
+        "commDelaySec": "number · one-way delay to Earth (ISS≈1, Moon≈1.3, Mars up to 1200)",
+        "goals": {
+          "exerciseMinPerDay": "number (ISS ≈ 90)",
+          "exerciseDaysPerWeek": "number (6)",
+          "sleepHours": "number (7)",
+          "kcalPerDay": "number"
+        },
+        "environments": "Environment[] · {id, name, type: 'lab'|'sleep'|'gym'|'galley'|'node', areaM2}"
+      }
+    },
+    "astronauts.json": {
+      "type": "Astronaut[]",
+      "fields": {
+        "id": "string",
+        "name": "string",
+        "crewId": "string · login id",
+        "role": "'astronaut' (only role in the app)",
+        "profile": {
+          "age": "number",
+          "heightCm": "number",
+          "weightKg": "number",
+          "foodPreferences": "string[]"
+        },
+        "baseline": {
+          "$comment": "pre-flight exam, filled by the medical team, read-only in the app (onboarding just confirms)",
+          "boneDensity": "g/cm²",
+          "muscleMassKg": "number",
+          "strengthScore": "number (100 = baseline)",
+          "aerobicScore": "number (100)",
+          "bodyFatPct": "number",
+          "restingHr": "bpm",
+          "restingBp": "'118/76'",
+          "usualSleepH": "number",
+          "usualBedtime": "'HH:mm'"
+        },
+        "devices": {
+          "wristBand": "{model:'ARCHeR-style actigraphy', paired:boolean}",
+          "dosimeterBadgeId": "string",
+          "bpCuff": "boolean"
+        },
+        "avatar": {
+          "name": "string (default 'Bolt')",
+          "level": "number",
+          "coins": "number",
+          "owned": "string[] shop item ids",
+          "equipped": "{helmet, suit, pet|null, room:{window, wall, floor}}",
+          "state": "'idle'|'walking'|'happy'|'tired'|'sleepy'|'sad' · drives the animation state machine"
+        },
+        "onboardingDone": "boolean"
+      }
+    },
+    "logs.json": {
+      "type": "Log[]",
+      "$comment": "ALL health logs in one list. Overview screens filter by type; 'Logged today' = exists a log of that type with missionDay = today.",
+      "base": {
+        "id": "string",
+        "astronautId": "string",
+        "type": "'mood'|'sleep'|'radiation'|'measurement'|'injury'|'meal'|'exercise'|'meditation'",
+        "timestamp": "ISO",
+        "missionDay": "number",
+        "environmentId": "string?",
+        "note": "string?",
+        "coinsEarned": "number",
+        "data": "object (depends on type)"
+      },
+      "dataByType": {
+        "mood": {
+          "level": "1..5 (5 great, 4 good, 3 okay, 2 tired, 1 stressed)",
+          "label": "'great'|'good'|'okay'|'tired'|'stressed'",
+          "tags": "string[] e.g. calm, focused, homesick, lonely, anxious, overloaded"
+        },
+        "sleep": {
+          "bedtime": "ISO",
+          "wakeTime": "ISO",
+          "durationMin": "number",
+          "quality": "1..5",
+          "wakeUps": "'none'|'1-2'|'3+'",
+          "source": "'archer_band'|'manual'",
+          "band": {
+            "movementEvents": "number",
+            "lightExposureLux": "number (evening avg)",
+            "avgHr": "bpm",
+            "respRate": "per min",
+            "noiseDb": "number"
+          }
+        },
+        "radiation": {
+          "value": "number",
+          "unit": "'uSv'|'mSv'",
+          "doseUsv": "number (normalized)",
+          "source": "'personal'|'area'",
+          "badgeId": "string?",
+          "particle": "'total'|'neutron'",
+          "illustrative": "true"
+        },
+        "measurement": {
+          "metric": "'blood_pressure'|'bone_density'|'muscle_mass'|'strength'|'aerobic'",
+          "cadence": "'daily'|'weekly'",
+          "values": "blood_pressure → {systolic, diastolic, pulse}; others → {value, unit}",
+          "deltaVsBaselinePct": "number? (negative = loss)"
+        },
+        "injury": {
+          "bodyPart": "'head'|'neck'|'back'|'arm'|'hand'|'leg'|'knee'|'foot'",
+          "side": "'left'|'right'|'center'",
+          "kind": "'bruise'|'cut'|'strain'|'burn'|'pain'",
+          "severity": "'minor'|'moderate'|'severe'",
+          "pain": "1..5",
+          "description": "string",
+          "photoUrl": "string?",
+          "status": "'active'|'healing'|'resolved'",
+          "flaggedToGround": "boolean (true when severe)"
+        },
+        "meal": {
+          "name": "string",
+          "items": "string[]",
+          "kcal": "number",
+          "proteinG": "number",
+          "carbsG": "number",
+          "fatG": "number",
+          "tasteRating": "1..5 (menu fatigue signal)"
+        },
+        "exercise": {
+          "modality": "'resistive'|'aerobic'",
+          "equipment": "'resistive_device'|'treadmill'|'cycle'",
+          "durationMin": "number",
+          "effort": "1..5"
+        },
+        "meditation": {
+          "session": "string",
+          "durationMin": "number",
+          "moodBefore": "1..5",
+          "moodAfter": "1..5",
+          "$comment": "Relax is 'coming soon' (UI greyed)"
+        }
+      }
+    },
+    "daily_summaries.json": {
+      "type": "DailySummary[]",
+      "$comment": "Derived (can be computed on the fly). Feeds the Status day scrubber and the Home log menu.",
+      "fields": {
+        "astronautId": "string",
+        "missionDay": "number",
+        "logsDone": "string[] of types",
+        "logsDoneCount": "0..7 (mood, sleep, radiation, measurement, meal, exercise, injury not counted)",
+        "overallScore": "0..100",
+        "areas": "{head, torso, armL, armR, legL, legR}: 'ok'|'warn'|'alert' → hologram colors"
+      }
+    },
+    "environment_readings.json": {
+      "type": "EnvReading[]",
+      "$comment": "Ground dashboard only",
+      "fields": {
+        "id": "string",
+        "environmentId": "string",
+        "timestamp": "ISO",
+        "temperatureC": "number",
+        "pressureKpa": "number",
+        "lightLux": "number",
+        "noiseDb": "number",
+        "radiationUsvH": "number (illustrative)",
+        "crewPresent": "number"
+      }
+    },
+    "ai_chat.json": {
+      "type": "object",
+      "fields": {
+        "messages": "AiMessage[] {id, astronautId, author:'astronaut'|'orbi', text, timestamp, mode:'journal'} · PRIVATE mode messages are never stored",
+        "journal": "JournalEntry[] {id, astronautId, timestamp, summary, moodLevel?, sourceMessageIds[]} · shown as 'Shared with Orbi' in Mood history",
+        "alerts": "Alert[] {id, astronautId, type:'poor_sleep'|'low_mood'|'bone_loss'|'fitness_drop'|'menu_fatigue'|'injury', level:'low'|'medium'|'high', text, evidence: string[] log/message ids, timestamp, sentToGround:boolean}"
+      }
+    },
+    "ground_messages.json": {
+      "type": "GroundMessage[]",
+      "fields": {
+        "id": "string",
+        "astronautId": "string",
+        "from": "'astronaut'|'ground'",
+        "text": "string",
+        "urgent": "boolean",
+        "sentAt": "ISO",
+        "estimatedArrivalAt": "ISO = sentAt + mission.commDelaySec",
+        "status": "'sending'|'in_transit'|'delivered'|'read'",
+        "attachments": "string[] log ids"
+      }
+    },
+    "shop.json": {
+      "type": "ShopItem[]",
+      "fields": {
+        "id": "string",
+        "category": "'helmet'|'suit'|'pet'|'window'|'wall'|'floor'",
+        "name": "string",
+        "price": "number",
+        "asset": "string (color/gradient or sprite path)"
+      }
+    },
+    "calendar.json": {
+      "type": "CalendarEvent[]",
+      "$comment": "Calendar is 'coming soon' (UI greyed)",
+      "fields": {
+        "id": "string",
+        "astronautId": "string",
+        "date": "ISO",
+        "title": "string",
+        "kind": "'test'|'scan'|'winddown'|'call'",
+        "linkedScreen": "string"
+      }
+    }
+  },
+  "derived": {
+    "leaderboard": "rank astronauts by total logs (tab 'Daily logs') or avatar.coins (tab 'Coins')",
+    "logToday[type]": "logs.some(l => l.astronautId===me && l.type===type && l.missionDay===today)",
+    "baselineDelta": "(latest measurement value / baseline value − 1) × 100; alert thresholds: bone −1.5%/month, strength/aerobic −10% (NASA HRP averages)"
+  }
+}

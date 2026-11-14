@@ -1,0 +1,268 @@
+[
+  {
+    "id": "helmet-classic",
+    "category": "helmet",
+    "name": "Classic",
+    "price": 0,
+    "asset": "assets/shop/helmet-classic.png"
+  },
+  {
+    "id": "helmet-nebula",
+    "category": "helmet",
+    "name": "Nebula",
+    "price": 300,
+    "asset": "assets/shop/helmet-nebula.png"
+  },
+  {
+    "id": "helmet-solar",
+    "category": "helmet",
+    "name": "Solar",
+    "price": 450,
+    "asset": "assets/shop/helmet-solar.png"
+  },
+  {
+    "id": "helmet-aurora",
+    "category": "helmet",
+    "name": "Aurora",
+    "price": 350,
+    "asset": "assets/shop/helmet-aurora.png"
+  },
+  {
+    "id": "helmet-mars-red",
+    "category": "helmet",
+    "name": "Mars red",
+    "price": 600,
+    "asset": "assets/shop/helmet-mars-red.png"
+  },
+  {
+    "id": "helmet-stealth",
+    "category": "helmet",
+    "name": "Stealth",
+    "price": 800,
+    "asset": "assets/shop/helmet-stealth.png"
+  },
+  {
+    "id": "suit-standard",
+    "category": "suit",
+    "name": "Standard",
+    "price": 0,
+    "asset": "assets/shop/suit-standard.png"
+  },
+  {
+    "id": "suit-flight-blue",
+    "category": "suit",
+    "name": "Flight blue",
+    "price": 250,
+    "asset": "assets/shop/suit-flight-blue.png"
+  },
+  {
+    "id": "suit-orange-eva",
+    "category": "suit",
+    "name": "Orange EVA",
+    "price": 500,
+    "asset": "assets/shop/suit-orange-eva.png"
+  },
+  {
+    "id": "suit-lilac",
+    "category": "suit",
+    "name": "Lilac",
+    "price": 300,
+    "asset": "assets/shop/suit-lilac.png"
+  },
+  {
+    "id": "suit-gold-trim",
+    "category": "suit",
+    "name": "Gold trim",
+    "price": 700,
+    "asset": "assets/shop/suit-gold-trim.png"
+  },
+  {
+    "id": "suit-night",
+    "category": "suit",
+    "name": "Night",
+    "price": 900,
+    "asset": "assets/shop/suit-night.png"
+  },
+  {
+    "id": "pet-robocat",
+    "category": "pet",
+    "name": "Robo-cat",
+    "price": 400,
+    "asset": "assets/shop/pet-robocat.png"
+  },
+  {
+    "id": "pet-drone",
+    "category": "pet",
+    "name": "Mini drone",
+    "price": 350,
+    "asset": "assets/shop/pet-drone.png"
+  },
+  {
+    "id": "pet-plant",
+    "category": "pet",
+    "name": "Plant buddy",
+    "price": 200,
+    "asset": "assets/shop/pet-plant.png"
+  },
+  {
+    "id": "pet-jellybot",
+    "category": "pet",
+    "name": "Jelly-bot",
+    "price": 600,
+    "asset": "assets/shop/pet-jellybot.png"
+  },
+  {
+    "id": "window-earth-day",
+    "category": "window",
+    "name": "Earth day",
+    "price": 0,
+    "asset": "assets/shop/window-earth-day.png"
+  },
+  {
+    "id": "window-earth-night",
+    "category": "window",
+    "name": "Earth night",
+    "price": 200,
+    "asset": "assets/shop/window-earth-night.png"
+  },
+  {
+    "id": "window-sunrise",
+    "category": "window",
+    "name": "Sunrise",
+    "price": 350,
+    "asset": "assets/shop/window-sunrise.png"
+  },
+  {
+    "id": "window-aurora",
+    "category": "window",
+    "name": "Aurora",
+    "price": 450,
+    "asset": "assets/shop/window-aurora.png"
+  },
+  {
+    "id": "window-moon",
+    "category": "window",
+    "name": "Moon",
+    "price": 300,
+    "asset": "assets/shop/window-moon.png"
+  },
+  {
+    "id": "window-mars",
+    "category": "window",
+    "name": "Mars",
+    "price": 500,
+    "asset": "assets/shop/window-mars.png"
+  },
+  {
+    "id": "window-saturn",
+    "category": "window",
+    "name": "Saturn",
+    "price": 650,
+    "asset": "assets/shop/window-saturn.png"
+  },
+  {
+    "id": "window-nebula",
+    "category": "window",
+    "name": "Nebula",
+    "price": 700,
+    "asset": "assets/shop/window-nebula.png"
+  },
+  {
+    "id": "window-deep-stars",
+    "category": "window",
+    "name": "Deep stars",
+    "price": 150,
+    "asset": "assets/shop/window-deep-stars.png"
+  },
+  {
+    "id": "wall-lilac",
+    "category": "wall",
+    "name": "Lilac panels",
+    "price": 0,
+    "asset": "assets/shop/wall-lilac.png"
+  },
+  {
+    "id": "wall-steel",
+    "category": "wall",
+    "name": "Steel",
+    "price": 150,
+    "asset": "assets/shop/wall-steel.png"
+  },
+  {
+    "id": "wall-wood",
+    "category": "wall",
+    "name": "Warm wood",
+    "price": 400,
+    "asset": "assets/shop/wall-wood.png"
+  },
+  {
+    "id": "wall-starlight",
+    "category": "wall",
+    "name": "Starlight",
+    "price": 550,
+    "asset": "assets/shop/wall-starlight.png"
+  },
+  {
+    "id": "wall-mint",
+    "category": "wall",
+    "name": "Mint",
+    "price": 250,
+    "asset": "assets/shop/wall-mint.png"
+  },
+  {
+    "id": "wall-coral",
+    "category": "wall",
+    "name": "Coral",
+    "price": 300,
+    "asset": "assets/shop/wall-coral.png"
+  },
+  {
+    "id": "wall-hex",
+    "category": "wall",
+    "name": "Hex tiles",
+    "price": 450,
+    "asset": "assets/shop/wall-hex.png"
+  },
+  {
+    "id": "floor-teal",
+    "category": "floor",
+    "name": "Teal glow",
+    "price": 0,
+    "asset": "assets/shop/floor-teal.png"
+  },
+  {
+    "id": "floor-grid",
+    "category": "floor",
+    "name": "Grid",
+    "price": 150,
+    "asset": "assets/shop/floor-grid.png"
+  },
+  {
+    "id": "floor-carpet",
+    "category": "floor",
+    "name": "Carpet",
+    "price": 300,
+    "asset": "assets/shop/floor-carpet.png"
+  },
+  {
+    "id": "floor-metal",
+    "category": "floor",
+    "name": "Metal",
+    "price": 250,
+    "asset": "assets/shop/floor-metal.png"
+  },
+  {
+    "id": "floor-wood",
+    "category": "floor",
+    "name": "Wood",
+    "price": 350,
+    "asset": "assets/shop/floor-wood.png"
+  },
+  {
+    "id": "floor-checker",
+    "category": "floor",
+    "name": "Checker",
+    "price": 400,
+    "asset": "assets/shop/floor-checker.png"
+  }
+]

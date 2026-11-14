@@ -1,0 +1,228 @@
+[
+  {
+    "id": "ast-01",
+    "name": "Ana Souza",
+    "crewId": "ORB3-ANA",
+    "role": "astronaut",
+    "$story": "stable, short sleep lately (attention)",
+    "profile": {
+      "age": 38,
+      "heightCm": 168,
+      "weightKg": 60,
+      "foodPreferences": [
+        "no restrictions"
+      ]
+    },
+    "baseline": {
+      "boneDensity": 1.2,
+      "muscleMassKg": 27.0,
+      "strengthScore": 100,
+      "aerobicScore": 100,
+      "bodyFatPct": 22,
+      "restingHr": 66,
+      "restingBp": "118/76",
+      "usualSleepH": 7.5,
+      "usualBedtime": "23:00"
+    },
+    "devices": {
+      "wristBand": {
+        "model": "ARCHeR-style actigraphy",
+        "paired": true
+      },
+      "dosimeterBadgeId": "CPD-0413",
+      "bpCuff": false
+    },
+    "avatar": {
+      "name": "Bolt",
+      "level": 5,
+      "coins": 1250,
+      "owned": [
+        "helmet-classic",
+        "pet-robocat",
+        "suit-standard"
+      ],
+      "equipped": {
+        "helmet": "helmet-classic",
+        "suit": "suit-standard",
+        "pet": "pet-robocat",
+        "room": {
+          "window": "window-earth-day",
+          "wall": "wall-lilac",
+          "floor": "floor-teal"
+        }
+      },
+      "state": "tired"
+    },
+    "onboardingDone": true
+  },
+  {
+    "id": "ast-02",
+    "name": "Raj Patel",
+    "crewId": "ORB3-RAJ",
+    "role": "astronaut",
+    "$story": "in great shape, logs everything",
+    "profile": {
+      "age": 44,
+      "heightCm": 181,
+      "weightKg": 79,
+      "foodPreferences": [
+        "no restrictions"
+      ]
+    },
+    "baseline": {
+      "boneDensity": 1.28,
+      "muscleMassKg": 35.6,
+      "strengthScore": 100,
+      "aerobicScore": 100,
+      "bodyFatPct": 17,
+      "restingHr": 61,
+      "restingBp": "118/76",
+      "usualSleepH": 7.5,
+      "usualBedtime": "23:00"
+    },
+    "devices": {
+      "wristBand": {
+        "model": "ARCHeR-style actigraphy",
+        "paired": true
+      },
+      "dosimeterBadgeId": "CPD-0441",
+      "bpCuff": false
+    },
+    "avatar": {
+      "name": "Bolt",
+      "level": 5,
+      "coins": 1480,
+      "owned": [
+        "helmet-classic",
+        "helmet-solar",
+        "pet-drone",
+        "suit-flight-blue",
+        "suit-standard"
+      ],
+      "equipped": {
+        "helmet": "helmet-solar",
+        "suit": "suit-flight-blue",
+        "pet": "pet-drone",
+        "room": {
+          "window": "window-moon",
+          "wall": "wall-steel",
+          "floor": "floor-grid"
+        }
+      },
+      "state": "happy"
+    },
+    "onboardingDone": true
+  },
+  {
+    "id": "ast-03",
+    "name": "Mika Tanaka",
+    "crewId": "ORB3-MIKA",
+    "role": "astronaut",
+    "$story": "mood dip 3 days, homesick, menu fatigue",
+    "profile": {
+      "age": 33,
+      "heightCm": 162,
+      "weightKg": 55,
+      "foodPreferences": [
+        "no restrictions"
+      ]
+    },
+    "baseline": {
+      "boneDensity": 1.2,
+      "muscleMassKg": 24.8,
+      "strengthScore": 100,
+      "aerobicScore": 100,
+      "bodyFatPct": 22,
+      "restingHr": 57,
+      "restingBp": "116/74",
+      "usualSleepH": 7.5,
+      "usualBedtime": "23:00"
+    },
+    "devices": {
+      "wristBand": {
+        "model": "ARCHeR-style actigraphy",
+        "paired": true
+      },
+      "dosimeterBadgeId": "CPD-0452",
+      "bpCuff": false
+    },
+    "avatar": {
+      "name": "Bolt",
+      "level": 4,
+      "coins": 920,
+      "owned": [
+        "helmet-aurora",
+        "helmet-classic",
+        "suit-lilac",
+        "suit-standard"
+      ],
+      "equipped": {
+        "helmet": "helmet-aurora",
+        "suit": "suit-lilac",
+        "pet": null,
+        "room": {
+          "window": "window-earth-night",
+          "wall": "wall-mint",
+          "floor": "floor-carpet"
+        }
+      },
+      "state": "sad"
+    },
+    "onboardingDone": true
+  },
+  {
+    "id": "ast-04",
+    "name": "Leo Martins",
+    "crewId": "ORB3-LEO",
+    "role": "astronaut",
+    "$story": "stressed, poor sleep, knee strain, fitness near 10% loss (alert)",
+    "profile": {
+      "age": 41,
+      "heightCm": 176,
+      "weightKg": 74,
+      "foodPreferences": [
+        "no restrictions"
+      ]
+    },
+    "baseline": {
+      "boneDensity": 1.2,
+      "muscleMassKg": 33.3,
+      "strengthScore": 100,
+      "aerobicScore": 100,
+      "bodyFatPct": 17,
+      "restingHr": 64,
+      "restingBp": "116/74",
+      "usualSleepH": 7.5,
+      "usualBedtime": "23:00"
+    },
+    "devices": {
+      "wristBand": {
+        "model": "ARCHeR-style actigraphy",
+        "paired": true
+      },
+      "dosimeterBadgeId": "CPD-0453",
+      "bpCuff": false
+    },
+    "avatar": {
+      "name": "Bolt",
+      "level": 3,
+      "coins": 610,
+      "owned": [
+        "helmet-classic",
+        "suit-standard"
+      ],
+      "equipped": {
+        "helmet": "helmet-classic",
+        "suit": "suit-standard",
+        "pet": null,
+        "room": {
+          "window": "window-earth-day",
+          "wall": "wall-lilac",
+          "floor": "floor-teal"
+        }
+      },
+      "state": "sleepy"
+    },
+    "onboardingDone": true
+  }
+]

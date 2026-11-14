@@ -1,0 +1,34 @@
+[
+  {
+    "id": "cal-1",
+    "astronautId": "ast-01",
+    "date": "2026-11-14T10:00:00Z",
+    "title": "Aerobic fitness test",
+    "kind": "test",
+    "linkedScreen": "Body"
+  },
+  {
+    "id": "cal-2",
+    "astronautId": "ast-01",
+    "date": "2026-11-14T21:00:00Z",
+    "title": "Wind-down",
+    "kind": "winddown",
+    "linkedScreen": "Orbi"
+  },
+  {
+    "id": "cal-3",
+    "astronautId": "ast-01",
+    "date": "2026-11-16T09:00:00Z",
+    "title": "Bone density scan",
+    "kind": "scan",
+    "linkedScreen": "Body"
+  },
+  {
+    "id": "cal-4",
+    "astronautId": "ast-01",
+    "date": "2026-11-19T18:00:00Z",
+    "title": "Family video call slot",
+    "kind": "call",
+    "linkedScreen": "Messages"
+  }
+]
