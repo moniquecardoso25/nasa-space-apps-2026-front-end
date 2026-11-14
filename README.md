@@ -15,6 +15,10 @@ npx expo start       # Expo Go / emulator
 - Data is an in-memory mock (`src/mocks/mock-db.json`) and resets on reload.
 - Dev catalogue of components and the Bolt animation lab: `/dev/components`. Ground team dashboard (web): `/ground`.
 
+## Deploy (Vercel)
+
+`vercel.json` builds the static web app (`npx expo export -p web` → `dist/`) and rewrites every route to `index.html`, so deep links like `/status` work. Import the repo in Vercel and deploy the `ui-cosmomedic` branch; no settings needed.
+
 ## Structure
 
 | Path | What |
