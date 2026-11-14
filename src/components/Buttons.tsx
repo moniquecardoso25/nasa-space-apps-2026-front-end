@@ -18,10 +18,13 @@ type PrimaryProps = {
   tone?: 'primary' | 'gold';
   icon?: IconName;
   style?: ViewStyle;
+  /** sm = 40 h, radius 12, 13 px (inline actions like "Pair"). */
+  size?: 'md' | 'sm';
 };
 
 /** Lilac CTA, radius 18, min-height 54, glow. `tone="gold"` = daily check-in style. */
-export function PrimaryButton({ label, reward, onPress, href, disabled, tone = 'primary', icon, style }: PrimaryProps) {
+export function PrimaryButton({ label, reward, onPress, href, disabled, tone = 'primary', icon, style, size = 'md' }: PrimaryProps) {
+  const sm = size === 'sm';
   const gold = tone === 'gold';
   const fg = gold ? C.onGold : C.onPrimary;
   return (
@@ -33,12 +36,13 @@ export function PrimaryButton({ label, reward, onPress, href, disabled, tone = '
       style={({ pressed }) => [
         styles.primary,
         gold && { backgroundColor: C.gold, boxShadow: tokens.shadow.goldGlow },
+        sm && styles.sm,
         disabled && styles.disabled,
         pressed && { opacity: 0.85 },
         style,
       ]}>
       {icon ? <Icon name={icon} size={18} color={fg} strokeWidth={2.5} /> : null}
-      <Txt weight="700" size={tokens.font.size.body} color={fg}>
+      <Txt weight="700" size={sm ? tokens.font.size.small : tokens.font.size.body} color={fg}>
         {label}
       </Txt>
       {reward ? <RewardChip amount={reward} color={fg} /> : null}
@@ -160,6 +164,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
   },
+  sm: { minHeight: 40, borderRadius: tokens.radius.small, paddingHorizontal: 14, boxShadow: 'none' },
   disabled: { opacity: 0.45 },
   reward: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   logRow: { flexDirection: 'row', gap: 8 },

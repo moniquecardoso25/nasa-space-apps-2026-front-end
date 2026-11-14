@@ -15,25 +15,28 @@ type ChipProps = {
   onPress?: () => void;
   /** teal (default, COMPONENTS.md) or primary (mood tags in AppMoodAdd). */
   tone?: 'teal' | 'primary';
+  /** Read-only (onboarding): not pressable, 60% opacity. */
+  readOnly?: boolean;
 };
 
 /** Pill 36 h. Selected = teal 14% bg + teal border; disabled = dashed muted + ✓. */
-export function Chip({ label, selected, disabled, onPress, tone = 'teal' }: ChipProps) {
+export function Chip({ label, selected, disabled, onPress, tone = 'teal', readOnly }: ChipProps) {
   const accent = tone === 'teal' ? C.teal : C.primary;
   const soft = tone === 'teal' ? X.tealChip : C.primarySoft;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected, disabled }}
-      disabled={disabled}
+      disabled={disabled || readOnly}
       onPress={onPress}
       style={[
         styles.chip,
+        readOnly && { opacity: 0.6 },
         selected && { backgroundColor: soft, borderColor: accent },
         disabled && styles.chipDisabled,
       ]}>
       {disabled ? <Icon name="check" size={14} color={C.muted} strokeWidth={2.5} /> : null}
-      <Txt size={tokens.font.size.small} weight={selected ? '700' : '500'} color={disabled ? C.muted : C.text}>
+      <Txt size={tokens.font.size.small} weight={selected ? '700' : '500'} color={disabled || (readOnly && selected) ? C.muted : C.text}>
         {label}
       </Txt>
     </Pressable>
@@ -229,6 +232,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rateOn: { backgroundColor: C.primarySoft, borderWidth: 2, borderColor: C.primary },
-  switch: { width: 48, height: 28, borderRadius: tokens.radius.pill, backgroundColor: C.track, padding: 3 },
-  knob: { width: 22, height: 22, borderRadius: 11, backgroundColor: C.text },
+  switch: { width: 50, height: 30, borderRadius: tokens.radius.pill, backgroundColor: C.track, padding: 3 },
+  knob: { width: 24, height: 24, borderRadius: 12, backgroundColor: X.white },
 });

@@ -125,6 +125,14 @@ export const tokens = {
       consoleBar: '#3A3780',
       plantDark: '#2DBE85',
       plantMid: '#43D39A',
+      // Login Earth
+      loginEarth1: '#3B82F6',
+      loginEarth2: '#1E40AF',
+      loginEarth3: '#0B1E5B',
+      earthGlow: 'rgba(61,224,200,0.45)',
+      earthGlowHome: 'rgba(61,224,200,0.55)',
+      loginCard: 'rgba(18,16,56,0.86)',
+      logoGlow: 'rgba(139,124,255,0.35)',
       earthLight: '#5AA8FF',
       earthMid: '#2066DA',
       earthDeep: '#0D3480',
@@ -141,6 +149,12 @@ export const tokens = {
     fontSize: {
       label: 14, // card titles, menu rows
       stat: 20, // stat numbers, greeting
+      h1: 24, // onboarding headings
+      brand: 26, // login wordmark
+    },
+    radius: {
+      panel: 24, // login card, avatar stage
+      button: 16, // Home top buttons
     },
     shadow: {
       tabBar: '0 8px 30px rgba(5,5,25,0.6)',
