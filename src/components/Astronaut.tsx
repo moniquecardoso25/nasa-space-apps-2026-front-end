@@ -62,7 +62,7 @@ const layer = { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 } as 
 function Part({ children, style }: { children: React.ReactNode; style?: object }) {
   return (
     <Animated.View pointerEvents="none" style={[layer, style]}>
-      <Svg width={BOLT_W} height={BOLT_H} viewBox={`0 ${-10} ${BOLT_W} ${BOLT_H + 10}`} style={{ overflow: 'visible' }}>
+      <Svg width={BOLT_W} height={BOLT_H} viewBox={`0 0 ${BOLT_W} ${BOLT_H}`}>
         {children}
       </Svg>
     </Animated.View>
@@ -83,10 +83,6 @@ type BoltProps = {
  */
 export function BoltFigure({ rig, colors = DEFAULT_BOLT, scale = 1, holding = null }: BoltProps) {
   const k = colors;
-  // y offset of 10 in the viewBox (antenna room) → pivots shift by +10 * (BOLT_H / (BOLT_H + 10))
-  const sy = BOLT_H / (BOLT_H + 10);
-  const py = (y: number) => (y + 10) * sy;
-  const px = (x: number) => x * sy + (BOLT_W - BOLT_W * sy) / 2;
 
   const bodyStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: rig.body.value }, { rotate: `${rig.lean.value}deg` }, { scaleY: rig.squash.value }],
@@ -100,7 +96,7 @@ export function BoltFigure({ rig, colors = DEFAULT_BOLT, scale = 1, holding = nu
   }));
   const eyesStyle = useAnimatedStyle(() => ({ transform: [{ scaleY: Math.max(0.12, rig.eyes.value) }] }));
 
-  const origin = (x: number, y: number) => ({ transformOrigin: `${px(x)}px ${py(y)}px` });
+  const origin = (x: number, y: number) => ({ transformOrigin: `${x}px ${y}px` });
 
   return (
     <View style={{ width: BOLT_W * scale, height: BOLT_H * scale }}>

@@ -120,6 +120,10 @@ export const tokens = {
       streakFlame: '#7A3A00',
       streakEmpty: '#7A5A10',
       // station scene
+      windowRing: 'rgba(150,140,255,0.35)',
+      windowInset: 'rgba(0,0,0,0.6)',
+      floorGlow: 'rgba(61,224,200,0.35)',
+      potBorder: 'rgba(150,140,255,0.4)',
       space: '#04041A',
       console: '#22205A',
       consoleBar: '#3A3780',

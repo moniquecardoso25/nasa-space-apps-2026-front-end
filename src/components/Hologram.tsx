@@ -125,7 +125,7 @@ export function Callout({ side, slot, icon, label, value, level, onPress }: Call
       ]}>
       <View style={styles.calloutTop}>
         <Icon name={icon} size={14} color={col} />
-        <Txt size={tokens.font.size.tiny} color={C.muted} numberOfLines={2} style={{ flex: 1 }}>
+        <Txt size={tokens.font.size.tiny} color={C.muted} numberOfLines={2} lh={1.2} style={{ flex: 1 }}>
           {label}
         </Txt>
       </View>
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   callout: {
     position: 'absolute',
     width: 120,
-    height: 56,
+    minHeight: 56,
     paddingVertical: 7,
     paddingHorizontal: 10,
     borderRadius: tokens.radius.small,

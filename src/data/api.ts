@@ -184,14 +184,43 @@ export function updateLog<T extends LogType>(id: string, data: LogDataMap[T], op
   lastSaved = { type: getDb().logs.find((l) => l.id === id)?.type ?? 'mood', at: Date.now() };
 }
 
-/** Saves today's log of a once-a-day type: updates if it exists, otherwise adds (+10). */
+/**
+ * Saves today's log of a once-a-day type: updates if it exists, otherwise adds (+10).
+ * A new mood check-in that completes a 7-day streak also gives the +50 check-in bonus.
+ */
 export function saveDailyLog<T extends LogType>(type: T, data: LogDataMap[T], opts: AddLogOptions = {}) {
   const existing = getTodayLogs(type)[0];
   if (existing) {
     updateLog<T>(existing.id, data, opts);
     return { log: existing, coins: 0 };
   }
-  return { log: addLog(type, data, opts), coins: COINS_PER_LOG };
+  const log = addLog(type, data, opts);
+  let coins = COINS_PER_LOG;
+  if (type === 'mood' && getCheckinStreak() % 7 === 0) {
+    addCoins(DAILY_CHECKIN_COINS);
+    coins += DAILY_CHECKIN_COINS;
+  }
+  return { log, coins };
+}
+
+export function addCoins(amount: number, astronautId: string = getCurrentAstronautId()) {
+  updateAstronaut(astronautId, (a) => ({ ...a, avatar: { ...a.avatar, coins: a.avatar.coins + amount } }));
+}
+
+/**
+ * Daily check-in = mood log. Streak = consecutive days with a check-in, ending
+ * today (or yesterday when today's check-in is still open).
+ */
+export function getCheckinStreak(astronautId?: string) {
+  const days = new Set(getLogs({ type: 'mood', astronautId }).map((l) => l.missionDay));
+  let d = getToday();
+  if (!days.has(d)) d--;
+  let streak = 0;
+  while (d >= 1 && days.has(d)) {
+    streak++;
+    d--;
+  }
+  return streak;
 }
 
 let lastSaved: { type: LogType; at: number } | null = null;
@@ -238,16 +267,6 @@ export function overallLabel(score: number): OverallLabel {
   return 'Alert';
 }
 
-/** Consecutive days (ending today or yesterday) with at least one counted log. */
-export function getStreak(astronautId?: string) {
-  let streak = 0;
-  for (let d = getToday(); d >= 1; d--) {
-    const done = getDailySummary(d, astronautId).logsDoneCount > 0;
-    if (!done) break;
-    streak++;
-  }
-  return streak;
-}
 
 // ---------------------------------------------------------------- Orbi / journal / alerts
 
