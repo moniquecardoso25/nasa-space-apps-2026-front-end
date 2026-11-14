@@ -19,7 +19,7 @@ import { C, X } from '@/theme/tokens';
 export const BOLT_W = 100;
 export const BOLT_H = 140;
 
-export type BoltColors = { suit: string; shade: string; boot: string; visor: string; accent: string };
+export type BoltColors = { suit: string; shade: string; boot: string; visor: string; accent: string; helmet?: string };
 export const DEFAULT_BOLT: BoltColors = {
   suit: X.suit,
   shade: X.suitShade,
@@ -129,7 +129,7 @@ export function BoltFigure({ rig, colors = DEFAULT_BOLT, scale = 1, holding = nu
           {/* head */}
           <Animated.View style={[layer, origin(60, 52), headStyle]}>
             <Part>
-              <Circle cx={60} cy={30} r={26} fill={k.suit} />
+              <Circle cx={60} cy={30} r={26} fill={k.helmet ?? k.suit} />
               <Rect x={42} y={18} width={36} height={24} rx={11} fill={k.visor} />
               <Path d="M46 23q4-3 9-3" stroke={k.accent} strokeWidth={2.5} fill="none" strokeLinecap="round" />
               <Line x1={60} y1={4} x2={60} y2={-6} stroke={k.accent} strokeWidth={3} />

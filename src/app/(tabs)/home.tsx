@@ -17,10 +17,12 @@ import { ProgressBar, Ring } from '@/components/Charts';
 import { Icon } from '@/components/Icon';
 import { LogMenu, type LogMenuItem } from '@/components/LogMenu';
 import { CoinsPill, levelColor } from '@/components/Pills';
-import { StationProps, StationWindow, WINDOW } from '@/components/StationScene';
+import { PetArt } from '@/components/ShopArt';
+import { StationProps, StationWall, StationWindow, WINDOW } from '@/components/StationScene';
 import { Txt } from '@/components/Txt';
 import { firstName, getAstronaut, getDailySummary, getMission, isLoggedToday, overallLabel } from '@/data/api';
 import { orbiNudge } from '@/data/derived';
+import { boltColors } from '@/data/shopArt';
 import { useData } from '@/data/store';
 import type { Level, LogType } from '@/data/types';
 import { C, X, tokens } from '@/theme/tokens';
@@ -39,7 +41,7 @@ const BOLT_W = 100;
 const WALK_MS = 18000;
 
 /** Bolt walking left ↔ right across the floor (AppHome keyframes). Static when reduced motion is on. */
-function WalkingBolt({ sceneW }: { sceneW: number }) {
+function WalkingBolt({ sceneW, colors }: { sceneW: number; colors: ReturnType<typeof boltColors> }) {
   const reduced = useReducedMotion();
   const p = useSharedValue(0);
   const max = Math.max(40, sceneW - 120);
@@ -67,7 +69,7 @@ function WalkingBolt({ sceneW }: { sceneW: number }) {
   });
   return (
     <Animated.View pointerEvents="none" style={[styles.walker, style]}>
-      <Astronaut state={reduced ? 'idle' : 'walking'} />
+      <Astronaut state={reduced ? 'idle' : 'walking'} colors={colors} />
       <BoltShadow />
     </Animated.View>
   );
@@ -108,8 +110,14 @@ export default function Home() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.scene} onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
-        <StationWindow height={winH} width={winW} />
-        <StationProps />
+        <StationWall wall={me.avatar.equipped.room.wall} width={size.w} height={size.h} />
+        <StationWindow height={winH} width={winW} view={me.avatar.equipped.room.window} />
+        <StationProps floor={me.avatar.equipped.room.floor} width={size.w} />
+        {me.avatar.equipped.pet ? (
+          <View pointerEvents="none" style={styles.pet}>
+            <PetArt id={me.avatar.equipped.pet} size={44} />
+          </View>
+        ) : null}
 
         <Pressable
           accessibilityRole="button"
@@ -127,7 +135,7 @@ export default function Home() {
           <OrbiDrone />
         </View>
 
-        <WalkingBolt sceneW={size.w} />
+        <WalkingBolt sceneW={size.w} colors={boltColors(me.avatar.equipped)} />
 
         <View style={styles.bottom}>
           <View style={{ gap: 4, flex: 1 }}>
@@ -237,6 +245,7 @@ const styles = StyleSheet.create({
     borderColor: C.teal,
   },
   drone: { position: 'absolute', left: 282 },
+  pet: { position: 'absolute', right: 96, bottom: 132 },
   walker: { position: 'absolute', left: 0, bottom: 110, alignItems: 'center', width: BOLT_W },
   bottom: {
     position: 'absolute',

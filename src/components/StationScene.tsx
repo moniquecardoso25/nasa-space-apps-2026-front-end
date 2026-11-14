@@ -3,6 +3,7 @@ import Svg, { Circle, Defs, Ellipse, G, LinearGradient, RadialGradient, Rect, St
 
 import { C, X, tokens } from '@/theme/tokens';
 
+import { Surface, WindowView, floorSpec, wallSpec } from './ShopArt';
 import { Stars } from './Space';
 
 /** Window frame in AppHome: 334×340, 8px track border, radius 44. */
@@ -86,8 +87,16 @@ export function WindowEarth({ innerW, innerH }: { innerW: number; innerH: number
   );
 }
 
-/** Station window with stars and Earth. */
-export function StationWindow({ height = WINDOW.height, width = WINDOW.width }: { height?: number; width?: number }) {
+/** Station window with stars and Earth (or the equipped window view). */
+export function StationWindow({
+  height = WINDOW.height,
+  width = WINDOW.width,
+  view = 'window-earth-day',
+}: {
+  height?: number;
+  width?: number;
+  view?: string;
+}) {
   const innerW = width - 16;
   const innerH = height - 16;
   return (
@@ -106,14 +115,33 @@ export function StationWindow({ height = WINDOW.height, width = WINDOW.width }: 
         overflow: 'hidden',
         boxShadow: `0 0 0 1px ${X.windowRing}, inset 0 0 40px ${X.windowInset}`,
       }}>
-      <Stars stars={WINDOW_STARS} />
-      <WindowEarth innerW={innerW} innerH={innerH} />
+      {view === 'window-earth-day' ? (
+        <>
+          <Stars stars={WINDOW_STARS} />
+          <WindowEarth innerW={innerW} innerH={innerH} />
+        </>
+      ) : (
+        <>
+          <WindowView id={view} width={innerW} height={innerH} />
+          <Stars stars={WINDOW_STARS} />
+        </>
+      )}
     </View>
   );
 }
 
-/** Floor (teal edge + glow), console, plant. */
-export function StationProps() {
+/** Wall pattern behind the scene (equipped wall). Lilac panels = plain bgScene like AppHome. */
+export function StationWall({ wall, width, height }: { wall: string; width: number; height: number }) {
+  if (wall === 'wall-lilac') return null;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
+      <Surface spec={wallSpec(wall)} width={width} height={height} />
+    </View>
+  );
+}
+
+/** Floor (teal edge + glow, or the equipped floor), console, plant. */
+export function StationProps({ floor = 'floor-teal', width = 430 }: { floor?: string; width?: number }) {
   return (
     <>
       <View
@@ -128,8 +156,10 @@ export function StationProps() {
           borderTopWidth: 2,
           borderTopColor: C.teal,
           boxShadow: `0 -4px 18px ${X.floorGlow}`,
-        }}
-      />
+          overflow: 'hidden',
+        }}>
+        {floor !== 'floor-teal' ? <Surface spec={floorSpec(floor)} width={width} height={210} /> : null}
+      </View>
       {/* console */}
       <View
         pointerEvents="none"

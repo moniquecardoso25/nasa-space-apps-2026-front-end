@@ -98,3 +98,26 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - Exercise week strip uses the calendar week (Mon–Sun); other week charts use the last 7 mission days.
 - Sleep stage bar is illustrative (built from duration + wake-ups); the data model has no sleep stages.
 - Time inputs are plain `HH:MM` text fields with a mask (no native time picker yet).
+
+---
+
+## Etapa 5 · Orbi, Messages, Avatar & shop, Leaderboard, Calendar — done
+
+**Done**
+- Orbi AI (`/(tabs)/orbi`): header (on board, no delay), Journal/Private toggle + disclaimer, chat with day/time separators, "Saved to your journal (Shared with Orbi) · View" chip, quick replies, input, greyed mic, send.
+  - Journal: messages go to `ai_chat.messages` and each astronaut message creates a `journal` entry (shows in Mood › Shared with Orbi).
+  - Private: messages live only in component state; nothing touches the db (verified: private text never appears in Journal).
+  - Replies come from `src/data/orbi.ts` (rule-based, reads the astronaut's logs). Quick replies send text or open screens.
+- Messages (`/(tabs)/messages`): delay banner from `mission.commDelaySec`, thread grouped by day, ground messages "arrived HH:MM", own messages "In transit · arrives on Earth ~HH:MM" + ETA bar or "Delivered HH:MM". ETA = `sentAt + commDelaySec`, recomputed every 15 s. Composer: textarea, attach today's logs (paperclip), Mark urgent, Send.
+- Avatar & shop (`/(tabs)/avatar?tab=helmet|suit|room|pets`): stage with Bolt in a mini room (equipped wall, floor, window view, pet), name + level + logs, 4 tabs synced to `?tab`, grids (helmet/suit 3 cols, pets 2 cols), Room = 3 horizontal rows (Window 9, Wall 7, Floor 6). States Equipped / Owned / price. Owned → equip; price → confirm sheet → buy & equip (coins spent) or "need N more coins". Leaderboard link with ranks.
+- Equipped items show everywhere Bolt appears: helmet/suit colors on Bolt, pet on the Home floor, window view / wall / floor in the Home scene.
+- Leaderboard: Daily logs / Coins tabs, podium top 3 (1st gold), list, explanation.
+- Calendar (`/calendar`): Coming soon banner; month grid with check-in ticks, event dots and today; Today + Coming up events from `calendar.json` — all greyed and not interactive but reachable.
+
+**Decisions**
+- Shop sprites in `shop.json` (`assets/shop/*.png`) don't exist; items are drawn in SVG from `src/data/shopArt.ts` (colors/patterns copied from the AppAvatar* sources).
+- Suit shading/boots are derived from the suit color (mixed with `color.bg`), helmet color only tints the head.
+- Buying an item equips it right away. Tapping the equipped pet unequips it (pet can be null).
+- Orbi quick replies change with the last answer; the default set is the one in AppOrbi.
+- Leaderboard uses the 4 mock astronauts (the PNG shows a 5th, "Sam", that is not in the mock).
+- Message status is derived from the clock (`now ≥ ETA` → Delivered), not from the stored `status` field.

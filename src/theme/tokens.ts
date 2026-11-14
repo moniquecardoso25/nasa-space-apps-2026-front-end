@@ -108,6 +108,8 @@ export const tokens = {
       warningSoft: 'rgba(255,159,90,0.12)', // menu-fatigue note bg
       sleepDeep: '#5B4FD9', // deep-sleep stage bar
       playGlow: 'rgba(139,124,255,0.6)', // Relax play button
+      swatchBorder: 'rgba(255,255,255,0.15)', // room item swatches
+      podiumGold: 'rgba(255,201,77,0.16)', // leaderboard 1st place
       dangerSoft: 'rgba(255,122,147,0.14)',
       shadowDeep: 'rgba(5,5,25,0.7)',
       overlay: 'rgba(0,0,0,0.45)', // Bolt floor shadow
@@ -161,6 +163,7 @@ export const tokens = {
       h1: 24, // onboarding headings
       hero: 32, // big log numbers (5h 20m, 0.48 mSv, 1,840 kcal)
       brand: 26, // login wordmark
+      nameplate: 18, // avatar name on the stage
     },
     radius: {
       panel: 24, // login card, avatar stage
