@@ -18,6 +18,8 @@ Stack: **React Native + Expo** (runs on phone and web). Visual style: **Nebula G
 | `data/data-model.json` | All data the app uses: files, fields, types, enums, derived values |
 | `data/mock/*.json` | Mock database (4 astronauts × 12 mission days) split per file |
 | `data/mock-db.json` | Same mock in one object, easy to import while the backend is not ready |
+| `ANIMATIONS.md` | Bolt's animation state machine (idle/status animations, priorities, reduced motion) |
+| `PROGRESS.md` | Build log of the app: what is done, decisions, what is simplified or missing |
 
 ## Product rules (short)
 
@@ -28,9 +30,9 @@ Stack: **React Native + Expo** (runs on phone and web). Visual style: **Nebula G
   Overview button: `Log today +10 🪙` when not logged, `✓ Logged today · Edit` when logged (meals/exercise/body: `Add` instead of Edit).
 - **Coins:** every saved log = +10. Coins buy avatar items. Leaderboard ranks by number of logs (tab 1) or coins (tab 2).
 - **Everyone starts with the same astronaut** ("Bolt"). Customization only through the shop (helmet, suit, pets, room window/wall/floor).
-- **Orbi (AI)** is also the journal. *Journal* mode saves and sends summaries to the medical team; *Private* mode stores nothing.
+- **Orbi (AI)** is also the journal. *Journal* mode saves and sends summaries to the medical team; *Private* mode stores nothing. **Fill with Orbi** asks for every log still open today (voice or text) and saves them after an editable confirmation.
 - **Messages** = text with the ground team, always showing the communication delay and estimated arrival.
-- **Coming soon (show greyed, but navigable):** Relax/meditation, Calendar screen content, Orbi voice input.
+- **Coming soon (show greyed, but navigable):** Relax/meditation, Calendar screen content, Orbi voice input in the normal chat. Voice is live only in **Fill with Orbi** (`/logs/orbi-fill`), the guided logging flow.
 - **Radiation values are illustrative** (NASA gives no fixed limit for long missions). Mark them with `*`.
 - Screens are 390×844. Only the essentials need to be visible without scrolling; long content scrolls and the main action stays fixed at the bottom. Avatar/shop lists may be taller.
 
@@ -42,4 +44,5 @@ Bone density −1–1.5%/month · strength & aerobic −10–12% vs pre-mission 
 
 ```
 UI work: follow docs/design/README.md, SCREENS.md and tokens/tokens.ts. Use data/mock-db.json until the backend exists.
+(Already added to the repo's AGENTS.md; the app copy of the tokens is src/theme/tokens.ts.)
 ```

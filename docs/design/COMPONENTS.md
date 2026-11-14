@@ -1,6 +1,6 @@
 # Components (build once, reuse)
 
-Values come from `tokens/tokens.ts`.
+Values come from `tokens/tokens.ts` (app copy: `src/theme/tokens.ts`). Implemented in `src/components/`; live catalogue at `/dev/components`.
 
 | Component | Props | Look |
 |---|---|---|
@@ -12,7 +12,7 @@ Values come from `tokens/tokens.ts`.
 | `SecondaryButton` | `label, icon?` | glass bg, 1px border, radius 18 |
 | `RewardChip` | `amount=10` | "+10" + gold coin icon (no background) |
 | `LogStateButton` | `logged, onLog, onEdit, loggedText?, editLabel?` | not logged → `PrimaryButton "Log today" + RewardChip`; logged → green outline "✓ Logged today" + `SecondaryButton Edit` |
-| `Chip` | `label, selected, disabled` | pill 36 h; selected = teal 14% bg + teal border; disabled = dashed muted + ✓ |
+| `Chip` | `label, selected, disabled, tone?, readOnly?` | pill 36 h; selected = teal 14% bg + teal border (`tone="primary"` = lilac, used by mood tags); disabled = dashed muted + ✓; readOnly = 60% opacity (onboarding) |
 | `Segmented` | `items, selected` | glass track, selected = lilac bg |
 | `Field` | `label, value, unit?, readOnly?` | 48 h, radius 14; readOnly = dashed border, muted text |
 | `Rating` | `value, min/max labels` | five 46 h buttons |
@@ -25,9 +25,23 @@ Values come from `tokens/tokens.ts`.
 | `HologramBody` | `areas{head,torso,armL,armR,legL,legR}` | outline astronaut, each part stroked by level color, grid + scanline bg, platform ring |
 | `Callout` | `icon, label, value, level, onPress` | 120×56 box linked by a line to a body point |
 | `DayScrubber` | `days[], selected, onSelect` | 7 buttons with vertical fill bar = logs done |
-| `LogMenu` | `items[], open` | dropdown under the Log button; rows with Done / Log now |
+| `LogMenu` | `items[], open` | dropdown under the Log button; rows with Done / Log now; first row "Fill with Orbi · N to go" (teal) |
 | `Astronaut` (Bolt) | `state, equipped` | two-eyed side astronaut; walking = legs/arm swing + bob; respects reduced motion. Built as `BoltFigure` (SVG layers per body part) + `BoltActor` (state machine, see `ANIMATIONS.md`) |
 | `OrbiDrone` | — | small floating drone with two eyes |
 | `ChatBubble` | `author, text, meta, progress?` | me = lilac right, other = glass left; ETA bar for in-transit |
 
-Icons: simple 24×24 stroke icons (e.g. `lucide-react-native`): smile, moon, sun, activity, utensils, leaf, calendar, message, send, user, bell, coins, check, clock, alert-triangle, heart, zap, bone, bandage, camera, lock, eye-off, trophy, chevron.
+Icons: simple 24×24 stroke icons: smile, moon, sun, activity, utensils, leaf, calendar, message, send, user, bell, coins, check, clock, alert-triangle, heart, zap, bone, bandage, camera, lock, eye-off, trophy, chevron. The app uses the exact paths from `source/*.dc.html` (`src/components/Icon.tsx`, 45 icons) instead of lucide.
+
+## Added during the build
+
+| Component | Where | What |
+|---|---|---|
+| `Txt` | `Txt.tsx` | Text with Sora/Inter by weight (Android needs one family per weight) |
+| `InfoNote`, `StatTile`, `CardTitle`, `SectionLabel` | `Card.tsx` | Lilac tip row, small stat tile, card title row |
+| `Toggle`, `Ring`, `Gauge`, `ProgressBar`, `Badge`, `Legend` | `Inputs.tsx`, `Charts.tsx`, `Pills.tsx` | Switch, progress ring (log button, exercise), overall gauge, bars, small badges, ok/attention/alert legend |
+| `LogScreen`, `SavedBanner`, `ListRow`, `MetricTile`, `Stars`, `Note`, `ComingSoon`, `Greyed`, `Stepper` | `LogKit.tsx` | Shared pieces of the log screens |
+| `OnboardingShell` | `Onboarding.tsx` | Step header, 5-step progress, sticky CTA |
+| `StationWindow`, `StationProps`, `StationWall` | `StationScene.tsx` | Home scene (window/Earth, console, plant, floor) using the equipped room items |
+| `HelmetIcon`, `SuitIcon`, `PetArt`, `WindowView`, `Surface`, `RoomSwatch` | `ShopArt.tsx` | Shop items drawn in SVG (`src/data/shopArt.ts`) |
+| `DraftCard` | `FillCards.tsx` | Editable confirmation card of Fill with Orbi |
+| `BoltFigure`, `BoltActor` | `Astronaut.tsx`, `src/avatar/BoltActor.tsx` | Bolt rig + animation state machine (`ANIMATIONS.md`) |

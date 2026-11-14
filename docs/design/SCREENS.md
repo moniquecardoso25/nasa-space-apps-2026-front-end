@@ -1,6 +1,6 @@
 # Screens
 
-Base size 390×844. Route names are a suggestion for expo-router. `PNG` = file in `screenshots/`. Current user in mocks: `ast-01` (Ana), today = mission day 12.
+Base size 390×844. Route names are the expo-router routes used by the app (`src/app/`). Dev-only: `/dev/components` (component catalogue + Bolt animation lab). `PNG` = file in `screenshots/`. Current user in mocks: `ast-01` (Ana), today = mission day 12.
 
 ## 1 · Sign in and onboarding
 
@@ -19,9 +19,9 @@ All onboarding screens: progress bar (5 steps), back button, sticky bottom butto
 
 | Screen | Route | PNG | Content | Data | Notes |
 |---|---|---|---|---|---|
-| Home | `/(tabs)/home` | AppHome (menu open), AppHomeClosed | Full-screen station scene (window with Earth, console, plant, floor). **Bolt walks** left↔right. Orbi drone + speech bubble (latest alert). Top-left: **Log button** (ring 3/7) that drops a vertical list of the 7 logs with Done / Log now; calendar button next to it. Top-right: coins. Bottom-left: greeting + mission day bar; bottom-right: "Stable 72" → Status | `daily_summaries[today]`, `ai_chat.alerts`, `avatar` | Log menu items open each overview. Relax opens greyed screen |
+| Home | `/(tabs)/home` | AppHome (menu open), AppHomeClosed | Full-screen station scene (window with Earth, console, plant, floor). **Bolt walks** left↔right. Orbi drone + speech bubble (latest alert). Top-left: **Log button** (ring 3/7) that drops a vertical list: **Fill with Orbi** (N to go) + the 7 logs with Done / Log now; calendar button next to it. After Fill with Orbi, a card "Orbi saved N logs +N". Bolt is driven by the animation state machine (`ANIMATIONS.md`), equipped room/pet/helmet/suit are shown. Top-right: coins. Bottom-left: greeting + mission day bar; bottom-right: "Stable 72" → Status | `daily_summaries[today]`, `ai_chat.alerts`, `avatar` | Log menu items open each overview. Relax opens greyed screen |
 | Crew status | `/(tabs)/status` | AppStatus | Header + coins · Overall gauge (score, logs done) · gold **Daily check-in +50** card with streak dots · **7-day scrubber** (tap a day: gauge and counts change) · **green hologram body** with 8 callouts linked to body parts (mood/stress → head, BP/radiation → chest, muscle → arm, sleep → wrist band, exercise/bone → legs). Each area colored by level ok/warn/alert. **Open injuries** (active/healing) paint their area pink (holoAlert) and add a callout "Injury · Left hand · Healing" in an extra row below the body, linked by a dashed line to the area, opening the injury in Body. Legend below | `daily_summaries` (areas include injuries), latest logs per type, `baseline`, injury logs | Callouts open the matching overview. Pending ones show "+ Log today" |
-| Orbi AI | `/(tabs)/orbi` | AppOrbi | Orbi header (on-board, no delay) · **Journal / Private** toggle + disclaimer · chat · "Saved to your journal" chip · quick replies · input, mic (greyed), send | `ai_chat.messages`, `.journal` | Private mode: never persist |
+| Orbi AI | `/(tabs)/orbi` | AppOrbi | Orbi header (on-board, no delay) · **Journal / Private** toggle + disclaimer · chat · "Saved to your journal" chip · quick replies (incl. "Fill today's logs") · input, mic (greyed), send | `ai_chat.messages`, `.journal` | Private mode: never persist |
 | Messages | `/(tabs)/messages` | AppMessages | Ground team header · delay banner "Earth is 20 min away" · thread with status (delivered / in transit + ETA bar) · composer: textarea, attach log, Mark urgent, Send | `ground_messages`, `mission.commDelaySec` | ETA = sentAt + delay |
 | Calendar | `/calendar` | AppCalendar | Coming soon banner, month grid with check-in days + events, today/upcoming (all greyed) | `calendar` | Greyed but reachable |
 

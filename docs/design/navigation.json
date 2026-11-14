@@ -125,7 +125,13 @@
         "/(tabs)/orbi",
         "/logs/radiation",
         "/logs/sleep",
-        "/(tabs)/status"
+        "/(tabs)/status",
+        "/logs/body/injury",
+        "/logs/mood/add",
+        "/logs/sleep/add",
+        "/logs/radiation/add",
+        "/logs/body/add",
+        "/logs/exercise/add"
       ]
     },
     "Orbi": {
@@ -469,6 +475,14 @@
         "/logs/mood/add"
       ],
       "$comment": "New (no PNG). Orbi asks only the categories not logged today; answers by voice or text; editable draft cards; Confirm & save calls addLog per category."
+    },
+    "DevComponents": {
+      "route": "/dev/components",
+      "title": "Dev · component catalogue + Bolt animation lab",
+      "screenshot": null,
+      "source": null,
+      "linksTo": [],
+      "$comment": "Development only"
     }
   }
 }

@@ -198,3 +198,38 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 **Decisions**
 - Injury status is not versioned in the mock, so past days use the current status (an injury resolved today disappears from past days too).
 - Up to 4 injury callouts (2 per side); the stage grows by 92 px per extra row.
+
+---
+
+## Etapa 10 · Final review — done
+
+**Docs ↔ app consistency (fixed)**
+- README: lists `ANIMATIONS.md` and `PROGRESS.md`; Coming-soon note clarifies that voice is live only in Fill with Orbi (normal Orbi chat mic stays greyed); Orbi rule mentions Fill with Orbi.
+- SCREENS: routes are the real expo-router routes; Home log menu has the Fill with Orbi row + summary card; Orbi quick replies; Crew status injury callouts; Fill with Orbi row in section 4; Avatar points to ANIMATIONS.md.
+- COMPONENTS: real icon source (design paths, not lucide), Chip tones/readOnly, LogMenu special row, and a table of components added during the build.
+- navigation.json: `OrbiFill`, `DevComponents`, and the new links (Home/Orbi → orbi-fill, Status → add forms and injury). Script check: all 33 routes/links map to a file in `src/app/`; all referenced screenshots exist.
+- data-model.json: added `currentAstronautId`, `mission.today`, `daily_summaries.logsTotal`, coin/streak/clock conventions, injury-aware `areas`, derived message status, shop asset note, `fillWithOrbi`, Bolt statuses.
+- tokens/tokens.ts + tokens.json now mirror `src/theme/tokens.ts`, including the `ext` block (values taken from the design sources). Base tokens were already identical.
+- Root README rewritten for the project; AGENTS.md has the "UI work" line.
+
+**Checks**: `tsc` clean · `expo lint` clean · `expo-doctor` 20/20 · Android bundle and web production export build · every route opened in a headless browser with no console errors (the only console output is Reanimated's dev-only notice when reduced motion is emulated).
+
+## Final summary
+
+**Ready**
+- Every screen in SCREENS.md, built from the tokens and checked against the PNGs: login, onboarding 1–5 (read-only), Home station scene (log menu, coins, Orbi nudge, equipped room/pet, Bolt state machine), Crew status (gauge, check-in streak, 7-day scrubber, hologram with callouts and injuries), Orbi (Journal/Private), Messages (comm delay, ETA, delivered/in transit), Avatar & shop (4 tabs, buy/equip), Leaderboard, Calendar and Relax (greyed, reachable), all log overviews (Todo/Done states) and add forms, injury reports, ground dashboard.
+- Coins: +10 per log, +50 for a 7-day check-in streak, spent in the shop; "Logged today" consistent across Home, Status and overviews.
+- Fill with Orbi: voice/text guided logging with an isolated, replaceable parser and editable confirmation.
+- Bolt animation state machine (14 idle + status + celebrate), reduced-motion aware, with a dev selector.
+
+**Simplified**
+- In-memory data (no backend, no persistence, resets on reload); mock login (any 4-digit PIN).
+- Orbi replies and the Fill-with-Orbi parser are rule-based (EN/PT keywords), not an AI model.
+- Device pairing, badge scan and injury photo are simulated; shop items are SVG drawings; sleep stage bar is illustrative; meal macros are estimated from kcal; injury status has no history (past days use the current status).
+- Time inputs are masked text fields, not native pickers. Speech recognition language fixed to en-US.
+
+**Missing / next**
+- Real backend + auth, sync of logs and messages with the ground team, real Orbi AI (LLM behind `OrbiFillParser` and `orbiReply`), ground replies.
+- Native testing on devices (only bundles were built here); voice needs a development build.
+- Ground dashboard: only "Crew overview" is implemented; Environments/Alerts/Schedule/Messages sidebar items are static.
+- Calendar and Relax content (coming soon by design); notifications/reminders.

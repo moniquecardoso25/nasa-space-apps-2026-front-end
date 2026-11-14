@@ -4,7 +4,12 @@
     "ids": "string with prefix, e.g. ast-01, log-0001",
     "timestamps": "ISO-8601 UTC string",
     "missionDay": "integer, Day 1 = mission start (no Sols: Sol is a Mars day)",
-    "coins": "integer, every saved log = +10"
+    "coins": "integer, every saved log = +10 (edits of today's log give nothing); a mood check-in that completes a 7-day streak gives a +50 bonus; shop purchases spend coins",
+    "currentUser": "mock-db.json → currentAstronautId (signed-in astronaut, ast-01 by default; Login sets it)",
+    "clock": "station time = UTC; 'today' = mission.today, time of day from the real clock"
+  },
+  "root": {
+    "currentAstronautId": "string · signed-in astronaut (mock-db.json only)"
   },
   "files": {
     "mission.json": {
@@ -15,6 +20,7 @@
         "destination": "'LEO' | 'ISS' | 'Moon' | 'Mars'",
         "startDate": "date",
         "lengthDays": "number",
+        "today": "number · current mission day (the app's 'today')",
         "commDelaySec": "number · one-way delay to Earth (ISS≈1, Moon≈1.3, Mars up to 1200)",
         "goals": {
           "exerciseMinPerDay": "number (ISS ≈ 90)",
@@ -159,6 +165,7 @@
         "missionDay": "number",
         "logsDone": "string[] of types",
         "logsDoneCount": "0..7 (mood, sleep, radiation, measurement, meal, exercise, injury not counted)",
+        "logsTotal": "7 (mood, sleep, radiation, measurement, meal, exercise, meditation)",
         "overallScore": "0..100",
         "areas": "{head, torso, armL, armR, legL, legR}: 'ok'|'warn'|'alert' → hologram colors. Computed = stored areas, then every injury (logged up to that day) with status 'active' or 'healing' sets its area(s) to 'alert' (holoAlert). Mapping: head/neck → head, back → torso, arm/hand → armL/armR by side, leg/knee/foot → legL/legR by side ('center' → both). Left/right = the astronaut's side shown on the viewer's left/right column of the hologram (armL left, armR right)."
       }
@@ -196,7 +203,7 @@
         "urgent": "boolean",
         "sentAt": "ISO",
         "estimatedArrivalAt": "ISO = sentAt + mission.commDelaySec",
-        "status": "'sending'|'in_transit'|'delivered'|'read'",
+        "status": "'sending'|'in_transit'|'delivered'|'read' · the app derives it from the clock: now ≥ sentAt + commDelaySec → delivered",
         "attachments": "string[] log ids"
       }
     },
@@ -207,7 +214,7 @@
         "category": "'helmet'|'suit'|'pet'|'window'|'wall'|'floor'",
         "name": "string",
         "price": "number",
-        "asset": "string (color/gradient or sprite path)"
+        "asset": "string (sprite path; sprites don't exist yet — the app draws items in SVG from src/data/shopArt.ts)"
       }
     },
     "calendar.json": {
@@ -226,7 +233,10 @@
   "derived": {
     "leaderboard": "rank astronauts by total logs (tab 'Daily logs') or avatar.coins (tab 'Coins')",
     "logToday[type]": "logs.some(l => l.astronautId===me && l.type===type && l.missionDay===today)",
-    "baselineDelta": "(latest measurement value / baseline value − 1) × 100; alert thresholds: bone −1.5%/month, strength/aerobic −10% (NASA HRP averages)"
+    "baselineDelta": "(latest measurement value / baseline value − 1) × 100; alert thresholds: bone −1.5%/month, strength/aerobic −10% (NASA HRP averages)",
+    "overallLabel": "score ≥70 Stable, 50–69 Attention, <50 Alert",
+    "checkinStreak": "consecutive days with a mood log ending today (or yesterday if today is open)",
+    "boltStatuses": "see ANIMATIONS.md (status.ts)"
   },
   "fillWithOrbi": {
     "$comment": "'Fill with Orbi' (route /logs/orbi-fill). Not stored as its own file: it produces normal logs. Parser lives in src/data/orbiParser.ts behind an interface so it can be replaced by an LLM.",
