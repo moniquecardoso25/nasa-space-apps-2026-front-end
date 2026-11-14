@@ -6,13 +6,16 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat
 import { BoltMascot } from '@/components/bolt-mascot';
 import { Button, Card, Field, Muted } from '@/components/cosmo-ui';
 import { useCrewProfile } from '@/components/crew-profile-context';
+import { useAuth } from '@/components/auth-context';
 import { C } from '@/constants/cosmo';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { setProfile } = useCrewProfile();
+  const { signIn: authenticate, enterDemo: authenticateDemo } = useAuth();
+  const [busy, setBusy] = useState(false);
   const bob = useSharedValue(0);
   const floatStyle = useAnimatedStyle(() => ({ transform: [{ translateY: bob.value * 8 }] }));
   const orbit = useSharedValue(0);
@@ -24,14 +27,28 @@ export default function LoginScreen() {
     return () => { cancelAnimation(bob); cancelAnimation(orbit); };
   }, [bob, orbit]);
 
-  const signIn = () => {
-    const normalizedEmail = email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) { setError('Enter a valid email address.'); return; }
+  const signIn = async () => {
+    if (!username.trim()) { setError('Enter your crew username.'); return; }
     if (!password.trim()) { setError('Enter your password to continue.'); return; }
-    setProfile(null);
-    router.push({ pathname: '/onboarding', params: { email: normalizedEmail } });
+    setBusy(true);
+    setError('');
+    try {
+      const session = await authenticate(username, password);
+      setProfile(null);
+      router.replace(session.user.role === 'astronaut' ? '/onboarding' : '/care');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Sign in failed. Check your credentials and API connection.');
+    } finally { setBusy(false); }
   };
-  const enterDemo = () => { setProfile(null); router.replace('/home'); };
+  const enterDemo = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await authenticateDemo();
+      setProfile(null);
+      router.replace('/home');
+    } finally { setBusy(false); }
+  };
 
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <View style={styles.spaceBackground} pointerEvents="none">
@@ -47,13 +64,13 @@ export default function LoginScreen() {
         </View>
         <Card style={styles.formCard}>
           <View style={styles.formHeading}><Text style={styles.welcome}>Welcome aboard</Text><Muted>Sign in to continue your mission.</Muted></View>
-          <Field label="Email" value={email} onChangeText={(value) => { setEmail(value); setError(''); }} placeholder="name@mission.org" keyboardType="email-address" autoCapitalize="none" />
+          <Field label="Username" value={username} onChangeText={(value) => { setUsername(value); setError(''); }} placeholder="astronaut4" autoCapitalize="none" />
           <Field label="Password" value={password} onChangeText={(value) => { setPassword(value); setError(''); }} placeholder="Enter your password" secureTextEntry autoCapitalize="none" />
           {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
-          <Button title="Sign in" onPress={signIn} style={styles.signInButton} />
+          <Button title={busy ? 'Connecting…' : 'Sign in'} onPress={signIn} disabled={busy} style={styles.signInButton} />
           <View style={styles.separator}><View style={styles.separatorLine} /><Text style={styles.separatorText}>OR</Text><View style={styles.separatorLine} /></View>
-          <Pressable accessibilityRole="button" onPress={enterDemo} style={({ pressed }) => [styles.demoButton, pressed && { opacity: 0.75 }]}><Text style={styles.demoGlyph}>▷</Text><Text style={styles.demoText}>Enter demo</Text></Pressable>
-          <Text style={styles.demoHint}>Explore the CosmoMedic prototype with sample mission data.</Text>
+          <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy }} onPress={enterDemo} style={({ pressed }) => [styles.demoButton, pressed && { opacity: 0.75 }, busy && { opacity: 0.55 }]}><Text style={styles.demoGlyph}>▷</Text><Text style={styles.demoText}>Enter demo</Text></Pressable>
+          <Text style={styles.demoHint}>Demo account: astronaut4 / spaceapps2026. If the API is offline, the app opens with local sample data.</Text>
         </Card>
         <Text style={styles.footer}>NASA SPACE APPS CHALLENGE · 2026</Text>
       </View>

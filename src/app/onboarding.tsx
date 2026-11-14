@@ -5,6 +5,8 @@ import { BoltMascot } from '@/components/bolt-mascot';
 import { Button, Card, Chip, Field, Heading, Label, Muted, Row, Screen } from '@/components/cosmo-ui';
 import { useCrewProfile } from '@/components/crew-profile-context';
 import { C } from '@/constants/cosmo';
+import { useAuth } from '@/components/auth-context';
+import { ApiOnboarding } from '@/components/api-onboarding';
 
 const steps = ['Welcome', 'Body baseline', 'Vitals & habits', 'Devices', 'Your companion'];
 const deviceOptions = [
@@ -16,6 +18,7 @@ const deviceOptions = [
 export default function OnboardingScreen() {
   const { email: emailParam } = useLocalSearchParams<{ email?: string }>();
   const { setProfile } = useCrewProfile();
+  const { session } = useAuth();
   const [step, setStep] = useState(0);
   const [name, setName] = useState('Ana Souza');
   const [email, setEmail] = useState(Array.isArray(emailParam) ? emailParam[0] : emailParam || '');
@@ -50,6 +53,8 @@ export default function OnboardingScreen() {
   };
   const next = () => step < steps.length - 1 ? setStep((current) => current + 1) : finish();
   const back = () => step > 0 ? setStep((current) => current - 1) : router.back();
+
+  if (session && !session.offlineDemo && session.user.role === 'astronaut') return <ApiOnboarding />;
 
   return <Screen>
     <Pressable accessibilityRole="button" onPress={back} style={styles.back}><Text style={styles.backText}>‹  Back</Text></Pressable>

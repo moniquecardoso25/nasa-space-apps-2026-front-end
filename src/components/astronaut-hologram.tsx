@@ -52,8 +52,8 @@ export function AstronautHologram({ desktop = false, compact = false }: { deskto
         <View style={styles.baseRing} />
       </View>
     </Animated.View></Animated.View>
-    <Pressable accessibilityRole="button" accessibilityLabel={showBack ? 'Girar astronauta para ver a frente' : 'Girar astronauta para ver as costas'} onPress={flip} style={styles.flipButton}>
-      <Text style={styles.flipGlyph}>↻</Text><Text style={styles.flipLabel}>{showBack ? 'Ver frente' : 'Ver costas'}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={showBack ? 'Rotate astronaut to view the front' : 'Rotate astronaut to view the back'} onPress={flip} style={styles.flipButton}>
+      <Text style={styles.flipGlyph}>↻</Text><Text style={styles.flipLabel}>{showBack ? 'View front' : 'View back'}</Text>
     </Pressable>
   </View>;
 }

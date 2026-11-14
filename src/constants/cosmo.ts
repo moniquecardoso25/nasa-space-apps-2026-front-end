@@ -25,6 +25,8 @@ export const VOICE_OPTIONS = [
   { label: 'Home', route: '/home' }, { label: 'Status', route: '/status' },
   { label: 'Orbi AI', route: '/orbi' }, { label: 'Messages', route: '/messages' },
   { label: 'Calendar', route: '/calendar' }, { label: 'Avatar & shop', route: '/avatar' },
+  { label: 'Research data', route: '/research' },
   ...LOGS.map((log) => ({ label: log.title, route: LOG_PATH[log.key] })),
   { label: 'Leaderboard', route: '/leaderboard' },
+  { label: 'Medical care', route: '/care' },
 ];

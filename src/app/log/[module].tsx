@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Chip, Divider, Field, Heading, Label, Muted, Row, Screen } from '@/components/cosmo-ui';
+import { useAuth } from '@/components/auth-context';
+import { crewHealthApi, type CheckinOptions, type DailyCheckin, type JsonRecord } from '@/services/crew-health-api';
 import { C, LOGS, type LogModule } from '@/constants/cosmo';
 
 const moodChoices = [
@@ -12,69 +14,127 @@ const measurements = [
   ['Blood pressure', 'Daily', 'Not logged today', C.gold], ['Bone density', 'Weekly', 'Logged Mon · −1.1%', C.green], ['Muscle mass', 'Weekly', 'Logged Mon · −2%', C.green], ['Strength test', 'Weekly', 'Logged Wed · −6%', C.green], ['Aerobic test', 'Weekly', 'Due today · −9%', C.gold],
 ];
 
+export function generateStaticParams() {
+  return LOGS.map(({ key }) => ({ module: key }));
+}
+
 export default function LogScreen() {
   const params = useLocalSearchParams<{ module: string }>();
   const module = (LOGS.find((item) => item.key === params.module)?.key ?? 'mood') as LogModule;
   const config = LOGS.find((item) => item.key === module)!;
+  const { session } = useAuth();
+  const onlineCrew = session?.me && !session.offlineDemo ? session.me : null;
   const [selected, setSelected] = useState(module === 'mood' ? 'Okay' : module === 'sleep' ? '3' : module === 'body' ? 'Blood pressure' : module === 'radiation' ? 'Personal dosimeter' : module === 'exercise' ? 'Resistive' : '');
   const [secondary, setSecondary] = useState('1–2 times');
   const [number, setNumber] = useState(module === 'radiation' ? '38' : module === 'body' ? '118' : module === 'exercise' ? '30' : module === 'meals' ? '420' : '');
   const [detail, setDetail] = useState(module === 'body' ? '76' : module === 'sleep' ? '00:40' : '');
   const [note, setNote] = useState('');
   const [saved, setSaved] = useState(false);
+  const [checkinOptions, setCheckinOptions] = useState<CheckinOptions | null>(null);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [fatigue, setFatigue] = useState(3);
+  const [apiData, setApiData] = useState<JsonRecord | null>(null);
+  const [apiError, setApiError] = useState('');
+  const [apiNotice, setApiNotice] = useState('');
 
-  const save = () => setSaved(true);
+  useEffect(() => {
+    if (!onlineCrew) return;
+    const load = module === 'mood'
+      ? Promise.allSettled([crewHealthApi.checkinOptions(), crewHealthApi.checkins({ fromDay: onlineCrew.missionDay, toDay: onlineCrew.missionDay })])
+      : Promise.allSettled([crewHealthApi.mission.today(onlineCrew.missionId, onlineCrew.astronautId, onlineCrew.missionDay)]);
+    load.then((results) => {
+      if (module === 'mood') {
+        const options = results[0];
+        const history = results[1];
+        if (options?.status === 'fulfilled') setCheckinOptions(options.value as CheckinOptions);
+        if (history?.status === 'fulfilled' && Array.isArray(history.value) && history.value[0]) {
+          const last = history.value[0] as DailyCheckin;
+          setSelectedSymptoms(last.symptoms ?? []); setFatigue(last.fatigue ?? 3); setNote(last.notes ?? '');
+          setSelected(['Great', 'Good', 'Okay', 'Tired', 'Stressed'][Math.max(0, Math.min(4, Number(last.stress) - 1))]);
+        }
+      } else if (results[0]?.status === 'fulfilled') setApiData(results[0].value as JsonRecord);
+      const rejected = results.find((result) => result.status === 'rejected');
+      if (rejected?.status === 'rejected') setApiError(rejected.reason instanceof Error ? rejected.reason.message : 'Could not load mission data.');
+    });
+  }, [onlineCrew, module]);
+
+  const save = async () => {
+    if (onlineCrew && module === 'mood') {
+      setApiError(''); setApiNotice('');
+      try {
+        const result = await crewHealthApi.submitCheckin({ stress: moodChoices.findIndex((mood) => mood.title === selected) + 1, fatigue, symptoms: selectedSymptoms, notes: note.trim() || undefined });
+        setSaved(true);
+        setApiNotice(result.message || (result.urgentSymptoms.length ? 'An urgent symptom was sent to the flight medical team.' : 'Your daily check-in was saved to the Crew Health API.'));
+      } catch (cause) { setApiError(cause instanceof Error ? cause.message : 'The check-in could not be saved.'); }
+      return;
+    }
+    setSaved(true);
+  };
   const setOption = (option: string) => { setSelected(option); setSaved(false); };
+  const toggleSymptom = (code: string) => setSelectedSymptoms((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]);
 
   return <Screen>
     <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹</Text><Text style={styles.backLabel}>Back</Text></Pressable>
     <Heading eyebrow="Mission log" title={config.title.replace(' check-in', '')} subtitle={config.detail} />
-    {module === 'mood' ? <MoodLog selected={selected} onSelect={setOption} secondary={secondary} onSecondary={setSecondary} note={note} onNote={setNote} /> : null}
-    {module === 'sleep' ? <SleepLog selected={selected} onSelect={setOption} secondary={secondary} onSecondary={setSecondary} note={note} onNote={setNote} detail={detail} setDetail={setDetail} /> : null}
-    {module === 'radiation' ? <RadiationLog selected={selected} onSelect={setOption} number={number} setNumber={setNumber} detail={detail} setDetail={setDetail} /> : null}
-    {module === 'body' ? <BodyLog selected={selected} onSelect={setOption} number={number} setNumber={setNumber} detail={detail} setDetail={setDetail} note={note} onNote={setNote} /> : null}
-    {module === 'meals' ? <MealsLog selected={selected} onSelect={setOption} number={number} setNumber={setNumber} detail={detail} setDetail={setDetail} note={note} onNote={setNote} /> : null}
-    {module === 'exercise' ? <ExerciseLog selected={selected} onSelect={setOption} number={number} setNumber={setNumber} secondary={secondary} onSecondary={setSecondary} /> : null}
-    {module === 'relax' ? <RelaxLog selected={selected} onSelect={setOption} saved={saved} onSave={save} /> : null}
-    {module !== 'relax' ? <Button title={saved ? '✓  Logged today' : `Save ${module === 'mood' ? `“${selected || 'mood'}”` : module === 'sleep' ? 'sleep log' : module === 'radiation' ? 'reading' : module === 'body' ? (selected === 'Injury' ? 'injury report' : 'measurement') : module === 'meals' ? 'meal' : 'session'}    +10  ◉`} onPress={save} /> : null}
-    {saved && module !== 'relax' ? <Text style={styles.savedMessage}>✓  Log saved to your mission record · +10 mission coins</Text> : null}
-    <Muted style={{ textAlign: 'center' }}>Entries are demo data for the hackathon. For urgent symptoms, follow your mission medical protocol.</Muted>
+    {onlineCrew && module !== 'mood' ? <ApiMetricView module={module} data={apiData} error={apiError} /> : <>
+      {module === 'mood' ? <MoodLog selected={selected} onSelect={setOption} secondary={secondary} onSecondary={setSecondary} note={note} onNote={setNote} fatigue={fatigue} onFatigue={setFatigue} symptoms={onlineCrew ? checkinOptions?.symptoms : undefined} selectedSymptoms={selectedSymptoms} toggleSymptom={toggleSymptom} /> : null}
+      {!onlineCrew && module === 'sleep' ? <SleepLog selected={selected} onSelect={setOption} secondary={secondary} onSecondary={setSecondary} note={note} onNote={setNote} detail={detail} setDetail={setDetail} /> : null}
+      {!onlineCrew && module === 'radiation' ? <RadiationLog selected={selected} onSelect={setOption} number={number} setNumber={setNumber} detail={detail} setDetail={setDetail} /> : null}
+      {!onlineCrew && module === 'body' ? <BodyLog selected={selected} onSelect={setOption} number={number} setNumber={setNumber} detail={detail} setDetail={setDetail} note={note} onNote={setNote} /> : null}
+      {!onlineCrew && module === 'meals' ? <MealsLog selected={selected} onSelect={setOption} number={number} setNumber={setNumber} detail={detail} setDetail={setDetail} note={note} onNote={setNote} /> : null}
+      {!onlineCrew && module === 'exercise' ? <ExerciseLog selected={selected} onSelect={setOption} number={number} setNumber={setNumber} secondary={secondary} onSecondary={setSecondary} /> : null}
+      {!onlineCrew && module === 'relax' ? <RelaxLog selected={selected} onSelect={setOption} saved={saved} onSave={save} /> : null}
+    </>}
+    {apiError ? <Text accessibilityLiveRegion="polite" style={{ color: C.pink }}>{apiError}</Text> : null}
+    {apiNotice ? <Text accessibilityLiveRegion="polite" style={{ color: C.green }}>{apiNotice}</Text> : null}
+    {((!onlineCrew && module !== 'relax') || (onlineCrew && module === 'mood')) ? <Button title={saved ? 'Saved to mission record' : onlineCrew ? 'Submit daily check-in' : `Save ${module === 'mood' ? selected : 'sample entry'}`} onPress={save} /> : null}
+    {saved && !onlineCrew ? <Text style={styles.savedMessage}>Saved in local demo mode.</Text> : null}
+    <Muted style={{ textAlign: 'center' }}>{onlineCrew ? module === 'mood' ? 'Your check-in is stored by the Crew Health API. For urgent symptoms, follow your mission medical protocol.' : 'This API view is read-only. The provided contract does not include a write endpoint for this record type.' : 'Local sample data for the hackathon prototype. These entries are not sent to the Crew Health API.'}</Muted>
   </Screen>;
 }
 
-function MoodLog({ selected, onSelect, secondary, onSecondary, note, onNote }: { selected: string; onSelect: (v: string) => void; secondary: string; onSecondary: (v: string) => void; note: string; onNote: (v: string) => void }) {
+function MoodLog({ selected, onSelect, secondary, onSecondary, note, onNote, fatigue, onFatigue, symptoms, selectedSymptoms, toggleSymptom }: { selected: string; onSelect: (value: string) => void; secondary: string; onSecondary: (value: string) => void; note: string; onNote: (value: string) => void; fatigue: number; onFatigue: (value: number) => void; symptoms?: CheckinOptions['symptoms']; selectedSymptoms: string[]; toggleSymptom: (code: string) => void }) {
   const selectedIndex = Math.max(0, moodChoices.findIndex((mood) => mood.title === selected));
   const selectedMood = moodChoices[selectedIndex];
   const responder = useMemo(() => {
-    const chooseAtY = (y: number) => {
-      const index = Math.max(0, Math.min(moodChoices.length - 1, Math.round(y / 52)));
-      onSelect(moodChoices[index].title);
-    };
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: (event) => chooseAtY(event.nativeEvent.locationY),
-      onPanResponderMove: (event) => chooseAtY(event.nativeEvent.locationY),
-    });
+    const chooseAtY = (y: number) => onSelect(moodChoices[Math.max(0, Math.min(moodChoices.length - 1, Math.round(y / 52)))].title);
+    return PanResponder.create({ onStartShouldSetPanResponder: () => true, onMoveShouldSetPanResponder: () => true, onPanResponderTerminationRequest: () => false, onPanResponderGrant: (event) => chooseAtY(event.nativeEvent.locationY), onPanResponderMove: (event) => chooseAtY(event.nativeEvent.locationY) });
   }, [onSelect]);
   return <>
-    <Label style={{ textAlign: 'center', fontSize: 20 }}>How are you feeling today, Ana?</Label>
+    <Label style={{ textAlign: 'center', fontSize: 20 }}>How are you feeling today?</Label>
     <Card style={styles.moodCard}>
-      <View style={styles.moodScale}>
-        <View style={styles.moodLabels}>{moodChoices.map((mood) => <Pressable key={mood.title} accessibilityRole="button" accessibilityState={{ selected: selected === mood.title }} onPress={() => onSelect(mood.title)} style={styles.moodChoice}><Text style={[styles.moodName, selected === mood.title && { color: mood.color, fontWeight: '800' }]}>{mood.title}</Text></Pressable>)}</View>
-        <View {...responder.panHandlers} accessibilityRole="adjustable" accessibilityLabel="Mood scale. Drag vertically to choose your mood" accessibilityValue={{ min: 1, max: 5, now: selectedIndex + 1, text: selectedMood.title }} style={styles.moodTrackArea}>
-          <View style={styles.moodTrackLine} /><View style={[styles.moodActiveLine, { top: 26 + selectedIndex * 52, height: Math.max(0, 208 - selectedIndex * 52), backgroundColor: selectedMood.color }]} /><View style={[styles.moodThumb, { top: selectedIndex * 52 + 16, borderColor: selectedMood.color }]} />
-        </View>
+      <View style={styles.moodScale}><View style={styles.moodLabels}>{moodChoices.map((mood) => <Pressable key={mood.title} accessibilityRole="button" accessibilityState={{ selected: selected === mood.title }} onPress={() => onSelect(mood.title)} style={styles.moodChoice}><Text style={[styles.moodName, selected === mood.title && { color: mood.color, fontWeight: '800' }]}>{mood.title}</Text></Pressable>)}</View>
+        <View {...responder.panHandlers} accessibilityRole="adjustable" accessibilityLabel="Mood scale. Drag vertically to choose your mood" accessibilityValue={{ min: 1, max: 5, now: selectedIndex + 1, text: selectedMood.title }} style={styles.moodTrackArea}><View style={styles.moodTrackLine} /><View style={[styles.moodActiveLine, { top: 26 + selectedIndex * 52, height: Math.max(0, 208 - selectedIndex * 52), backgroundColor: selectedMood.color }]} /><View style={[styles.moodThumb, { top: selectedIndex * 52 + 16, borderColor: selectedMood.color }]} /></View>
         <View style={styles.moodFaces}>{moodChoices.map((mood) => <Pressable key={mood.title} accessibilityRole="button" accessibilityLabel={mood.title} onPress={() => onSelect(mood.title)} style={styles.faceChoice}><Text style={[styles.face, { color: selected === mood.title ? mood.color : C.muted }]}>{mood.face}</Text></Pressable>)}</View>
       </View>
       <Text style={[styles.selectedMood, { color: selectedMood.color }]}>{selectedMood.face}  {selectedMood.title}</Text>
-      <Muted style={{ textAlign: 'center' }}>Arraste o marcador para cima ou para baixo, ou toque em uma opção.</Muted>
+      <Muted style={{ textAlign: 'center' }}>Drag the marker up or down, or tap a mood.</Muted>
     </Card>
-    <Label>What is behind it?</Label><View style={styles.wrap}>{['Calm', 'Focused', 'Homesick', 'Lonely', 'Anxious', 'Overloaded'].map((v) => <Chip key={v} title={v} active={secondary === v} onPress={() => onSecondary(v)} />)}</View>
-    <Field label="Anything you want to note?" value={note} onChangeText={onNote} placeholder="Optional · only share what feels right" />
+    {symptoms ? <>
+      <Card><Label>Fatigue level - 1 to 5</Label><View style={styles.wrap}>{[1, 2, 3, 4, 5].map((level) => <Chip key={level} title={`${level}${level === 1 ? ' - very low' : level === 5 ? ' - very high' : ''}`} active={fatigue === level} onPress={() => onFatigue(level)} />)}</View></Card>
+      <Card><Label>Symptoms from the Crew Health API</Label><View style={styles.wrap}>{symptoms.map((symptom) => <Chip key={symptom.code} title={`${symptom.label}${symptom.urgent ? ' - urgent' : ''}`} active={selectedSymptoms.includes(symptom.code)} onPress={() => toggleSymptom(symptom.code)} />)}</View><Muted>Select any symptoms you have today. Urgent symptoms open a request for the flight medical team.</Muted></Card>
+    </> : <><Label>What is behind it?</Label><View style={styles.wrap}>{['Calm', 'Focused', 'Homesick', 'Lonely', 'Anxious', 'Overloaded'].map((value) => <Chip key={value} title={value} active={secondary === value} onPress={() => onSecondary(value)} />)}</View></>}
+    <Field label="Anything you want to note?" value={note} onChangeText={onNote} placeholder="Optional - only share what feels right" />
   </>;
 }
+
+function ApiMetricView({ module, data, error }: { module: LogModule; data: JsonRecord | null; error: string }) {
+  const raw = asRecord(data?.values ?? data?.metrics);
+  const keyMap: Record<LogModule, string[]> = {
+    mood: ['mood', 'stress', 'fatigue'], sleep: ['sleep', 'fatigue'], radiation: ['radiation', 'dose'], body: ['blood', 'pressure', 'bone', 'muscle', 'strength', 'aerobic', 'temperature'],
+    meals: ['meal', 'calorie', 'kcal', 'nutrition', 'protein', 'carbohydrate'], exercise: ['exercise', 'fitness', 'aerobic', 'strength'], relax: ['stress', 'mood', 'sleep'],
+  };
+  const rows = raw ? Object.entries(raw).filter(([key]) => keyMap[module].some((part) => key.toLowerCase().includes(part))) : [];
+  return <Card><Label>Mission data from the Crew Health API</Label>{error ? <Text style={{ color: C.pink }}>{error}</Text> : null}{rows.length ? rows.map(([key, rawValue]) => {
+    const record = asRecord(rawValue);
+    const value = record ? record.value ?? record.current ?? record.mean ?? '?' : rawValue;
+    const unit = record?.unit ? ` ${String(record.unit)}` : '';
+    const status = record?.status ? ` · ${String(record.status).replace(/_/g, ' ')}` : '';
+    return <View key={key} style={styles.measure}><Text style={[styles.measureName, { flex: 1 }]}>{key.replace(/_/g, ' ')}</Text><Text style={styles.readingValue}>{String(value)}{unit}{status}</Text></View>;
+  }) : <Muted>{data ? 'The API returned no readings for this screen on the current mission day.' : 'Loading current mission readings...'}</Muted>}<Muted>This view is read-only. The provided backend contract does not include a write endpoint for this record type.</Muted></Card>;
+}
+
+function asRecord(value: unknown): JsonRecord | null { return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as JsonRecord : null; }
 
 function SleepLog({ selected, onSelect, secondary, onSecondary, note, onNote, detail, setDetail }: { selected: string; onSelect: (v: string) => void; secondary: string; onSecondary: (v: string) => void; note: string; onNote: (v: string) => void; detail: string; setDetail: (v: string) => void }) {
   return <>

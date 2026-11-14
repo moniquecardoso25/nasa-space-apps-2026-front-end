@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { router, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from '@/constants/cosmo';
+import { useAuth } from '@/components/auth-context';
 
 type MenuItem = { label: string; icon: string; route: string };
 
@@ -25,16 +26,22 @@ const crew: MenuItem[] = [
   { label: 'Calendar', icon: '▦', route: '/calendar' },
   { label: 'Avatar & shop', icon: 'A', route: '/avatar' },
   { label: 'Leaderboard', icon: '♜', route: '/leaderboard' },
+  { label: 'Research data', icon: 'R', route: '/research' },
 ];
 
 export function AppNavigation({ desktop }: { desktop: boolean }) {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const { session, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = (route: string) => {
     setMenuOpen(false);
+    if (route === '/login') signOut();
     if (pathname !== route) router.replace(route as never);
   };
+  const roleMenu: MenuItem[] = session && ['medical', 'surgeon', 'admin'].includes(session.user.role)
+    ? [{ label: 'Medical care', icon: 'M', route: '/care' }]
+    : [];
 
   return <>
     {desktop ? <View style={styles.sidebar}>
@@ -42,7 +49,7 @@ export function AppNavigation({ desktop }: { desktop: boolean }) {
       <ScrollView contentContainerStyle={styles.sidebarContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.section}>MISSION</Text>{main.map((item) => <MenuRow key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}
         <Text style={styles.section}>DAILY LOGS</Text>{logs.map((item) => <MenuRow key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} compact />)}
-        <Text style={styles.section}>CREW</Text>{crew.map((item) => <MenuRow key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}
+        <Text style={styles.section}>CREW</Text>{crew.map((item) => <MenuRow key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}{roleMenu.map((item) => <MenuRow key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}
       </ScrollView>
       <Text style={styles.footer}>MISSION DATA · DEMO</Text>
     </View> : <View style={[styles.mobileBar, { height: 72 + insets.bottom, paddingBottom: insets.bottom + 5 }]}>
@@ -50,22 +57,22 @@ export function AppNavigation({ desktop }: { desktop: boolean }) {
         <View style={[styles.mobileIcon, pathname === item.route && styles.mobileIconActive]}><Text style={[styles.mobileGlyph, pathname === item.route && styles.mobileGlyphActive]}>{item.icon}</Text></View>
         <Text numberOfLines={1} style={[styles.mobileLabel, pathname === item.route && styles.mobileLabelActive]}>{item.label}</Text>
       </Pressable>)}
-      <Pressable accessibilityRole="button" accessibilityLabel="Abrir menu de navegação" accessibilityState={{ expanded: menuOpen }} onPress={() => setMenuOpen(true)} style={styles.mobileItem}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Open navigation menu" accessibilityState={{ expanded: menuOpen }} onPress={() => setMenuOpen(true)} style={styles.mobileItem}>
         <View style={[styles.mobileIcon, menuOpen && styles.mobileIconActive]}><Text style={[styles.mobileGlyph, menuOpen && styles.mobileGlyphActive]}>☰</Text></View>
         <Text style={[styles.mobileLabel, menuOpen && styles.mobileLabelActive]}>Menu</Text>
       </Pressable>
     </View>}
     <Modal visible={menuOpen} transparent animationType={desktop ? 'fade' : 'slide'} onRequestClose={() => setMenuOpen(false)}>
       <View style={styles.modalRoot}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Fechar menu" style={styles.backdrop} onPress={() => setMenuOpen(false)} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Close menu" style={styles.backdrop} onPress={() => setMenuOpen(false)} />
         <View style={styles.sheet}>
           {!desktop ? <View style={styles.sheetHandle} /> : null}
-          <View style={styles.sheetHeader}><View><Text style={styles.sheetTitle}>CosmoMedic menu</Text><Text style={styles.sheetSubtitle}>Choose a screen</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Fechar menu" onPress={() => setMenuOpen(false)} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable></View>
+          <View style={styles.sheetHeader}><View><Text style={styles.sheetTitle}>CosmoMedic menu</Text><Text style={styles.sheetSubtitle}>Choose a screen</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Close menu" onPress={() => setMenuOpen(false)} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable></View>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
             <Text style={styles.section}>MISSION</Text><View style={styles.menuGrid}>{main.map((item) => <GridItem key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}</View>
             <Text style={styles.section}>DAILY LOGS</Text><View style={styles.menuGrid}>{logs.map((item) => <GridItem key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}</View>
-            <Text style={styles.section}>CREW</Text><View style={styles.menuGrid}>{crew.map((item) => <GridItem key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}</View>
-            <Text style={styles.section}>ACCOUNT</Text><View style={styles.menuGrid}><GridItem item={{ label: 'Sign in / switch crew', icon: '↪', route: '/login' }} active={pathname === '/login'} onPress={() => navigate('/login')} /></View>
+            <Text style={styles.section}>CREW</Text><View style={styles.menuGrid}>{crew.map((item) => <GridItem key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}{roleMenu.map((item) => <GridItem key={item.route} item={item} active={pathname === item.route} onPress={() => navigate(item.route)} />)}</View>
+            <Text style={styles.section}>ACCOUNT</Text><View style={styles.menuGrid}><GridItem item={{ label: 'Sign out', icon: '↪', route: '/login' }} active={false} onPress={() => navigate('/login')} /></View>
           </ScrollView>
         </View>
       </View>

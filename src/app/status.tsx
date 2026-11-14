@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { AstronautHologram } from '@/components/astronaut-hologram';
 import { Card, Heading, Muted, Screen } from '@/components/cosmo-ui';
 import { useDesktopLayout } from '@/components/responsive-layout';
 import { useCrewProfile } from '@/components/crew-profile-context';
+import { useAuth } from '@/components/auth-context';
 import { C } from '@/constants/cosmo';
+import { crewHealthApi, type DailyCheckin, type JsonRecord } from '@/services/crew-health-api';
 
 const days = [
   { label: 'D6', score: '68', logs: 5, amount: 0.72 }, { label: 'D7', score: '70', logs: 4, amount: 0.55 },
@@ -39,47 +41,154 @@ export default function StatusScreen() {
   const { width } = useWindowDimensions();
   const compactDesktop = desktop && width < 1100;
   const { profile } = useCrewProfile();
+  const { session } = useAuth();
   const [selectedDay, setSelectedDay] = useState('Today');
+  const [missionToday, setMissionToday] = useState<JsonRecord | null>(null);
+  const [missionBaseline, setMissionBaseline] = useState<JsonRecord | null>(null);
+  const [missionHistory, setMissionHistory] = useState<JsonRecord[]>([]);
+  const [checkins, setCheckins] = useState<DailyCheckin[]>([]);
+  const [patterns, setPatterns] = useState<JsonRecord[]>([]);
+  const [apiError, setApiError] = useState('');
+  useEffect(() => {
+    const me = session?.me;
+    if (!me || session?.offlineDemo) return;
+    Promise.allSettled([
+      crewHealthApi.mission.today(me.missionId, me.astronautId, me.missionDay),
+      crewHealthApi.mission.baseline(me.missionId, me.astronautId),
+      crewHealthApi.mission.daily(me.missionId, me.astronautId, { fromDay: Math.max(1, me.missionDay - 6), toDay: me.missionDay }),
+      crewHealthApi.checkins({ fromDay: Math.max(1, me.missionDay - 6), toDay: me.missionDay }),
+      crewHealthApi.patterns(me.missionDay),
+    ]).then(([today, baseline, history, loggedCheckins, detectedPatterns]) => {
+      if (today.status === 'fulfilled') setMissionToday(today.value);
+      if (baseline.status === 'fulfilled') setMissionBaseline(baseline.value);
+      if (history.status === 'fulfilled') setMissionHistory(history.value);
+      if (loggedCheckins.status === 'fulfilled') setCheckins(loggedCheckins.value);
+      if (detectedPatterns.status === 'fulfilled') setPatterns(detectedPatterns.value);
+      const failures = [today, baseline, history, loggedCheckins, detectedPatterns].filter((result) => result.status === 'rejected');
+      if (failures.length) setApiError(`${failures.length} API data request(s) could not be loaded.`);
+    });
+  }, [session]);
   const day = days.find((item) => item.label === selectedDay) ?? days[6];
+  const onlineCrew = session?.me && !session.offlineDemo ? session.me : null;
+  const metricSource = missionToday;
+  const currentScore = onlineCrew ? findScalar(metricSource, ['overallScore', 'overall_score', 'healthScore', 'score']) : day.score;
+  const currentStatus = onlineCrew ? findScalar(metricSource, ['overallStatus', 'overall_status', 'status']) : 'Stable';
+  const displayName = onlineCrew?.displayName || profile?.name || 'Crew member';
+  const missionDayLabel = onlineCrew ? `Day ${onlineCrew.missionDay}` : 'Day 12';
+  const visibleBodyAreas = bodyAreas.map((item) => onlineCrew ? { ...item, value: apiBodyValue(missionToday, item.title) ?? 'No data', color: apiBodyValue(missionToday, item.title) ? apiStatusColor(missionToday, item.title) : C.muted } : item);
   return <Screen>
-    <Heading eyebrow={`${profile?.name || 'Ana'} · ${selectedDay === 'Today' ? 'Today, Day 12' : selectedDay} · synced 08:30`} title="Crew status" subtitle="A view of your health signals against your pre-mission baseline." action={<View style={styles.coins}><Text style={styles.coinIcon}>⊕</Text><Text style={styles.coinText}>1,250</Text></View>} />
+    <Heading eyebrow={`${displayName} · ${missionDayLabel}${onlineCrew ? ` · Mission ${onlineCrew.missionId}` : ' · Sample data'}`} title="Crew status" subtitle="A view of your health signals against your pre-mission baseline." action={!onlineCrew ? <View style={styles.coins}><Text style={styles.coinIcon}>⊕</Text><Text style={styles.coinText}>1,250</Text></View> : undefined} />
     <View style={styles.summaryRow}>
-      <Card style={[styles.overallCard, styles.summaryCard]}><View style={styles.gauge}><Text style={styles.scoreNumber}>{day.score}</Text><Text style={styles.scoreOf}>/ 100</Text></View><View style={styles.summaryText}><Text style={styles.summaryLabel}>Overall</Text><Text style={styles.stable}>● Stable</Text><Text style={styles.summarySub}>{day.logs} of 7 logs done</Text></View></Card>
+      <Card style={[styles.overallCard, styles.summaryCard]}><View style={styles.gauge}><Text style={styles.scoreNumber}>{currentScore ?? '?'}</Text><Text style={styles.scoreOf}>{onlineCrew ? 'API' : '/ 100'}</Text></View><View style={styles.summaryText}><Text style={styles.summaryLabel}>Overall</Text><Text style={styles.stable}>● {labelize(currentStatus || 'No data')}</Text><Text style={styles.summarySub}>{onlineCrew ? `Mission day ${onlineCrew.missionDay}` : `${day.logs} of 7 logs done`}</Text></View></Card>
       <Pressable accessibilityRole="button" onPress={() => router.push('/log/mood')} style={({ pressed }) => [styles.streakCard, styles.summaryCard, pressed && { opacity: 0.82 }]}>
         <View style={styles.streakTitleRow}><Text style={styles.streakCheck}>✓</Text><Text style={styles.streakTitle}>Daily check-in</Text></View>
-        <Text style={styles.streakDetail}>+50 coins · 5-day streak</Text><View style={styles.streakDots}>{[0, 1, 2, 3, 4, 5, 6].map((dot) => <View key={dot} style={[styles.streakDot, dot < 5 && styles.streakDotDone]} />)}</View>
+        <Text style={styles.streakDetail}>{onlineCrew ? (checkins[0] ? `Latest check-in · Day ${checkins[0].missionDay}` : "Complete today's check-in") : '+50 coins · 5-day streak'}</Text><View style={styles.streakDots}>{[0, 1, 2, 3, 4, 5, 6].map((dot) => <View key={dot} style={[styles.streakDot, dot < (onlineCrew ? Math.min(7, checkins.length) : 5) && styles.streakDotDone]} />)}</View>
       </Pressable>
     </View>
 
-    <View style={styles.dayHeading}><Text style={styles.sectionTitle}>Last 7 days · logs done</Text><Text style={styles.dayPrompt}>Tap a day</Text></View>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayStrip}>
-      {days.map((item) => <Pressable key={item.label} accessibilityRole="button" accessibilityState={{ selected: selectedDay === item.label }} onPress={() => setSelectedDay(item.label)} style={[styles.dayCard, selectedDay === item.label && styles.dayCardActive]}>
-        <View style={styles.dayTrack}><View style={[styles.dayFill, { height: `${item.amount * 100}%`, backgroundColor: item.logs >= 5 ? C.green : C.gold }]} /></View><Text style={[styles.dayName, selectedDay === item.label && styles.dayNameActive]}>{item.label}</Text>
-      </Pressable>)}
-    </ScrollView>
+    {onlineCrew ? <Card><View style={styles.sectionHead}><Text style={styles.sectionTitle}>Last 7 mission days</Text><Muted>{missionHistory.length} API records</Muted></View><ApiRecords records={missionHistory} /></Card> : <><View style={styles.dayHeading}><Text style={styles.sectionTitle}>Last 7 days · logs done</Text><Text style={styles.dayPrompt}>Tap a day</Text></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayStrip}>{days.map((item) => <Pressable key={item.label} accessibilityRole="button" accessibilityState={{ selected: selectedDay === item.label }} onPress={() => setSelectedDay(item.label)} style={[styles.dayCard, selectedDay === item.label && styles.dayCardActive]}><View style={styles.dayTrack}><View style={[styles.dayFill, { height: `${item.amount * 100}%`, backgroundColor: item.logs >= 5 ? C.green : C.gold }]} /></View><Text style={[styles.dayName, selectedDay === item.label && styles.dayNameActive]}>{item.label}</Text></Pressable>)}</ScrollView></>}
 
-    <Card style={styles.hologramCard}><View style={styles.bodyHeader}><View><Text style={styles.sectionTitle}>Body systems</Text><Text style={styles.bodySubtitle}>Tap a signal to open its log</Text></View><View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>HOLOGRAM</Text></View></View>
+    <Card style={styles.hologramCard}><View style={styles.bodyHeader}><View><Text style={styles.sectionTitle}>Body systems</Text><Text style={styles.bodySubtitle}>Tap a signal to open its record</Text></View><View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>{onlineCrew ? 'API DATA' : 'HOLOGRAM'}</Text></View></View>
       <View style={[styles.hologramStage, desktop && styles.hologramStageDesktop, compactDesktop && styles.hologramStageCompact]}>
-        {desktop ? <>
-          <View style={[styles.calloutColumn, compactDesktop && styles.calloutColumnCompact]}>{bodyAreas.slice(0, 4).map((item) => <BodyCallout key={item.title} item={item} side="left" />)}</View>
-          <AstronautHologram desktop compact={compactDesktop} />
-          <View style={[styles.calloutColumn, compactDesktop && styles.calloutColumnCompact]}>{bodyAreas.slice(4).map((item) => <BodyCallout key={item.title} item={item} side="right" />)}</View>
-        </> : <>
-          <View style={styles.mobileAstronaut}><AstronautHologram /></View>
-          <View style={styles.mobileCallouts}>{bodyAreas.map((item) => <BodyCallout key={item.title} item={item} />)}</View>
-        </>}
+        {desktop ? <><View style={[styles.calloutColumn, compactDesktop && styles.calloutColumnCompact]}>{visibleBodyAreas.slice(0, 4).map((item) => <BodyCallout key={item.title} item={item} side="left" />)}</View><AstronautHologram desktop compact={compactDesktop} /><View style={[styles.calloutColumn, compactDesktop && styles.calloutColumnCompact]}>{visibleBodyAreas.slice(4).map((item) => <BodyCallout key={item.title} item={item} side="right" />)}</View></> : <><View style={styles.mobileAstronaut}><AstronautHologram /></View><View style={styles.mobileCallouts}>{visibleBodyAreas.map((item) => <BodyCallout key={item.title} item={item} />)}</View></>}
       </View>
-      <View style={styles.legend}><Legend color={C.green} title="OK" /><Legend color={C.gold} title="Attention" /><Legend color={C.pink} title="Alert" /><Text style={styles.legendBaseline}>· vs. pre-mission baseline</Text></View>
-      <Muted>*Illustrative demo reading. Crew health data is not a medical diagnosis.</Muted>
+      <View style={styles.legend}><Legend color={C.green} title="OK" /><Legend color={C.gold} title="Attention" /><Legend color={C.pink} title="Alert" /><Text style={styles.legendBaseline}>Compared with pre-mission baseline</Text></View>
+      <Muted>{onlineCrew ? 'Callout colors follow the API metric statuses when the API returns them. This prototype is not a medical diagnosis.' : '*Illustrative demo reading. Crew health data is not a medical diagnosis.'}</Muted>
     </Card>
 
-    <Card><View style={styles.sectionHead}><Text style={styles.sectionTitle}>Health signals</Text><Muted>Mission day 12</Muted></View>
-      {signals.map((item) => { const value = item.title === 'Blood pressure' ? profile?.bloodPressure || item.value : item.value; return <Pressable key={item.title} onPress={() => router.push(item.link as never)} style={styles.reading}><View style={[styles.icon, { backgroundColor: `${item.color}20` }]}><Text style={{ color: item.color, fontSize: 18 }}>{item.icon}</Text></View><Text style={styles.readingName}>{item.title}</Text><Text style={[styles.readingValue, { color: item.color }]}>{value}</Text></Pressable>; })}
-    </Card>
-    <Card><Text style={styles.sectionTitle}>Compared with pre-flight</Text><Muted>These trends help your medical team spot changes over time.</Muted><Trend label="Bone density" value="−1.1%" amount={0.35} color={C.green} /><Trend label="Aerobic fitness" value="−9%" amount={0.78} color={C.gold} /><Trend label="Muscle mass" value="−2%" amount={0.45} color={C.teal} /></Card>
-    <Card style={{ borderColor: C.gold }}><Text style={styles.noticeTitle}>⚠ Keep an eye on sleep</Text><Muted>You logged less than 7 hours. Orbi can suggest a wind-down routine or you can message Mission Control.</Muted></Card>
+    <Card><View style={styles.sectionHead}><Text style={styles.sectionTitle}>Health signals</Text><Muted>{missionDayLabel}</Muted></View>{signals.map((item) => { const value = onlineCrew ? apiSignalValue(missionToday, item.title) ?? 'No data' : item.title === 'Blood pressure' ? profile?.bloodPressure || item.value : item.value; return <Pressable key={item.title} onPress={() => router.push(item.link as never)} style={styles.reading}><View style={[styles.icon, { backgroundColor: `${item.color}20` }]}><Text style={{ color: item.color, fontSize: 18 }}>{item.icon}</Text></View><Text style={styles.readingName}>{item.title}</Text><Text style={[styles.readingValue, { color: item.color }]}>{value}</Text></Pressable>; })}</Card>
+    {onlineCrew ? <><Card><Text style={styles.sectionTitle}>Mission health metrics</Text><Muted>Values, units, and status flags returned by the API.</Muted><ApiRecords records={recordsFrom(missionToday?.values ?? missionToday?.metrics)} /></Card><Card><Text style={styles.sectionTitle}>Pre-mission baseline</Text><Muted>Read-only reference data from your mission API.</Muted><ApiRecords records={recordsFrom(missionBaseline?.metrics ?? missionBaseline?.values ?? missionBaseline)} /></Card>{patterns.length ? <Card><Text style={styles.sectionTitle}>Detected health patterns</Text><ApiRecords records={patterns} /></Card> : null}{apiError ? <Card style={{ borderColor: C.gold }}><Muted>{apiError}</Muted></Card> : null}</> : <><Card><Text style={styles.sectionTitle}>Compared with pre-flight</Text><Muted>These trends help your medical team spot changes over time.</Muted><Trend label="Bone density" value="−1.1%" amount={0.35} color={C.green} /><Trend label="Aerobic fitness" value="−9%" amount={0.78} color={C.gold} /><Trend label="Muscle mass" value="−2%" amount={0.45} color={C.teal} /></Card><Card style={{ borderColor: C.gold }}><Text style={styles.noticeTitle}>⚠ Keep an eye on sleep</Text><Muted>You logged less than 7 hours. Orbi can suggest a wind-down routine or you can message the medical team.</Muted></Card></>}
   </Screen>;
 }
+
+function asRecord(value: unknown): JsonRecord | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as JsonRecord : null;
+}
+
+function metricEntry(payload: JsonRecord | null, keys: string[]) {
+  const root = asRecord(payload);
+  const sources = [root, asRecord(root?.values), asRecord(root?.metrics), asRecord(root?.readings)];
+  for (const source of sources) {
+    if (!source) continue;
+    for (const key of keys) {
+      const raw = source[key];
+      if (raw === undefined || raw === null) continue;
+      const entry = asRecord(raw);
+      if (!entry) return { value: raw, unit: '', status: null as string | null };
+      const value = entry.value ?? entry.current ?? entry.mean ?? entry.average ?? entry.status ?? null;
+      return { value, unit: String(entry.unit ?? ''), status: String(entry.status ?? entry.metricStatus ?? '') || null };
+    }
+  }
+  return null;
+}
+
+function findScalar(payload: JsonRecord | null, keys: string[]) {
+  const entry = metricEntry(payload, keys);
+  if (!entry || entry.value === null) return null;
+  return `${String(entry.value)}${entry.unit ? ` ${entry.unit}` : ''}`;
+}
+
+function apiSignalValue(payload: JsonRecord | null, title: string) {
+  const lower = title.toLowerCase();
+  if (lower.includes('blood pressure')) {
+    const systolic = findScalar(payload, ['systolic_bp', 'systolic_bp_mmhg', 'blood_pressure_systolic']);
+    const diastolic = findScalar(payload, ['diastolic_bp', 'diastolic_bp_mmhg', 'blood_pressure_diastolic']);
+    if (systolic && diastolic) return `${systolic} / ${diastolic}`;
+  }
+  const keys = lower.includes('mood') ? ['mood', 'mood_score']
+    : lower.includes('radiation') ? ['radiation_dose', 'radiation', 'radiation_usv']
+      : lower.includes('sleep') ? ['sleep_hours', 'sleep_duration_hours']
+        : lower.includes('bone') ? ['bone_density', 'bone_density_g_cm2']
+          : lower.includes('exercise') ? ['exercise_minutes', 'exercise_min', 'exercise_duration_min']
+            : ['stress', 'stress_score'];
+  return findScalar(payload, keys);
+}
+
+function apiBodyValue(payload: JsonRecord | null, title: string) {
+  if (title === 'BP · not logged') return apiSignalValue(payload, 'Blood pressure');
+  if (title === 'Radiation*') return apiSignalValue(payload, 'Radiation · today');
+  if (title === 'Muscle') return findScalar(payload, ['muscle_mass', 'muscle_mass_kg']);
+  if (title.startsWith('Sleep')) return apiSignalValue(payload, 'Sleep · last night');
+  if (title === 'Exercise') return apiSignalValue(payload, 'Exercise');
+  if (title === 'Bone density') return apiSignalValue(payload, 'Bone density');
+  if (title === 'Stress') return apiSignalValue(payload, 'Stress');
+  return apiSignalValue(payload, 'Mood');
+}
+
+function apiStatusColor(payload: JsonRecord | null, title: string) {
+  const aliases = title.toLowerCase().includes('radiation') ? ['radiation_dose', 'radiation', 'radiation_usv']
+    : title.toLowerCase().includes('sleep') ? ['sleep_hours']
+      : title.toLowerCase().includes('bone') ? ['bone_density']
+        : title.toLowerCase().includes('muscle') ? ['muscle_mass']
+          : title.toLowerCase().includes('blood') || title.toLowerCase().includes('bp') ? ['systolic_bp', 'blood_pressure']
+            : title.toLowerCase().includes('exercise') ? ['exercise_minutes', 'exercise_min'] : ['mood', 'stress'];
+  const status = metricEntry(payload, aliases)?.status?.toLowerCase();
+  if (status === 'out_of_range' || status === 'alert' || status === 'invalid') return C.pink;
+  if (status === 'watch' || status === 'attention') return C.gold;
+  if (status === 'no_data' || status === 'no_reference') return C.muted;
+  return C.green;
+}
+
+function recordsFrom(value: unknown): JsonRecord[] {
+  if (Array.isArray(value)) return value.filter((item): item is JsonRecord => item !== null && typeof item === 'object');
+  const record = asRecord(value);
+  if (!record) return [];
+  return Object.entries(record).map(([key, item]) => {
+    const nested = asRecord(item);
+    return nested ? { label: key, ...nested } : { label: key, value: item };
+  });
+}
+
+function ApiRecords({ records }: { records: JsonRecord[] }) {
+  if (!records.length) return <Muted>No records returned for this period.</Muted>;
+  return <View style={{ gap: 5 }}>{records.slice(0, 10).map((record, index) => {
+    const title = record.label ?? record.metric ?? record.pattern ?? record.missionDay ?? record.asOfDay ?? record.id ?? `Record ${index + 1}`;
+    const fields = Object.entries(record).filter(([key, value]) => key !== 'label' && (value === null || ['string', 'number', 'boolean'].includes(typeof value))).slice(0, 4);
+    return <View key={String(record.id ?? record.code ?? `${title}-${index}`)} style={{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 7, gap: 3 }}><Text style={{ color: C.text, fontSize: 12, fontWeight: '800' }}>{labelize(String(title))}</Text>{fields.map(([key, value]) => <View key={key} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}><Muted style={{ fontSize: 10 }}>{labelize(key)}</Muted><Text style={{ color: C.muted, fontSize: 10, textAlign: 'right', flex: 1 }}>{String(value ?? '?')}</Text></View>)}</View>;
+  })}</View>;
+}
+
+function labelize(value: string) { return value.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase()); }
 
 function BodyCallout({ item, side }: { item: (typeof bodyAreas)[number]; side?: 'left' | 'right' }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={`${item.title}, ${item.value}, ${item.label}`} onPress={() => router.push(item.route as never)} style={({ pressed }) => [styles.callout, side === 'left' && styles.calloutLeft, side === 'right' && styles.calloutRight, { borderColor: `${item.color}98` }, pressed && { opacity: 0.78 }]}>

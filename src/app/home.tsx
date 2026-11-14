@@ -5,12 +5,16 @@ import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat
 import { BoltMascot } from '@/components/bolt-mascot';
 import { Button, Card, Label, Muted, Screen } from '@/components/cosmo-ui';
 import { useCrewProfile } from '@/components/crew-profile-context';
+import { useAuth } from '@/components/auth-context';
 import { useDesktopLayout } from '@/components/responsive-layout';
 import { C, LOGS, LOG_PATH } from '@/constants/cosmo';
+import { crewHealthApi, type ProactiveMessage } from '@/services/crew-health-api';
 
 export default function HomeScreen() {
   const [logOpen, setLogOpen] = useState(false);
   const { profile } = useCrewProfile();
+  const { session } = useAuth();
+  const [apiMessage, setApiMessage] = useState<ProactiveMessage | null>(null);
   const desktop = useDesktopLayout();
   const { width: screenWidth } = useWindowDimensions();
   const walkDistance = Math.max(80, Math.min(screenWidth - (desktop ? 500 : 170), 760));
@@ -23,13 +27,22 @@ export default function HomeScreen() {
     return () => cancelAnimation(walk);
   }, [walk, walkDistance]);
 
+  useEffect(() => {
+    const me = session?.me;
+    if (!me || session?.offlineDemo) return;
+    crewHealthApi.messages().then((messages) => setApiMessage(messages[0] ?? null)).catch(() => setApiMessage(null));
+  }, [session]);
+
+  const firstName = session?.me?.displayName.split(' ')[0] || profile?.name.split(' ')[0] || 'Commander';
+  const missionLabel = session?.me ? `${session.me.missionId} · Day ${session.me.missionDay}` : `${profile?.mission || 'Orbit-3'} · Day 12 of ${profile?.missionDays || '30'}`;
+
   return <Screen>
     <View style={styles.topline}>
       <View style={styles.topActions}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Abrir registros diários" accessibilityState={{ expanded: logOpen }} onPress={() => setLogOpen((open) => !open)} style={styles.logMenuButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open daily logs" accessibilityState={{ expanded: logOpen }} onPress={() => setLogOpen((open) => !open)} style={styles.logMenuButton}>
           <View style={styles.logRing}><Text style={styles.logMenuCount}>3/7</Text></View><Text style={styles.logMenuText}>Log</Text><Text style={styles.logMenuArrow}>{logOpen ? '⌃' : '⌄'}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Abrir calendário da missão" onPress={() => router.push('/calendar')} style={styles.calendarButton}><Text style={styles.calendarGlyph}>▦</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open mission calendar" onPress={() => router.push('/calendar')} style={styles.calendarButton}><Text style={styles.calendarGlyph}>▦</Text></Pressable>
       </View>
       <View style={styles.coins}><Text style={{ color: C.gold }}>⊕</Text><Text style={styles.coinText}>1,250</Text></View>
     </View>
@@ -42,8 +55,8 @@ export default function HomeScreen() {
         <View style={styles.floorLine} /><View style={styles.floor} />
         <Animated.View style={[styles.walkingBolt, walkStyle]}><BoltMascot /></Animated.View>
         <View style={styles.orbiDrone}><View style={styles.droneAntenna} /><View style={styles.droneBody}><View style={styles.droneEye} /><View style={styles.droneEye} /></View></View>
-        <View style={styles.orbiBubble}><Text style={styles.orbiText}><Text style={{ color: C.teal, fontWeight: '900' }}>Orbi:</Text> sleep was short last night. Wind down at 21:00?</Text></View>
-        <View style={styles.greeting}><Text style={styles.greetingText}>Hi, Commander <Text style={{ color: C.purple }}>{profile?.name.split(' ')[0] || 'Ana'}</Text></Text><View style={styles.missionProgress}><Text style={styles.missionText}>{profile?.mission || 'Orbit-3'} · Day 12 of {profile?.missionDays || '30'}</Text><View style={styles.progressTrack}><View style={styles.progressFill} /></View></View></View>
+        <View style={styles.orbiBubble}><Text style={styles.orbiText}><Text style={{ color: C.teal, fontWeight: '900' }}>Orbi:</Text> {apiMessage?.title || 'Your mission health summary is ready.'}</Text></View>
+        <View style={styles.greeting}><Text style={styles.greetingText}>Hi, Commander <Text style={{ color: C.purple }}>{firstName}</Text></Text><View style={styles.missionProgress}><Text style={styles.missionText}>{missionLabel}</Text><View style={styles.progressTrack}><View style={styles.progressFill} /></View></View></View>
         <Pressable accessibilityRole="button" onPress={() => router.push('/status')} style={styles.health}><Text style={{ color: C.teal }}>▮▮▮</Text><Text style={styles.healthText}>Stable 72</Text></Pressable>
       </View>
       {logOpen ? <Card style={[styles.logDropdown, desktop && styles.logDropdownDesktop]}>
@@ -53,7 +66,7 @@ export default function HomeScreen() {
       </Card> : null}
     </View>
 
-    <Card style={styles.orbiHint}><View style={styles.orbiBadge}><Text style={styles.orbiBadgeText}>O</Text></View><View style={{ flex: 1, gap: 3 }}><Label>Orbi noticed a pattern</Label><Muted>Your sleep was short last night. Want to wind down at 21:00?</Muted></View><Pressable accessibilityRole="button" onPress={() => router.push('/orbi')}><Text style={{ color: C.teal, fontWeight: '800' }}>›</Text></Pressable></Card>
+    <Card style={styles.orbiHint}><View style={styles.orbiBadge}><Text style={styles.orbiBadgeText}>O</Text></View><View style={{ flex: 1, gap: 3 }}><Label>{apiMessage?.title || 'Orbi mission note'}</Label><Muted>{apiMessage?.body || 'Review your health check-in and mission readings.'}</Muted></View><Pressable accessibilityRole="button" accessibilityLabel="Open Orbi" onPress={() => router.push('/orbi')}><Text style={{ color: C.teal, fontWeight: '800' }}>›</Text></Pressable></Card>
     <View style={styles.actions}><Button title="View crew status" secondary onPress={() => router.push('/status')} /><Button title="Open mission calendar  ›" secondary onPress={() => router.push('/calendar')} /></View>
   </Screen>;
 }
