@@ -7,7 +7,7 @@ import { C } from '@/constants/cosmo';
 type MenuItem = { label: string; icon: string; route: string };
 
 const main: MenuItem[] = [
-  { label: 'Home', icon: 'H', route: '/' },
+  { label: 'Home', icon: 'H', route: '/home' },
   { label: 'Status', icon: 'S', route: '/status' },
   { label: 'Orbi AI', icon: 'O', route: '/orbi' },
   { label: 'Messages', icon: 'M', route: '/messages' },

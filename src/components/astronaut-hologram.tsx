@@ -1,23 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { C } from '@/constants/cosmo';
 
 const Holo = '#39FF9F';
 const Attention = '#FFC94D';
 
-export function AstronautHologram({ desktop = false }: { desktop?: boolean }) {
+export function AstronautHologram({ desktop = false, compact = false }: { desktop?: boolean; compact?: boolean }) {
   const [showBack, setShowBack] = useState(false);
   const rotation = useSharedValue(0);
+  const bob = useSharedValue(0);
   const flipStyle = useAnimatedStyle(() => ({ transform: [{ perspective: 1000 }, { rotateY: `${rotation.value}deg` }] }));
+  const bobStyle = useAnimatedStyle(() => ({ transform: [{ translateY: bob.value * 3 }] }));
+  useEffect(() => {
+    // Keep the hologram breathing motion on the client and out of server rendering.
+    bob.value = withRepeat(withSequence(withTiming(-1, { duration: 1600 }), withTiming(1, { duration: 1600 })), -1, true);
+    return () => cancelAnimation(bob);
+  }, [bob]);
   const flip = () => {
     const next = !showBack;
     setShowBack(next);
     rotation.value = withTiming(next ? 180 : 0, { duration: 520 });
   };
 
-  return <View style={[styles.wrap, desktop && styles.wrapDesktop]}>
-    <Animated.View style={[styles.figure, desktop && styles.figureDesktop, flipStyle]}>
+  return <View style={[styles.wrap, desktop && styles.wrapDesktop, compact && styles.wrapCompact]}>
+    <Animated.View style={bobStyle}><Animated.View style={[styles.figure, desktop && styles.figureDesktop, compact && styles.figureCompact, flipStyle]}>
       <View style={[styles.face, styles.front]}>
         <View style={styles.antenna}><View style={styles.antennaLight} /></View>
         <View style={styles.helmet}><View style={styles.helmetRim} /><View style={styles.visor}><View style={styles.visorGlint} /><View style={styles.visorEyeLeft} /><View style={styles.visorEyeRight} /></View><View style={styles.helmetSideLeft} /><View style={styles.helmetSideRight} /></View>
@@ -44,7 +51,7 @@ export function AstronautHologram({ desktop = false }: { desktop?: boolean }) {
         <View style={styles.legRight}><View style={[styles.thighStripe, styles.goldStripe]} /><View style={[styles.kneePad, styles.goldKnee]} /><View style={[styles.boot, styles.goldBoot]}><View style={styles.bootSole} /></View></View>
         <View style={styles.baseRing} />
       </View>
-    </Animated.View>
+    </Animated.View></Animated.View>
     <Pressable accessibilityRole="button" accessibilityLabel={showBack ? 'Girar astronauta para ver a frente' : 'Girar astronauta para ver as costas'} onPress={flip} style={styles.flipButton}>
       <Text style={styles.flipGlyph}>↻</Text><Text style={styles.flipLabel}>{showBack ? 'Ver frente' : 'Ver costas'}</Text>
     </Pressable>
@@ -52,8 +59,8 @@ export function AstronautHologram({ desktop = false }: { desktop?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: 228, height: 460, alignItems: 'center', justifyContent: 'flex-start' }, wrapDesktop: { width: 280, height: 500 },
-  figure: { width: 220, height: 408, alignItems: 'center', position: 'relative' }, figureDesktop: { transform: [{ scale: 1.12 }] },
+  wrap: { width: 228, height: 460, alignItems: 'center', justifyContent: 'flex-start' }, wrapDesktop: { width: 240, height: 370 }, wrapCompact: { width: 190, height: 350 },
+  figure: { width: 220, height: 408, alignItems: 'center', position: 'relative' }, figureDesktop: { transform: [{ scale: 0.8 }] }, figureCompact: { transform: [{ scale: 0.72 }] },
   face: { position: 'absolute', width: 220, height: 408, alignItems: 'center' }, front: { backfaceVisibility: 'hidden' }, back: { backfaceVisibility: 'hidden' }, backFace: { transform: [{ rotateY: '180deg' }] },
   antenna: { position: 'absolute', top: -1, width: 3, height: 21, backgroundColor: Holo, alignItems: 'center', zIndex: 2 }, antennaLight: { width: 9, height: 9, borderRadius: 5, backgroundColor: Holo, marginTop: -5, shadowColor: Holo, shadowOpacity: 1, shadowRadius: 8, elevation: 7 },
   helmet: { position: 'absolute', top: 13, width: 106, height: 106, borderRadius: 56, borderWidth: 4, borderColor: Holo, backgroundColor: 'rgba(19, 72, 76, 0.62)', alignItems: 'center', justifyContent: 'center', shadowColor: Holo, shadowOpacity: 0.65, shadowRadius: 17, elevation: 9 }, helmetRim: { position: 'absolute', width: 89, height: 89, borderRadius: 46, borderWidth: 1, borderColor: 'rgba(57,255,159,0.55)' }, visor: { width: 73, height: 58, borderRadius: 32, backgroundColor: '#10243B', borderWidth: 2, borderColor: Holo, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 16 }, visorGlint: { position: 'absolute', width: 29, height: 7, top: 8, left: 10, borderRadius: 7, backgroundColor: 'rgba(57,255,159,0.43)', transform: [{ rotate: '-25deg' }] }, visorEyeLeft: { width: 6, height: 6, borderRadius: 3, backgroundColor: Holo }, visorEyeRight: { width: 6, height: 6, borderRadius: 3, backgroundColor: Holo }, helmetSideLeft: { position: 'absolute', left: -7, width: 9, height: 28, borderWidth: 2, borderColor: Holo, borderRadius: 5 }, helmetSideRight: { position: 'absolute', right: -7, width: 9, height: 28, borderWidth: 2, borderColor: Holo, borderRadius: 5 }, backHelmet: { width: 64, height: 60, borderRadius: 24, backgroundColor: 'rgba(12,32,50,0.85)', borderWidth: 2, borderColor: Holo, alignItems: 'center', justifyContent: 'center', gap: 5, padding: 9 }, backPanelLine: { height: 2, width: '100%', backgroundColor: Holo, opacity: 0.72 },

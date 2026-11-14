@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { AstronautHologram } from '@/components/astronaut-hologram';
 import { Card, Heading, Muted, Screen } from '@/components/cosmo-ui';
 import { useDesktopLayout } from '@/components/responsive-layout';
+import { useCrewProfile } from '@/components/crew-profile-context';
 import { C } from '@/constants/cosmo';
 
 const days = [
@@ -35,10 +36,13 @@ const bodyAreas = [
 
 export default function StatusScreen() {
   const desktop = useDesktopLayout();
+  const { width } = useWindowDimensions();
+  const compactDesktop = desktop && width < 1100;
+  const { profile } = useCrewProfile();
   const [selectedDay, setSelectedDay] = useState('Today');
   const day = days.find((item) => item.label === selectedDay) ?? days[6];
   return <Screen>
-    <Heading eyebrow={`Ana · ${selectedDay === 'Today' ? 'Today, Day 12' : selectedDay} · synced 08:30`} title="Crew status" subtitle="A view of your health signals against your pre-mission baseline." action={<View style={styles.coins}><Text style={styles.coinIcon}>⊕</Text><Text style={styles.coinText}>1,250</Text></View>} />
+    <Heading eyebrow={`${profile?.name || 'Ana'} · ${selectedDay === 'Today' ? 'Today, Day 12' : selectedDay} · synced 08:30`} title="Crew status" subtitle="A view of your health signals against your pre-mission baseline." action={<View style={styles.coins}><Text style={styles.coinIcon}>⊕</Text><Text style={styles.coinText}>1,250</Text></View>} />
     <View style={styles.summaryRow}>
       <Card style={[styles.overallCard, styles.summaryCard]}><View style={styles.gauge}><Text style={styles.scoreNumber}>{day.score}</Text><Text style={styles.scoreOf}>/ 100</Text></View><View style={styles.summaryText}><Text style={styles.summaryLabel}>Overall</Text><Text style={styles.stable}>● Stable</Text><Text style={styles.summarySub}>{day.logs} of 7 logs done</Text></View></Card>
       <Pressable accessibilityRole="button" onPress={() => router.push('/log/mood')} style={({ pressed }) => [styles.streakCard, styles.summaryCard, pressed && { opacity: 0.82 }]}>
@@ -55,11 +59,11 @@ export default function StatusScreen() {
     </ScrollView>
 
     <Card style={styles.hologramCard}><View style={styles.bodyHeader}><View><Text style={styles.sectionTitle}>Body systems</Text><Text style={styles.bodySubtitle}>Tap a signal to open its log</Text></View><View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>HOLOGRAM</Text></View></View>
-      <View style={[styles.hologramStage, desktop && styles.hologramStageDesktop]}>
+      <View style={[styles.hologramStage, desktop && styles.hologramStageDesktop, compactDesktop && styles.hologramStageCompact]}>
         {desktop ? <>
-          <View style={styles.calloutColumn}>{bodyAreas.slice(0, 4).map((item) => <BodyCallout key={item.title} item={item} side="left" />)}</View>
-          <AstronautHologram desktop />
-          <View style={styles.calloutColumn}>{bodyAreas.slice(4).map((item) => <BodyCallout key={item.title} item={item} side="right" />)}</View>
+          <View style={[styles.calloutColumn, compactDesktop && styles.calloutColumnCompact]}>{bodyAreas.slice(0, 4).map((item) => <BodyCallout key={item.title} item={item} side="left" />)}</View>
+          <AstronautHologram desktop compact={compactDesktop} />
+          <View style={[styles.calloutColumn, compactDesktop && styles.calloutColumnCompact]}>{bodyAreas.slice(4).map((item) => <BodyCallout key={item.title} item={item} side="right" />)}</View>
         </> : <>
           <View style={styles.mobileAstronaut}><AstronautHologram /></View>
           <View style={styles.mobileCallouts}>{bodyAreas.map((item) => <BodyCallout key={item.title} item={item} />)}</View>
@@ -70,7 +74,7 @@ export default function StatusScreen() {
     </Card>
 
     <Card><View style={styles.sectionHead}><Text style={styles.sectionTitle}>Health signals</Text><Muted>Mission day 12</Muted></View>
-      {signals.map((item) => <Pressable key={item.title} onPress={() => router.push(item.link as never)} style={styles.reading}><View style={[styles.icon, { backgroundColor: `${item.color}20` }]}><Text style={{ color: item.color, fontSize: 18 }}>{item.icon}</Text></View><Text style={styles.readingName}>{item.title}</Text><Text style={[styles.readingValue, { color: item.color }]}>{item.value}</Text></Pressable>)}
+      {signals.map((item) => { const value = item.title === 'Blood pressure' ? profile?.bloodPressure || item.value : item.value; return <Pressable key={item.title} onPress={() => router.push(item.link as never)} style={styles.reading}><View style={[styles.icon, { backgroundColor: `${item.color}20` }]}><Text style={{ color: item.color, fontSize: 18 }}>{item.icon}</Text></View><Text style={styles.readingName}>{item.title}</Text><Text style={[styles.readingValue, { color: item.color }]}>{value}</Text></Pressable>; })}
     </Card>
     <Card><Text style={styles.sectionTitle}>Compared with pre-flight</Text><Muted>These trends help your medical team spot changes over time.</Muted><Trend label="Bone density" value="−1.1%" amount={0.35} color={C.green} /><Trend label="Aerobic fitness" value="−9%" amount={0.78} color={C.gold} /><Trend label="Muscle mass" value="−2%" amount={0.45} color={C.teal} /></Card>
     <Card style={{ borderColor: C.gold }}><Text style={styles.noticeTitle}>⚠ Keep an eye on sleep</Text><Muted>You logged less than 7 hours. Orbi can suggest a wind-down routine or you can message Mission Control.</Muted></Card>
@@ -94,8 +98,8 @@ const styles = StyleSheet.create({
   streakCard: { justifyContent: 'center', backgroundColor: C.gold, borderColor: C.gold, gap: 7 }, streakTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 }, streakCheck: { color: '#382807', fontSize: 24, fontWeight: '900' }, streakTitle: { color: '#211A08', fontSize: 17, fontWeight: '900' }, streakDetail: { color: '#34280C', fontSize: 13, fontWeight: '700' }, streakDots: { flexDirection: 'row', gap: 7, marginTop: 1 }, streakDot: { width: 16, height: 16, borderRadius: 9, borderWidth: 2, borderColor: '#8A6B1B' }, streakDotDone: { backgroundColor: '#332707', borderColor: '#332707' },
   dayHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }, sectionTitle: { color: C.text, fontSize: 16, fontWeight: '800' }, dayPrompt: { color: C.muted, fontSize: 12 }, dayStrip: { flexDirection: 'row', gap: 8, paddingBottom: 2 }, dayCard: { width: 74, height: 95, borderRadius: 18, alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border }, dayCardActive: { borderColor: C.purple, borderWidth: 3, backgroundColor: '#211E53' }, dayTrack: { width: 11, height: 38, borderRadius: 7, backgroundColor: '#28265B', justifyContent: 'flex-end', overflow: 'hidden' }, dayFill: { width: '100%', borderRadius: 7 }, dayName: { color: C.text, fontSize: 11, fontWeight: '700' }, dayNameActive: { fontWeight: '900' },
   hologramCard: { padding: 0, overflow: 'hidden', gap: 0 }, bodyHeader: { padding: 17, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, bodySubtitle: { color: C.muted, fontSize: 11, marginTop: 4 }, livePill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 9, paddingVertical: 6, borderWidth: 1, borderColor: '#267963', borderRadius: 20, backgroundColor: '#0D282A' }, liveDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: C.green }, liveText: { color: C.green, fontSize: 8, fontWeight: '900', letterSpacing: 1 },
-  hologramStage: { width: '100%', minHeight: 484, justifyContent: 'flex-start', alignItems: 'center', overflow: 'hidden', backgroundColor: '#080D22', borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#17263C', paddingVertical: 12 }, hologramStageDesktop: { minHeight: 530, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 22, backgroundColor: '#080D22' }, mobileAstronaut: { height: 452, alignItems: 'center', justifyContent: 'center' }, mobileCallouts: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 12 }, calloutColumn: { flex: 1, minWidth: 175, maxWidth: 280, height: 472, justifyContent: 'space-around', gap: 6 },
-  callout: { flexGrow: 1, flexBasis: '46%', minHeight: 69, backgroundColor: 'rgba(6,15,29,0.94)', borderWidth: 1, borderRadius: 13, padding: 9, justifyContent: 'center', gap: 3 }, calloutLeft: { borderTopRightRadius: 3, borderBottomRightRadius: 3, marginRight: 5 }, calloutRight: { borderTopLeftRadius: 3, borderBottomLeftRadius: 3, marginLeft: 5 }, connector: { position: 'absolute', top: '50%', width: 68, height: 2, zIndex: 2 }, connectorOut: { right: -69 }, connectorIn: { left: -69 }, calloutTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 7 }, calloutIcon: { fontSize: 15 }, calloutTitle: { flex: 1, color: C.muted, fontSize: 11 }, calloutValue: { fontSize: 15, fontWeight: '900' }, calloutLabel: { color: C.muted, fontSize: 9 },
+  hologramStage: { width: '100%', minHeight: 484, justifyContent: 'flex-start', alignItems: 'center', overflow: 'hidden', backgroundColor: '#080D22', borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#17263C', paddingVertical: 12 }, hologramStageDesktop: { minHeight: 390, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#080D22' }, hologramStageCompact: { paddingHorizontal: 4 }, mobileAstronaut: { height: 452, alignItems: 'center', justifyContent: 'center' }, mobileCallouts: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 12 }, calloutColumn: { flex: 1, minWidth: 175, maxWidth: 280, height: 360, justifyContent: 'space-around', gap: 6 }, calloutColumnCompact: { minWidth: 130 },
+  callout: { flexGrow: 1, flexBasis: '46%', minHeight: 69, backgroundColor: 'rgba(6,15,29,0.94)', borderWidth: 1, borderRadius: 13, padding: 9, justifyContent: 'center', gap: 3 }, calloutLeft: { borderTopRightRadius: 3, borderBottomRightRadius: 3, marginRight: 5 }, calloutRight: { borderTopLeftRadius: 3, borderBottomLeftRadius: 3, marginLeft: 5 }, connector: { position: 'absolute', top: '50%', width: 48, height: 2, zIndex: 2 }, connectorOut: { right: -49 }, connectorIn: { left: -49 }, calloutTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 7 }, calloutIcon: { fontSize: 15 }, calloutTitle: { flex: 1, color: C.muted, fontSize: 11 }, calloutValue: { fontSize: 15, fontWeight: '900' }, calloutLabel: { color: C.muted, fontSize: 9 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 13, padding: 15 }, legendItem: { flexDirection: 'row', alignItems: 'center', gap: 7 }, legendDot: { width: 11, height: 11, borderRadius: 6 }, legendText: { color: C.muted, fontSize: 11 }, legendBaseline: { color: C.muted, fontSize: 10 },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }, reading: { flexDirection: 'row', alignItems: 'center', minHeight: 54, gap: 10, borderTopWidth: 1, borderTopColor: C.border }, icon: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, readingName: { color: C.text, fontWeight: '600', fontSize: 13, flex: 1 }, readingValue: { fontWeight: '800', fontSize: 12 }, trend: { gap: 8 }, track: { height: 8, borderRadius: 5, backgroundColor: C.track, overflow: 'hidden' }, fill: { height: '100%', borderRadius: 5 }, noticeTitle: { color: C.gold, fontWeight: '800', fontSize: 15 },
 });

@@ -25,8 +25,8 @@ export function Chip({ title, active, onPress, disabled }: { title: string; acti
   return <Pressable accessibilityRole={onPress ? 'button' : undefined} disabled={disabled} onPress={onPress} style={[ui.chip, active && ui.chipActive, disabled && ui.disabled]}><Text style={[ui.chipText, active && ui.chipTextActive]}>{title}</Text></Pressable>;
 }
 
-export function Field({ label, value, onChangeText, placeholder, keyboardType }: { label: string; value: string; onChangeText: (value: string) => void; placeholder?: string; keyboardType?: 'default' | 'numeric' }) {
-  return <View style={ui.fieldWrap}><Text style={ui.fieldLabel}>{label}</Text><TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={C.muted} keyboardType={keyboardType} style={ui.field} /></View>;
+export function Field({ label, value, onChangeText, placeholder, keyboardType, secureTextEntry, autoCapitalize }: { label: string; value: string; onChangeText: (value: string) => void; placeholder?: string; keyboardType?: 'default' | 'numeric' | 'email-address'; secureTextEntry?: boolean; autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters' }) {
+  return <View style={ui.fieldWrap}><Text style={ui.fieldLabel}>{label}</Text><TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={C.muted} keyboardType={keyboardType} secureTextEntry={secureTextEntry} autoCapitalize={autoCapitalize} style={ui.field} /></View>;
 }
 
 export function Row({ children, style }: PropsWithChildren<{ style?: object }>) { return <View style={[ui.row, style]}>{children}</View>; }

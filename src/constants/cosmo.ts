@@ -22,7 +22,7 @@ export const LOG_PATH: Record<LogModule, `/log/${LogModule}`> = {
 };
 
 export const VOICE_OPTIONS = [
-  { label: 'Home', route: '/' }, { label: 'Status', route: '/status' },
+  { label: 'Home', route: '/home' }, { label: 'Status', route: '/status' },
   { label: 'Orbi AI', route: '/orbi' }, { label: 'Messages', route: '/messages' },
   { label: 'Calendar', route: '/calendar' }, { label: 'Avatar & shop', route: '/avatar' },
   ...LOGS.map((log) => ({ label: log.title, route: LOG_PATH[log.key] })),
