@@ -8,6 +8,7 @@
  */
 import { MEAL_PICKS, MOOD_TAGS } from './derived';
 import { parseHHMM, sleepMinutes } from './format';
+import { spokenToDigits } from './spokenNumbers';
 import type { ExerciseData, MoodData, RadiationData, SleepData } from './types';
 
 export type FillCategory = 'mood' | 'sleep' | 'radiation' | 'body' | 'meal' | 'exercise';
@@ -64,14 +65,17 @@ const norm = (s: string) =>
 const has = (t: string, words: string[]) => words.some((w) => new RegExp(`(^|[^a-z])${w}([^a-z]|$)`).test(t));
 
 const WORD_NUM: Record<string, number> = {
-  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
   um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, onze: 11, doze: 12,
   half: 0.5, meia: 0.5,
 };
 
-/** Replaces spelled numbers ("six", "seis") with digits. */
+/**
+ * Replaces spelled numbers with digits: full English numbers via spokenToDigits
+ * ("one hundred eighteen", "sixty-four", "six and a half") — speech recognition
+ * often writes numbers in words — then small Portuguese ones ("seis").
+ */
 function digits(t: string) {
-  return t.replace(/[a-z]+/g, (w) => (w in WORD_NUM && WORD_NUM[w] !== 0.5 ? String(WORD_NUM[w]) : w));
+  return spokenToDigits(t).replace(/[a-z]+/g, (w) => (w in WORD_NUM && WORD_NUM[w] !== 0.5 ? String(WORD_NUM[w]) : w));
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -116,7 +120,7 @@ const SKIP = ['skip', 'pass', 'pular', 'pula', 'depois', 'later', 'not now', 'na
 // ------------------------------------------------------------------ categories
 
 function parseMood(raw: string): ParseResult<'mood'> {
-  const t = norm(raw);
+  const t = digits(norm(raw));
   let level: MoodDraft['level'] | null = null;
   const score = /([1-5])\s*(?:\/|out of|de|em)\s*5/.exec(t);
   if (score) level = Number(score[1]) as MoodDraft['level'];
@@ -158,6 +162,9 @@ function parseSleep(raw: string, ctx: ParseContext): ParseResult<'sleep'> {
   if (bedM) bed = findTimes(`at ${bedM[2]}`)[0] ?? null;
   if (wakeM) wake = findTimes(`at ${wakeM[2]}`)[0] ?? null;
   if (bed === null && wake === null && times.length >= 2) [bed, wake] = times;
+  // Bedtime said without am/pm ("bed at eleven thirty"): 7–11 means the evening.
+  const bedSaid = bedM?.[2] ?? '';
+  if (bed !== null && !/am|pm/.test(bedSaid) && bed >= 7 * 60 && bed < 12 * 60) bed += 12 * 60;
 
   const lastWake = parseHHMM(ctx.lastWake ?? '') ?? 6 * 60 + 30;
   const lastBed = parseHHMM(ctx.lastBed ?? '') ?? 23 * 60;
@@ -230,8 +237,9 @@ function parseBody(raw: string, ctx: ParseContext): ParseResult<'body'> {
 }
 
 function parseMeal(raw: string, ctx: ParseContext): ParseResult<'meal'> {
-  const t = norm(raw);
-  const kcalM = /(\d{2,4})\s*(kcal|cal|calories|calorias)/.exec(t);
+  const t = digits(norm(raw));
+  const spoken = spokenToDigits(raw.toLowerCase());
+  const kcalM = /(\d{2,4})\s*(kcal|calories|calorias|cal)/.exec(t);
   const starM = /([1-5])\s*(stars?|estrelas?|\/\s*5)/.exec(t);
   let taste: number | null = starM ? Number(starM[1]) : null;
   if (taste === null) {
@@ -242,20 +250,20 @@ function parseMeal(raw: string, ctx: ParseContext): ParseResult<'meal'> {
     else if (has(t, ['ok', 'okay', 'fine', 'normal', 'mais ou menos'])) taste = 3;
   }
   // Name: strip fillers and the rating/kcal parts.
-  let name = raw
-    .replace(/\d{2,4}\s*(kcal|cal|calories|calorias)/gi, '')
+  let name = spoken
+    .replace(/\d{2,4}\s*(kcal|calories|calorias|cal)/gi, '')
     .replace(/[1-5]\s*(stars?|estrelas?|\/\s*5)/gi, '')
     .replace(/^(i\s+)?(had|ate|eat|i had|for (breakfast|lunch|dinner))\s*/i, '')
     .replace(/^(eu\s+)?(comi|almocei|jantei|tomei)\s*/i, '')
     .replace(/[,.;]?\s*(it was|was|tasted|estava|tava|foi)\b.*$/i, '')
     .replace(/\s+(and|e)\s+/gi, ' + ')
     .trim()
-    .replace(/[.,;!]+$/, '');
+    .replace(/[\s.,;!+]+$/, '');
   const picks = MEAL_PICKS.filter((p) => norm(raw).includes(norm(p.name)));
   if (!name && picks.length) name = picks.map((p) => p.name).join(' + ');
   name = name ? name.charAt(0).toUpperCase() + name.slice(1) : '';
   const kcal = kcalM ? Number(kcalM[1]) : picks.reduce((s, p) => s + p.kcal, 0) || 500;
-  const time = findTimes(norm(raw))[0];
+  const time = findTimes(t)[0];
   const assumed: string[] = [];
   if (!kcalM) assumed.push('calories');
   if (taste === null) assumed.push('taste');

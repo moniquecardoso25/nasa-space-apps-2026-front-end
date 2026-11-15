@@ -23,8 +23,11 @@ import type {
 export const COINS_PER_LOG = 10;
 export const DAILY_CHECKIN_COINS = 50;
 
-/** The 7 log types counted in the daily ring (injury is not counted). */
-export const COUNTED_TYPES: LogType[] = ['mood', 'sleep', 'radiation', 'meal', 'exercise', 'measurement', 'meditation'];
+/**
+ * The 6 log types counted in the daily ring and "N of 6 logs done" — the ones in
+ * the Home log menu. Not counted: injury, and meditation (Relax is "coming soon").
+ */
+export const COUNTED_TYPES: LogType[] = ['mood', 'sleep', 'radiation', 'meal', 'exercise', 'measurement'];
 export const LOGS_TOTAL = COUNTED_TYPES.length;
 
 // ---------------------------------------------------------------- mission / time
@@ -269,7 +272,8 @@ export function getDailySummary(day: number = getToday(), astronautId: string = 
   const stored = getDb().daily_summaries.find((d) => d.astronautId === astronautId && d.missionDay === day);
   const dayLogs = getLogs({ astronautId, missionDay: day });
   const logsDone = COUNTED_TYPES.filter((t) => dayLogs.some((l) => l.type === t));
-  const storedCount = stored?.logsDoneCount ?? 0;
+  // compare with the stored snapshot using the same counted types
+  const storedCount = stored?.logsDone ? stored.logsDone.filter((t) => COUNTED_TYPES.includes(t as LogType)).length : (stored?.logsDoneCount ?? 0);
   const baseScore = stored?.overallScore ?? 60;
   const overallScore = Math.min(100, baseScore + Math.max(0, logsDone.length - storedCount) * 2);
   return {

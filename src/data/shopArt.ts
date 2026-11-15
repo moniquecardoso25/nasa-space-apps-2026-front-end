@@ -31,7 +31,11 @@ export type WindowSpec =
   | { kind: 'aurora' }
   | { kind: 'saturn'; planet: string }
   | { kind: 'nebula' }
-  | { kind: 'stars' };
+  | { kind: 'stars' }
+  /** "Home views": places on Earth shown on the window screen (drawn with existing palette tokens). */
+  | { kind: 'scene'; scene: EarthSceneId };
+
+export type EarthSceneId = 'beach' | 'field' | 'mountains' | 'city';
 
 export const WINDOW_SPEC: Record<string, WindowSpec> = {
   'window-earth-day': { kind: 'planet', planet: '#2066DA', rim: 'rgba(61,224,200,0.7)', sky: '#04041A' },
@@ -43,6 +47,10 @@ export const WINDOW_SPEC: Record<string, WindowSpec> = {
   'window-saturn': { kind: 'saturn', planet: '#E8C98A' },
   'window-nebula': { kind: 'nebula' },
   'window-deep-stars': { kind: 'stars' },
+  'window-beach': { kind: 'scene', scene: 'beach' },
+  'window-field': { kind: 'scene', scene: 'field' },
+  'window-mountains': { kind: 'scene', scene: 'mountains' },
+  'window-city': { kind: 'scene', scene: 'city' },
 };
 
 export type SurfaceSpec = {

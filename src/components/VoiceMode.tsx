@@ -1,28 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { cancelAnimation, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
-import { session } from '@/data/session';
 import { fontFamily } from '@/theme/fonts';
-import { C, tokens } from '@/theme/tokens';
-import { startListening, voiceEngine, type StopFn } from '@/voice/speech';
+import { C, X, tokens } from '@/theme/tokens';
+import { VOICE_LANG, startListening, voiceEngine, type StopFn, type VoiceEngine } from '@/voice/speech';
 import { speak, stopSpeaking } from '@/voice/tts';
+import { prepareWhisper, whisperReady } from '@/voice/whisper';
 
 import { OrbiDrone } from './Astronaut';
 import { AudioBars } from './AudioBars';
 import { Icon } from './Icon';
-import { Chip } from './Inputs';
+import { PrototypeTag } from './Pills';
 import { LOGIN_STARS, Stars } from './Space';
 import { Txt } from './Txt';
 
 export type VoiceReply = { say: string; end?: boolean };
-type Phase = 'idle' | 'listening' | 'thinking' | 'loading' | 'speaking';
+type Phase = 'idle' | 'listening' | 'transcribing' | 'thinking' | 'loading' | 'speaking';
+
+/** Shown in the header so it is clear which recognizer is listening (helps when something goes wrong). */
+const ENGINE_LABEL: Record<VoiceEngine, string> = {
+  native: 'phone recognizer',
+  browser: 'browser recognizer',
+  whisper: 'on-device recognizer',
+  none: 'no voice input here',
+};
+
+const busy = (p: Phase) => p === 'transcribing' || p === 'thinking' || p === 'loading';
 
 const PHASE_LABEL: Record<Phase, string> = {
   idle: 'Tap the mic to talk',
-  listening: 'Listening…',
-  thinking: 'Thinking…',
+  listening: 'Listening… tap ■ when you finish',
+  transcribing: 'Got it! Writing down what you said…',
+  thinking: 'Orbi is thinking…',
   loading: 'Getting voice ready…',
   speaking: 'Orbi is speaking · tap the mic to interrupt',
 };
@@ -33,6 +44,10 @@ type Props = {
   title: string;
   /** Spoken first (e.g. greeting or the current question). */
   intro?: string;
+  /** Example of what to say, always visible (updates with the current question). */
+  hint?: string;
+  /** Rewrites what was heard before showing / answering (Fill: numbers in words → digits). */
+  normalize?: (text: string) => string;
   /** Turns what the astronaut said into Orbi's spoken answer. `end` closes the loop after speaking. */
   respond: (text: string) => VoiceReply | Promise<VoiceReply>;
 };
@@ -50,13 +65,13 @@ export function VoiceMode(props: Props) {
   );
 }
 
-function VoiceSession({ onClose, title, intro, respond }: Props) {
+function VoiceSession({ onClose, title, intro, hint, normalize, respond }: Props) {
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<Phase>('idle');
+  const [hearing, setHearing] = useState<boolean | null>(null);
   const [heard, setHeard] = useState('');
   const [said, setSaid] = useState(intro ?? '');
   const [note, setNote] = useState<string | null>(null);
-  const [lang, setLang] = useState(session.voiceLang);
   const [typed, setTyped] = useState('');
   const engine = voiceEngine();
   const level = useSharedValue(0.06);
@@ -67,10 +82,10 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
   const speakTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const empties = useRef(0);
   const respondRef = useRef(respond);
-  const langRef = useRef(lang);
+  const normalizeRef = useRef(normalize);
   useEffect(() => {
     respondRef.current = respond;
-    langRef.current = lang;
+    normalizeRef.current = normalize;
   });
 
   // audio bar behaviour per phase (listening is driven by the mic level)
@@ -80,7 +95,7 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
     cancelAnimation(level);
     if (phase === 'speaking') {
       speakTimer.current = setInterval(() => level.set(withTiming(0.35 + Math.random() * 0.6, { duration: 110 })), 120);
-    } else if (phase === 'thinking' || phase === 'loading') {
+    } else if (busy(phase)) {
       level.set(withRepeat(withSequence(withTiming(0.32, { duration: 600 }), withTiming(0.1, { duration: 600 })), -1));
     } else if (phase === 'idle') level.set(withTiming(0.06, { duration: 200 }));
     return () => {
@@ -107,7 +122,8 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
     });
   };
 
-  const handle = async (text: string) => {
+  const handle = async (raw: string) => {
+    const text = normalizeRef.current ? normalizeRef.current(raw) : raw;
     setHeard(text);
     setPhase('thinking');
     const r = await respondRef.current(text);
@@ -128,17 +144,32 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
       setNote('Voice input is not supported here. Type below and Orbi will still answer out loud.');
       return;
     }
+    // On-device recognizer: don't open the mic until the model is ready (first use only),
+    // otherwise the download/compile would stall the voice detection.
+    if (engine === 'whisper' && !whisperReady()) {
+      setPhase('loading');
+      try {
+        await prepareWhisper((p) => alive.current && setNote(`Downloading the on-device voice model (one time only)… ${Math.round(p * 100)}%`));
+      } catch {
+        setPhase('idle');
+        setNote('Could not load the on-device voice model. Check your connection, or type below.');
+        return;
+      }
+      if (!alive.current) return;
+    }
     setNote(null);
     setPhase('listening');
+    setHearing(null);
     setHeard('');
     let got = false;
     stopRef.current = await startListening(
       {
         onPartial: (t) => setHeard(t),
+        onSpeech: (s) => setHearing(s),
         onLevel: (v) => level.set(withTiming(Math.max(0.06, v), { duration: 90 })),
         onStatus: (s, p) => {
           if (s === 'transcribing') {
-            setPhase('thinking');
+            setPhase('transcribing');
             setNote(null);
           } else if (s === 'loading') {
             setPhase('loading');
@@ -165,12 +196,18 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
           } else listen();
         },
       },
-      { lang: langRef.current },
+      { lang: VOICE_LANG },
     );
   };
 
   useEffect(() => {
     alive.current = true;
+    // Whisper: download/compile the model while Orbi says its intro, not after the first answer.
+    if (engine === 'whisper' && !whisperReady()) {
+      prepareWhisper((p) => alive.current && setNote(`Downloading the on-device voice model (one time only)… ${Math.round(p * 100)}%`))
+        .then(() => alive.current && setNote(null))
+        .catch(() => {});
+    }
     if (intro) say(intro, listen);
     else listen();
     return () => {
@@ -190,23 +227,18 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
       cancelSpeak.current();
       stopSpeaking();
     }
-    if (phase === 'thinking' || phase === 'loading') return;
+    if (busy(phase)) return;
     listen();
   };
 
   const sendTyped = () => {
     const t = typed.trim();
-    if (!t || phase === 'thinking') return;
+    if (!t || phase === 'thinking' || phase === 'transcribing') return;
     setTyped('');
     stopRef.current?.abort();
     stopRef.current = null;
     cancelSpeak.current();
     handle(t);
-  };
-
-  const pickLang = (l: typeof lang) => {
-    setLang(l);
-    session.voiceLang = l;
   };
 
   const barColor = phase === 'speaking' ? C.primary : phase === 'listening' ? C.teal : C.muted;
@@ -221,11 +253,10 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
             {title}
           </Txt>
           <Txt size={tokens.font.size.caption} color={C.teal}>
-            Voice mode · I speak = {lang === 'en-US' ? 'English' : 'Português'}
+            Voice mode · speak English · {ENGINE_LABEL[engine]}
           </Txt>
+          <PrototypeTag />
         </View>
-        <Chip label="EN" selected={lang === 'en-US'} onPress={() => pickLang('en-US')} />
-        <Chip label="PT" selected={lang === 'pt-BR'} onPress={() => pickLang('pt-BR')} />
         <Pressable accessibilityRole="button" accessibilityLabel="End voice mode" onPress={onClose} style={styles.close}>
           <Icon name="close" size={20} />
         </Pressable>
@@ -236,13 +267,20 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
         <View style={{ marginTop: 26 }}>
           <AudioBars level={level} color={barColor} bars={26} height={64} barWidth={6} />
         </View>
-        <Txt weight="600" size={tokens.font.size.small} color={barColor} accessibilityLiveRegion="polite" style={{ marginTop: 14 }}>
-          {PHASE_LABEL[phase]}
-        </Txt>
+        <View style={[styles.status, busy(phase) && styles.statusBusy]}>
+          {busy(phase) ? <ActivityIndicator size="small" color={C.teal} /> : null}
+          <Txt weight="600" size={tokens.font.size.small} color={busy(phase) ? C.text : barColor} accessibilityLiveRegion="polite">
+            {phase === 'listening' && hearing !== null ? (hearing ? 'Listening… hearing you' : 'Listening… finishing (or tap ■)') : PHASE_LABEL[phase]}
+          </Txt>
+        </View>
       </View>
 
       <View style={styles.transcript}>
-        {heard ? (
+        {phase === 'transcribing' && !heard ? (
+          <Txt size={tokens.font.size.small} color={C.muted} align="center">
+            “ … ”
+          </Txt>
+        ) : heard ? (
           <Txt size={tokens.font.size.small} color={C.muted} align="center" numberOfLines={3}>
             “{heard}”
           </Txt>
@@ -256,6 +294,16 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
           <Txt size={tokens.font.size.caption} color={C.warning} align="center">
             {note}
           </Txt>
+        ) : null}
+        {hint ? (
+          <View style={styles.hint} accessibilityLabel={`Try saying: ${hint}`}>
+            <Txt weight="700" size={tokens.font.size.tiny} color={C.teal}>
+              TRY SAYING
+            </Txt>
+            <Txt size={tokens.font.size.small} align="center">
+              {hint.replace(/^e\.g\.\s*/, '')}
+            </Txt>
+          </View>
         ) : null}
       </View>
 
@@ -279,10 +327,10 @@ function VoiceSession({ onClose, title, intro, respond }: Props) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={micOn ? 'Done talking' : 'Talk'}
-            accessibilityState={{ selected: micOn, disabled: engine === 'none' }}
-            disabled={engine === 'none'}
+            accessibilityState={{ selected: micOn, disabled: engine === 'none' || busy(phase) }}
+            disabled={engine === 'none' || busy(phase)}
             onPress={onMic}
-            style={[styles.mic, micOn && styles.micOn, engine === 'none' && { opacity: 0.35 }]}>
+            style={[styles.mic, micOn && styles.micOn, (engine === 'none' || busy(phase)) && { opacity: 0.35 }]}>
             <Icon name={micOn ? 'stop' : 'mic'} size={28} color={micOn ? C.bg : C.teal} />
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="End" onPress={onClose} style={styles.end}>
@@ -299,6 +347,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  status: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, minHeight: 36, paddingHorizontal: 14, borderRadius: tokens.radius.pill },
+  hint: { alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 12, borderRadius: tokens.radius.item, backgroundColor: X.tealSoft, borderWidth: 1, borderColor: C.teal },
+  statusBusy: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   transcript: { gap: 10, minHeight: 120, justifyContent: 'flex-end', paddingHorizontal: 8, marginBottom: 16 },
   bottom: { gap: 14 },
   typeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

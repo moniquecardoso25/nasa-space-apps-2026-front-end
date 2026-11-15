@@ -9,11 +9,13 @@ import { Icon } from '@/components/Icon';
 import { Chip, Segmented } from '@/components/Inputs';
 import { Txt } from '@/components/Txt';
 import { VoiceMode } from '@/components/VoiceMode';
+import { VoicePrep } from '@/components/VoicePrep';
 import { addAiMessage, addJournalEntry, dayOfDate, getAiMessages, getJournal, getTodayLogs } from '@/data/api';
 import { hhmm, relativeDay } from '@/data/format';
 import { journalSummary, orbiReply, type OrbiAction } from '@/data/orbi';
 import { useData } from '@/data/store';
 import type { AiMessage, ChatMode } from '@/data/types';
+import { useVoiceGate } from '@/voice/useVoiceGate';
 import { fontFamily } from '@/theme/fonts';
 import { C, X, tokens } from '@/theme/tokens';
 
@@ -28,6 +30,8 @@ export default function Orbi() {
   const [lastActions, setLastActions] = useState<OrbiAction[] | null>(null);
   const scroll = useRef<ScrollViewInstance>(null);
   const [voice, setVoice] = useState(false);
+  // start the on-device voice download as soon as this screen opens; voice unlocks when ready
+  const gate = useVoiceGate();
 
   const journalMsgs = useData(() => {
     const msgs = getAiMessages();
@@ -162,6 +166,11 @@ export default function Orbi() {
           </View>
         ) : null}
       </ScrollView>
+      {gate.needs && !gate.ready ? (
+        <View style={{ paddingHorizontal: 16, paddingBottom: 6 }}>
+          <VoicePrep gate={gate} />
+        </View>
+      ) : null}
       <View style={styles.composer}>
         <TextInput
           value={text}
@@ -173,7 +182,13 @@ export default function Orbi() {
           returnKeyType="send"
           style={styles.input}
         />
-        <Pressable accessibilityRole="button" accessibilityLabel="Voice mode: talk with Orbi" onPress={() => setVoice(true)} style={[styles.round, styles.mic]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={gate.ready ? 'Voice mode: talk with Orbi' : 'Voice mode: preparing'}
+          accessibilityState={{ disabled: !gate.ready }}
+          disabled={!gate.ready}
+          onPress={() => setVoice(true)}
+          style={[styles.round, styles.mic, !gate.ready && { opacity: 0.35 }]}>
           <Icon name="wave" size={20} color={C.teal} />
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Send" onPress={() => send(text)} style={[styles.round, styles.send]}>
@@ -185,6 +200,7 @@ export default function Orbi() {
         onClose={() => setVoice(false)}
         title={mode === 'private' ? 'Orbi · Private' : 'Orbi · Journal'}
         intro={mode === 'private' ? 'Private voice chat. Nothing is saved. What is on your mind?' : `I'm listening. How are you doing today?`}
+        hint={'“I slept badly” · “I feel stressed” · “I miss my family” · “make a wind-down plan”'}
         respond={(t) => ({ say: send(t) })}
       />
     </KeyboardAvoidingView>

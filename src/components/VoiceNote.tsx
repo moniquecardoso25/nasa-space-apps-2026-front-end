@@ -8,20 +8,22 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { session } from '@/data/session';
 import type { VoiceNote } from '@/data/types';
 import { C, X, tokens } from '@/theme/tokens';
 import { dbToLevel, decodeTo16k } from '@/voice/mic';
-import { startListening, voiceEngine, type StopFn } from '@/voice/speech';
-import { transcribe, whisperSupported } from '@/voice/whisper';
+import { VOICE_LANG, startListening, voiceEngine, type StopFn } from '@/voice/speech';
+import { useVoiceGate } from '@/voice/useVoiceGate';
+import { prepareWhisper, transcribe, whisperSupported } from '@/voice/whisper';
 
 import { AudioBars } from './AudioBars';
 import { ProgressBar } from './Charts';
 import { Icon } from './Icon';
 import { Chip } from './Inputs';
+import { PrototypeTag } from './Pills';
+import { VoicePrep } from './VoicePrep';
 import { Txt } from './Txt';
 
 const MAX_SEC = 60;
@@ -73,6 +75,8 @@ export function VoiceNoteRecorder({ value, onChange }: { value: VoiceNote | null
   const sttStop = useRef<StopFn | null>(null);
   const sttText = useRef('');
   const engine = voiceEngine();
+  // the on-device model (transcripts) downloads when the check-in opens; recording unlocks when ready
+  const gate = useVoiceGate();
 
   useEffect(() => {
     if (recording && rs.metering !== undefined) level.set(withTiming(Math.max(0.06, dbToLevel(rs.metering)), { duration: 80 }));
@@ -92,6 +96,8 @@ export function VoiceNoteRecorder({ value, onChange }: { value: VoiceNote | null
       await recorder.prepareToRecordAsync();
       recorder.record();
       setRecording(true);
+      // warm the on-device model while recording (Firefox / fallback)
+      if (Platform.OS === 'web' && engine !== 'browser' && whisperSupported()) prepareWhisper().catch(() => {});
       setLive('');
       sttText.current = '';
       // Chrome / Edge / Safari: transcribe live while recording.
@@ -101,7 +107,7 @@ export function VoiceNoteRecorder({ value, onChange }: { value: VoiceNote | null
             onPartial: (t) => setLive(t),
             onFinal: (t) => (sttText.current = t),
           },
-          { lang: session.voiceLang, continuous: true },
+          { lang: VOICE_LANG, continuous: true },
         );
       }
     } catch {
@@ -133,9 +139,9 @@ export function VoiceNoteRecorder({ value, onChange }: { value: VoiceNote | null
     // Firefox (or the browser recognizer failed): on-device Whisper after the fact.
     if (!transcript && Platform.OS === 'web' && whisperSupported()) {
       try {
-        setBusy('Transcribing on this device…');
+        setBusy('Got it! Writing down what you said…');
         const pcm = await decodeTo16k(await (await fetch(uri)).blob());
-        transcript = (await transcribe(pcm, session.voiceLang, (p) => setBusy(`Downloading the voice model (one time only)… ${Math.round(p * 100)}%`))) || undefined;
+        transcript = (await transcribe(pcm, VOICE_LANG, (p) => setBusy(`Getting voice ready (one time only)… ${Math.round(p * 100)}%`))) || undefined;
         if (transcript) onChange({ uri, durationSec, transcript });
       } catch {
         // keep the audio without a transcript
@@ -164,6 +170,7 @@ export function VoiceNoteRecorder({ value, onChange }: { value: VoiceNote | null
   if (recording) {
     return (
       <View style={[styles.box, styles.boxRec]}>
+        <PrototypeTag />
         <View style={styles.recHead}>
           <View style={styles.recDot} />
           <Txt weight="700" size={tokens.font.size.small}>
@@ -177,7 +184,11 @@ export function VoiceNoteRecorder({ value, onChange }: { value: VoiceNote | null
           <Txt size={tokens.font.size.caption} color={C.muted} numberOfLines={3}>
             “{live}”
           </Txt>
-        ) : null}
+        ) : (
+          <Txt size={tokens.font.size.caption} color={C.teal}>
+            e.g. “Long lab shift today. I miss my family, but I feel focused.”
+          </Txt>
+        )}
         <Pressable accessibilityRole="button" accessibilityLabel="Stop recording" onPress={stop} style={styles.stopBtn}>
           <Icon name="stop" size={18} color={C.bg} />
           <Txt weight="700" size={tokens.font.size.body} color={C.bg}>
@@ -193,25 +204,36 @@ export function VoiceNoteRecorder({ value, onChange }: { value: VoiceNote | null
       <View style={styles.box}>
         <VoiceNotePlayer note={value} />
         {busy ? (
-          <Txt size={tokens.font.size.caption} color={C.teal}>
-            {busy}
-          </Txt>
+          <View style={styles.row}>
+            <ActivityIndicator size="small" color={C.teal} />
+            <Txt size={tokens.font.size.caption} color={C.teal} accessibilityLiveRegion="polite">
+              {busy}
+            </Txt>
+          </View>
         ) : value.transcript ? (
           <Txt size={tokens.font.size.small} color={C.muted} lh={1.45}>
             “{value.transcript}”
           </Txt>
         ) : null}
-        <View style={styles.row}>
+        {busy ? null : (
+          <View style={styles.row}>
           <Chip label="Re-record" onPress={start} />
           <Chip label="Delete" onPress={() => onChange(null)} />
         </View>
+        )}
       </View>
     );
   }
 
   return (
     <View style={{ gap: 6 }}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Record a voice note" onPress={start} style={styles.recordBtn}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={gate.ready || !gate.needs ? 'Record a voice note' : 'Voice note: preparing'}
+        accessibilityState={{ disabled: gate.needs && !gate.ready }}
+        disabled={gate.needs && !gate.ready}
+        onPress={start}
+        style={[styles.recordBtn, gate.needs && !gate.ready && { opacity: 0.35 }]}>
         <Icon name="mic" size={20} color={C.teal} />
         <Txt weight="600" size={tokens.font.size.body} color={C.teal}>
           Record a voice note
@@ -219,6 +241,11 @@ export function VoiceNoteRecorder({ value, onChange }: { value: VoiceNote | null
       </Pressable>
       <Txt size={tokens.font.size.caption} color={C.muted}>
         Optional · up to 1 min · say anything about how you feel
+      </Txt>
+      <VoicePrep gate={gate} />
+      <PrototypeTag />
+      <Txt size={tokens.font.size.caption} color={C.teal}>
+        e.g. “Long lab shift today. I miss my family, but I feel focused.”
       </Txt>
       {error ? (
         <Txt size={tokens.font.size.caption} color={C.warning}>

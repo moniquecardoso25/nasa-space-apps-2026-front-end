@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { FLOOR_SPEC, HELMET_COLOR, JELLY_COLOR, SUIT_COLOR, WALL_SPEC, WINDOW_SPEC, type SurfaceSpec, type WindowSpec } from '@/data/shopArt';
+import { FLOOR_SPEC, HELMET_COLOR, JELLY_COLOR, SUIT_COLOR, WALL_SPEC, WINDOW_SPEC, type EarthSceneId, type SurfaceSpec, type WindowSpec } from '@/data/shopArt';
 import { C, X } from '@/theme/tokens';
 
 /** Helmet thumbnail (also used as crew avatar on the leaderboard). */
@@ -69,8 +69,155 @@ export function PetArt({ id, size = 44 }: { id: string; size?: number }) {
 }
 
 /** Window view (sky + planet) at any size. */
+/** Deterministic lit/unlit pattern for city windows. */
+const lit = (i: number, j: number) => ((i * 7 + j * 13) % 5 < 2 ? 0.95 : (i + j) % 3 === 0 ? 0.35 : 0);
+
+/**
+ * Places on Earth for the window screen (beach, countryside, mountains, city at night).
+ * Drawn on a 100×100 canvas that fills any size (slice), only with palette tokens.
+ */
+export function EarthScene({ scene, width, height, clouds = true }: { scene: EarthSceneId; width: number; height: number; clouds?: boolean }) {
+  const g = `es-${scene}-${width}`;
+  const day = scene === 'beach' || scene === 'field';
+  const sky: [string, string][] = day
+    ? [
+        ['0', X.loginEarth1],
+        ['0.6', X.earthLight],
+      ]
+    : scene === 'mountains'
+      ? [
+          ['0', X.loginEarth3],
+          ['0.45', C.primary],
+          ['0.75', C.warning],
+        ]
+      : [
+          ['0', X.space],
+          ['0.7', X.console],
+        ];
+  return (
+    <Svg width={width} height={height} viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <Defs>
+        <LinearGradient id={`${g}-sky`} x1="0" y1="0" x2="0" y2="1">
+          {sky.map(([o, c]) => (
+            <Stop key={o} offset={o} stopColor={c} />
+          ))}
+        </LinearGradient>
+      </Defs>
+      <Rect width={100} height={100} fill={`url(#${g}-sky)`} />
+
+      {scene === 'beach' && (
+        <>
+          <Circle cx={72} cy={24} r={13} fill={C.gold} opacity={0.25} />
+          <Circle cx={72} cy={24} r={8} fill={C.gold} />
+          <Rect y={52} width={100} height={24} fill={X.earthMid} />
+          <Rect y={52} width={100} height={1.5} fill={X.earthLight} />
+          <Rect x={66} y={56} width={12} height={1.2} rx={0.6} fill={C.gold} opacity={0.7} />
+          <Rect x={68} y={60} width={8} height={1.2} rx={0.6} fill={C.gold} opacity={0.5} />
+          <Path d="M0 66 Q8 63 16 66 T32 66 T48 66 T64 66 T80 66 T100 66" stroke={X.white} strokeWidth={1.2} fill="none" opacity={0.6} />
+          <Path d="M0 74 Q25 66 55 72 T100 70 V100 H0 Z" fill={X.sand} />
+          <Path d="M0 74 Q25 66 55 72 T100 70" stroke={X.white} strokeWidth={1.5} fill="none" opacity={0.75} />
+          {/* palm */}
+          <Path d="M17 100 Q15 80 22 60" stroke={X.streakEmpty} strokeWidth={2.6} fill="none" strokeLinecap="round" />
+          <Path d="M22 60 Q12 54 4 60 Q13 55 22 61Z M22 60 Q30 52 40 57 Q30 54 22 61Z M22 60 Q20 50 12 46 Q21 51 22 61Z M22 60 Q28 48 36 46 Q27 52 22 61Z" fill={X.land} stroke={X.land} strokeWidth={1.6} strokeLinejoin="round" />
+        </>
+      )}
+
+      {scene === 'field' && (
+        <>
+          <Circle cx={24} cy={22} r={12} fill={C.gold} opacity={0.25} />
+          <Circle cx={24} cy={22} r={7} fill={C.gold} />
+          <Path d="M0 58 Q22 46 46 55 T100 50 V100 H0 Z" fill={X.landLight} />
+          <Path d="M0 70 Q35 58 65 68 T100 64 V100 H0 Z" fill={X.land} />
+          <Path d="M0 84 Q40 78 100 82 V100 H0 Z" fill={X.plantMid} />
+          {/* tree */}
+          <Rect x={77} y={52} width={2} height={12} fill={X.streakEmpty} />
+          <Circle cx={78} cy={50} r={6} fill={X.plantDark} />
+          {/* fence */}
+          {[8, 20, 32, 44, 56].map((x) => (
+            <Rect key={x} x={x} y={76} width={1.6} height={10} fill={X.sand} />
+          ))}
+          <Rect x={6} y={78.5} width={54} height={1.2} fill={X.sand} />
+          <Rect x={6} y={82.5} width={54} height={1.2} fill={X.sand} />
+          {[
+            [14, 92, C.gold],
+            [27, 95, C.danger],
+            [40, 91, X.white],
+            [63, 94, C.gold],
+            [74, 90, C.danger],
+            [88, 95, X.white],
+          ].map(([x, y, c], i) => (
+            <Circle key={i} cx={x as number} cy={y as number} r={1.3} fill={c as string} />
+          ))}
+        </>
+      )}
+
+      {scene === 'mountains' && (
+        <>
+          <Circle cx={80} cy={20} r={3.5} fill={X.suit} />
+          <Path d="M0 64 L18 42 L30 54 L46 30 L62 50 L78 36 L100 58 V100 H0 Z" fill={X.consoleBar} />
+          <Path d="M46 30 L40 38 L44 37 L47 40 L50 36 L53 37 Z M78 36 L73 42 L77 41 L80 43 L83 41 Z M18 42 L14 47 L18 46 L21 48 Z" fill={X.white} opacity={0.9} />
+          <Path d="M0 76 L20 58 L38 72 L60 55 L82 74 L100 64 V100 H0 Z" fill={X.console} />
+          <Rect y={82} width={100} height={18} fill={X.earthDeep} />
+          <Rect x={30} y={86} width={22} height={1} fill={C.warning} opacity={0.6} />
+          <Rect x={36} y={90} width={12} height={1} fill={C.warning} opacity={0.4} />
+          {[6, 12, 88, 94].map((x) => (
+            <Path key={x} d={`M${x} 82 L${x - 3.5} 82 L${x} 70 L${x + 3.5} 82 Z`} fill={X.visor} />
+          ))}
+        </>
+      )}
+
+      {scene === 'city' && (
+        <>
+          <Circle cx={82} cy={18} r={6} fill={X.suit} />
+          <Circle cx={84.5} cy={16.5} r={5} fill={X.space} opacity={0.35} />
+          <Rect y={60} width={100} height={40} fill={C.primary} opacity={0.12} />
+          {[
+            [2, 50, 14],
+            [18, 40, 12],
+            [32, 54, 10],
+            [44, 34, 14],
+            [60, 46, 12],
+            [74, 38, 10],
+            [86, 52, 14],
+          ].map(([x, y, w], i) => (
+            <Rect key={`b${i}`} x={x} y={y} width={w} height={100 - y} fill={C.track} />
+          ))}
+          {[
+            [0, 66, 12],
+            [12, 58, 14],
+            [27, 70, 12],
+            [40, 56, 16],
+            [57, 64, 13],
+            [71, 60, 12],
+            [84, 68, 16],
+          ].map(([x, y, w], i) => (
+            <G key={`f${i}`}>
+              <Rect x={x} y={y} width={w} height={100 - y} fill={X.consoleBar} />
+              {Array.from({ length: Math.floor((w - 2) / 4) }, (_, a) =>
+                Array.from({ length: Math.floor((96 - y) / 5) }, (_, b) => {
+                  const o = lit(i * 3 + a, b);
+                  return o ? <Rect key={`${a}-${b}`} x={x + 2 + a * 4} y={y + 3 + b * 5} width={2} height={2.4} fill={C.gold} opacity={o} /> : null;
+                }),
+              )}
+            </G>
+          ))}
+        </>
+      )}
+
+      {day &&
+        clouds &&
+        [
+          [16, 14, 10],
+          [52, 10, 14],
+          [88, 30, 9],
+        ].map(([x, y, w], i) => <Ellipse key={i} cx={x} cy={y} rx={w} ry={w * 0.32} fill={X.white} opacity={0.85} />)}
+    </Svg>
+  );
+}
+
 export function WindowView({ id, width, height }: { id: string; width: number; height: number }) {
   const spec: WindowSpec = WINDOW_SPEC[id] ?? WINDOW_SPEC['window-earth-day'];
+  if (spec.kind === 'scene') return <EarthScene scene={spec.scene} width={width} height={height} />;
   const cx = width / 2;
   const cy = height * 1.3;
   const R = Math.hypot(cx, cy);

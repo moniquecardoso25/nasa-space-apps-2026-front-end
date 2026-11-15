@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 import { micAvailable, openMic, type MicSession } from './mic';
-import { transcribe, whisperSupported } from './whisper';
+import { prepareWhisper, transcribe, whisperReady, whisperSupported } from './whisper';
 
 /**
  * Speech-to-text with the best engine available:
@@ -25,6 +25,9 @@ try {
 let browserBroken = false;
 
 export type VoiceEngine = 'native' | 'browser' | 'whisper' | 'none';
+
+/** Voice input is English only (the app and Orbi's replies are in English). */
+export const VOICE_LANG = 'en-US';
 
 function hasWebSpeech(): boolean {
   if (typeof window === 'undefined') return false;
@@ -60,6 +63,8 @@ export type ListenHandlers = {
   onLevel?: (level: number) => void;
   /** Whisper engine: loading the model (progress 0…1) / transcribing. */
   onStatus?: (status: ListenStatus, progress?: number) => void;
+  /** On-device engine: voice detected (true) / quiet again (false), for "hearing you…" feedback. */
+  onSpeech?: (speaking: boolean) => void;
 };
 
 export type ListenOptions = { lang?: string; continuous?: boolean };
@@ -72,7 +77,7 @@ const noop: StopFn = Object.assign(() => {}, { abort: () => {} });
 /** Starts one listening session. */
 export async function startListening(h: ListenHandlers, opts: ListenOptions | string = {}): Promise<StopFn> {
   const o: ListenOptions = typeof opts === 'string' ? { lang: opts } : opts;
-  const lang = o.lang ?? 'en-US';
+  const lang = o.lang ?? VOICE_LANG;
   const engine = voiceEngine();
   if (engine === 'none') {
     h.onError?.('Voice input is not available here.');
@@ -175,6 +180,17 @@ async function listenRecognizer(h: ListenHandlers, lang: string, continuous: boo
 // ------------------------------------------------------------ on-device Whisper (web)
 
 async function listenWhisper(h: ListenHandlers, lang: string, continuous: boolean): Promise<StopFn> {
+  // First use: download + warm the model BEFORE opening the mic, so the work can't
+  // stall voice detection. Every screen that listens gets this (voice mode, Fill mic…).
+  if (!whisperReady()) {
+    try {
+      await prepareWhisper((p) => h.onStatus?.('loading', p));
+    } catch {
+      h.onError?.('Could not load the on-device voice model. Check your connection and try again, or type instead.');
+      h.onEnd?.();
+      return noop;
+    }
+  }
   let mic: MicSession;
   try {
     mic = await openMic({ capture: true });
@@ -184,28 +200,39 @@ async function listenWhisper(h: ListenHandlers, lang: string, continuous: boolea
     return noop;
   }
   h.onStatus?.('listening');
+  const TICK = 50;
   const start = Date.now();
-  const maxMs = continuous ? 60000 : 15000;
-  const silenceMs = continuous ? 2500 : 1300;
-  let floor = 0;
-  let floorN = 0;
+  const maxMs = continuous ? 60000 : 10000;
+  const silenceMs = continuous ? 2000 : 1000;
+  // Adaptive noise floor (level units, 0.1 ≈ 4 dB): drops fast, rises slowly, so a
+  // steady fan / hum / street noise becomes "silence" after a moment instead of
+  // keeping the turn open forever.
+  let floor = -1;
+  let speaking = false;
   let spokeMs = 0;
+  let firstLoud = 0;
   let lastLoud = 0;
   let finished = false;
 
-  const finalize = async (keep: boolean) => {
+  const finalize = async (keep: boolean, manual = false) => {
     if (finished) return;
     finished = true;
     clearInterval(timer);
+    // tell the UI right away (before decoding) so the "writing down…" loader shows instantly
+    if (keep && (spokeMs >= 200 || manual)) h.onStatus?.('transcribing');
     const pcm = await mic.stop().catch(() => null);
     h.onLevel?.(0);
-    if (!keep || !pcm || spokeMs < 250) {
+    if (!keep || !pcm || (spokeMs < 200 && !manual)) {
       h.onEnd?.();
       return;
     }
+    // Only send the part with speech (+ a little margin): less audio → faster Whisper.
+    const from = firstLoud ? Math.max(0, Math.floor(((firstLoud - start - 400) / 1000) * 16000)) : 0;
+    const to = lastLoud ? Math.min(pcm.length, Math.ceil(((lastLoud - start + 700) / 1000) * 16000)) : pcm.length;
+    const clip = to - from > 16000 * 0.3 ? pcm.subarray(from, to) : pcm;
     try {
       h.onStatus?.('transcribing');
-      const text = await transcribe(pcm, lang, (p) => h.onStatus?.('loading', p));
+      const text = await transcribe(clip, lang, (p) => h.onStatus?.('loading', p));
       h.onStatus?.('transcribing');
       if (text) h.onFinal(text);
     } catch {
@@ -214,23 +241,44 @@ async function listenWhisper(h: ListenHandlers, lang: string, continuous: boolea
     h.onEnd?.();
   };
 
-  // Voice-activity detection: calibrate the noise floor, then stop after a pause.
+  // Voice-activity detection: speech = clearly above the room; turn ends after a short pause.
+  let calib: number[] = [];
+  let peak = 0;
+  let wasSpeaking = false;
   const timer = setInterval(() => {
     const lvl = mic.level();
     h.onLevel?.(lvl);
-    const t = Date.now() - start;
-    if (t < 300) {
-      floor = (floor * floorN + lvl) / ++floorN;
-      return;
+    const now = Date.now();
+    const t = now - start;
+    // 1) Calibrate the room for ~300 ms. Ignore the all-zero frames many browsers
+    //    deliver while the mic starts (a zero "room" made any noise look like speech).
+    if (floor < 0) {
+      if (lvl > 0.001) calib.push(lvl);
+      if (t < 300 || !calib.length) return;
+      floor = Math.min(...calib);
+      calib = [];
     }
-    const threshold = Math.max(0.28, floor + 0.15);
-    if (lvl > threshold) {
-      spokeMs += 66;
-      lastLoud = Date.now();
+    // 2) The floor follows the room: drops fast, creeps up slowly (faster when quiet).
+    floor += (lvl - floor) * (lvl < floor ? 0.3 : speaking ? 0.002 : 0.01);
+    // 3) Speaking = clearly above the room to start (~7 dB); to keep speaking it must
+    //    also stay within ~14 dB of the voice's own peak, so steady noise, or the
+    //    browser turning the gain up after you stop, counts as silence.
+    if (speaking) peak = Math.max(peak * 0.997, lvl);
+    const keep = Math.max(floor + 0.08, peak - 0.35);
+    speaking = speaking ? lvl > keep : lvl > floor + 0.18 && lvl > 0.12;
+    if (speaking) {
+      if (!spokeMs) peak = lvl;
+      spokeMs += TICK;
+      if (!firstLoud) firstLoud = now;
+      lastLoud = now;
     }
-    const spoke = spokeMs >= 250;
-    if ((spoke && Date.now() - lastLoud > silenceMs) || t > maxMs || (!spoke && t > 8000)) finalize(true);
-  }, 66);
+    // UI feedback: "hearing you" at once, "finishing" only after 350 ms of quiet (no flicker between words)
+    const shown = speaking || (spokeMs > 0 && now - lastLoud < 350);
+    if (shown !== wasSpeaking) h.onSpeech?.(shown);
+    wasSpeaking = shown;
+    const spoke = spokeMs >= 200;
+    if ((spoke && now - lastLoud > silenceMs) || t > maxMs || (!spoke && t > 7000)) finalize(true);
+  }, TICK);
 
-  return Object.assign(() => void finalize(true), { abort: () => void finalize(false) });
+  return Object.assign(() => void finalize(true, true), { abort: () => void finalize(false) });
 }

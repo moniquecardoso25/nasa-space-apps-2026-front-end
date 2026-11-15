@@ -9139,6 +9139,34 @@
       "asset": "assets/shop/window-deep-stars.png"
     },
     {
+      "id": "window-beach",
+      "category": "window",
+      "name": "Beach",
+      "price": 400,
+      "asset": "assets/shop/window-beach.png"
+    },
+    {
+      "id": "window-field",
+      "category": "window",
+      "name": "Countryside",
+      "price": 350,
+      "asset": "assets/shop/window-field.png"
+    },
+    {
+      "id": "window-mountains",
+      "category": "window",
+      "name": "Mountains",
+      "price": 450,
+      "asset": "assets/shop/window-mountains.png"
+    },
+    {
+      "id": "window-city",
+      "category": "window",
+      "name": "City lights",
+      "price": 500,
+      "asset": "assets/shop/window-city.png"
+    },
+    {
       "id": "wall-lilac",
       "category": "wall",
       "name": "Lilac panels",

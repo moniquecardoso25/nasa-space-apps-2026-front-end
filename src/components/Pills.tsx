@@ -51,6 +51,17 @@ export function HealthTag({ level, label }: { level: Level; label: string }) {
   );
 }
 
+/** "Temporary" notice wherever the app listens: today's speech-recognition model is provisional; a better one will replace it. */
+export function PrototypeTag({ label = 'Temporary speech recognition · a better model will replace it' }: { label?: string }) {
+  return (
+    <View accessibilityLabel={label} style={[styles.badge, styles.proto]}>
+      <Txt weight="600" size={tokens.font.size.tiny} color={C.gold}>
+        {label}
+      </Txt>
+    </View>
+  );
+}
+
 /** Small muted badge ("Prefilled by ARCHeR wrist band", "Coming soon"). */
 export function Badge({ label, color = C.muted, bg = X.mutedSoft }: { label: string; color?: string; bg?: string }) {
   return (
@@ -101,6 +112,7 @@ const styles = StyleSheet.create({
   },
   today: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: tokens.radius.pill, borderWidth: 1 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
+  proto: { alignSelf: 'flex-start', backgroundColor: X.goldSoft, borderWidth: 1, borderColor: X.goldBannerBorder },
   badge: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: tokens.radius.pill },
   legend: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16, flexWrap: 'wrap' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },

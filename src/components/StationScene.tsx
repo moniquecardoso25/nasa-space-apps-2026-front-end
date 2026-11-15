@@ -4,7 +4,9 @@ import Svg, { Circle, Defs, Ellipse, LinearGradient, RadialGradient, Rect, Stop 
 
 import { C, X, tokens } from '@/theme/tokens';
 
-import { Surface, WindowView, floorSpec, wallSpec } from './ShopArt';
+import { WINDOW_SPEC } from '@/data/shopArt';
+
+import { EarthScene, Surface, WindowView, floorSpec, wallSpec } from './ShopArt';
 import { Stars, useLoop, useSway } from './Space';
 
 /** Window frame in AppHome: 334×340, 8px track border, radius 44. */
@@ -124,6 +126,30 @@ export function WindowEarth({ innerW, innerH }: { innerW: number; innerH: number
   );
 }
 
+/** Clouds sliding across a day scene (beach, countryside); wraps around. Same shapes as EarthScene, in window pixels. */
+function DriftClouds({ width, height }: { width: number; height: number }) {
+  const t = useLoop(70000);
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: (t.value - 1) * width }] }));
+  // EarthScene uses a 100×100 slice canvas: map its cloud coordinates to the window
+  const s = Math.max(width, height) / 100;
+  const ox = (width - 100 * s) / 2;
+  const oy = (height - 100 * s) / 2;
+  const CLOUD: [number, number, number][] = [
+    [16, 14, 10],
+    [52, 10, 14],
+    [88, 30, 9],
+  ];
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: width * 2, height }, style]}>
+      <Svg width={width * 2} height={height}>
+        {[0, width].map((dx) =>
+          CLOUD.map(([x, y, w], i) => <Ellipse key={`${dx}-${i}`} cx={dx + ox + x * s} cy={oy + y * s} rx={w * s} ry={w * 0.32 * s} fill={X.white} opacity={0.85} />),
+        )}
+      </Svg>
+    </Animated.View>
+  );
+}
+
 /** Station window with stars and Earth (or the equipped window view). */
 export function StationWindow({
   height = WINDOW.height,
@@ -136,6 +162,8 @@ export function StationWindow({
 }) {
   const innerW = width - 16;
   const innerH = height - 16;
+  const spec = WINDOW_SPEC[view];
+  const scene = spec?.kind === 'scene' ? spec.scene : null;
   return (
     <View
       pointerEvents="none"
@@ -156,6 +184,11 @@ export function StationWindow({
         <>
           <Stars stars={WINDOW_STARS} driftWidth={innerW} />
           <WindowEarth innerW={innerW} innerH={innerH} />
+        </>
+      ) : scene ? (
+        <>
+          <EarthScene scene={scene} width={innerW} height={innerH} clouds={false} />
+          {scene === 'beach' || scene === 'field' ? <DriftClouds width={innerW} height={innerH} /> : <Stars stars={WINDOW_STARS.filter((st) => st[1] < innerH * 0.3)} driftWidth={innerW} />}
         </>
       ) : (
         <>

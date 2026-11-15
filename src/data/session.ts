@@ -10,10 +10,7 @@ export const session: {
   bpCuffPaired: boolean;
   /** Summary of the last "Fill with Orbi" save, shown once on Home. */
   orbiFill: { saved: string[]; coins: number; at: number } | null;
-  /** Speech-recognition language for voice input (Orbi always answers in English). */
-  voiceLang: 'en-US' | 'pt-BR';
 } = {
-  voiceLang: 'en-US',
   onboardedThisSession: false,
   reminders: true,
   bpCuffPaired: false,

@@ -42,8 +42,9 @@ Icons: simple 24×24 stroke icons: smile, moon, sun, activity, utensils, leaf, c
 | `LogScreen`, `SavedBanner`, `ListRow`, `MetricTile`, `Stars`, `Note`, `ComingSoon`, `Greyed`, `Stepper` | `LogKit.tsx` | Shared pieces of the log screens |
 | `OnboardingShell` | `Onboarding.tsx` | Step header, 5-step progress, sticky CTA |
 | `StationWindow`, `StationProps`, `StationWall` | `StationScene.tsx` | Home scene (window/Earth, console, plant, floor) using the equipped room items |
-| `HelmetIcon`, `SuitIcon`, `PetArt`, `WindowView`, `Surface`, `RoomSwatch` | `ShopArt.tsx` | Shop items drawn in SVG (`src/data/shopArt.ts`) |
+| `HelmetIcon`, `SuitIcon`, `PetArt`, `WindowView`, `EarthScene`, `Surface`, `RoomSwatch` | `ShopArt.tsx` | Shop items drawn in SVG (`src/data/shopArt.ts`); `EarthScene` = beach / countryside / mountains / city window views |
 | `DraftCard` | `FillCards.tsx` | Editable confirmation card of Fill with Orbi |
+| `PrototypeTag` | `Pills.tsx` | Gold notice "Temporary speech recognition · a better model will replace it", shown wherever the app listens (voice mode, Fill with Orbi voice, mood voice note) |
 | `HealthTag` | `Pills.tsx` | Status tag (dot + "Doing well" / "Attention" / "Alert") shown instead of the overall score |
 | `AudioBars` | `AudioBars.tsx` | Live audio bars driven by a 0…1 level (mic input or synthetic while Orbi speaks) |
 | `VoiceMode` | `VoiceMode.tsx` | Full-screen hands-free conversation with Orbi (speak → listen → answer loop), used by Orbi chat and Fill with Orbi |

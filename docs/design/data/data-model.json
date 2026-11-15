@@ -166,7 +166,7 @@
         "missionDay": "number",
         "logsDone": "string[] of types",
         "logsDoneCount": "0..7 (mood, sleep, radiation, measurement, meal, exercise, injury not counted)",
-        "logsTotal": "7 (mood, sleep, radiation, measurement, meal, exercise, meditation)",
+        "logsTotal": "6 (mood, sleep, radiation, measurement, meal, exercise) — the Home log menu; meditation (Relax, coming soon) and injury are not counted. The app recomputes it (COUNTED_TYPES in src/data/api.ts); the mock files still store 7",
         "overallScore": "0..100 — internal only: the UI shows a status tag instead of the number (≥70 'Doing well' ok, ≥50 'Attention' warn, else 'Alert'), see healthTag() in src/data/api.ts",
         "areas": "{head, torso, armL, armR, legL, legR}: 'ok'|'warn'|'alert' → hologram colors. Computed = stored areas, then every injury (logged up to that day) with status 'active' or 'healing' sets its area(s) to 'alert' (holoAlert). Mapping: head/neck → head, back → torso, arm/hand → armL/armR by side, leg/knee/foot → legL/legR by side ('center' → both). Left/right = the astronaut's side shown on the viewer's left/right column of the hologram (armL left, armR right)."
       }

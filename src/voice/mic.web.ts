@@ -53,7 +53,7 @@ export async function openMic({ capture }: { capture: boolean }): Promise<MicSes
   if (!Ctx || !navigator.mediaDevices?.getUserMedia) throw new Error('Microphone is not available in this browser.');
   let stream: MediaStream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false } });
   } catch {
     throw new Error('Microphone permission was denied.');
   }

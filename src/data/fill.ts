@@ -18,11 +18,11 @@ export const FILL_LABEL: Record<FillCategory, string> = {
 };
 
 export const FILL_QUESTION: Record<FillCategory, { q: string; hint: string }> = {
-  mood: { q: 'How are you feeling today?', hint: 'e.g. “good, a bit tired” or “bem, focado”' },
-  sleep: { q: 'How did you sleep last night? Hours or bed/wake times both work.', hint: 'e.g. “slept 6 hours, woke twice” or “dormi 6 horas”' },
-  radiation: { q: 'What does your dosimeter badge read today?', hint: 'e.g. “38 microsieverts”' },
+  mood: { q: 'How are you feeling today?', hint: 'e.g. “good, a bit tired” or “four out of five, focused”' },
+  sleep: { q: 'How did you sleep last night? Hours or bed/wake times both work.', hint: 'e.g. “slept six and a half hours, woke twice” or “bed at eleven thirty, up at six”' },
+  radiation: { q: 'What does your dosimeter badge read today?', hint: 'e.g. “38 microsieverts” or “forty point five microsieverts”' },
   body: { q: 'Blood pressure time. What were your numbers?', hint: 'e.g. “118 over 76, pulse 64”' },
-  meal: { q: 'What did you eat today, and how did it taste?', hint: 'e.g. “beef stew and tortilla, bland”' },
+  meal: { q: 'What did you eat today, and how did it taste?', hint: 'e.g. “beef stew and tortilla, 600 calories, bland”' },
   exercise: { q: 'Any exercise today? Tell me what and for how long.', hint: 'e.g. “45 min on the treadmill, hard”' },
 };
 

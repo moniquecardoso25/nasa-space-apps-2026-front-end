@@ -244,11 +244,64 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 ## Follow-up · status tag, voice mode, mood voice notes, alive logo
 
 - **Overall score removed from the UI.** Home pill, Status card and the ground table show a status tag only (`healthTag()`: ≥70 "Doing well", ≥50 "Attention", else "Alert"). `overallScore` stays in the data as the internal source of the tag. The `Gauge` remains in the dev catalogue only.
-- **Voice mode** (`VoiceMode`): hands-free loop speak → listen → answer, with a live audio bar (teal = mic level, violet = Orbi speaking, muted = thinking). In Orbi chat (Journal/Private respected) and Fill with Orbi (reads each question, fills the card, moves on; cards still need "Confirm & save"). EN/PT chips set the recognition language (`session.voiceLang`); Orbi always answers in English (rule-based replies are English).
-- **Speech engines** (`src/voice/speech.ts`): native recognizer on phones, Web Speech on Chrome/Edge/Safari, **on-device Whisper** on Firefox and as automatic fallback when the browser recognizer fails (network/service errors). Whisper = transformers.js 3.7.6 from jsDelivr + `Xenova/whisper-base` q8 (~77 MB, cached). Decision: whisper-tiny (~41 MB) misheard "118 over 76, pulse 64" as "187/76" in tests; base got it right. Voice-activity detection ends a turn after ~1.3 s of silence.
+- **Voice mode** (`VoiceMode`): hands-free loop speak → listen → answer, with a live audio bar (teal = mic level, violet = Orbi speaking, muted = thinking). In Orbi chat (Journal/Private respected) and Fill with Orbi (reads each question, fills the card, moves on; cards still need "Confirm & save"). Orbi always answers in English (rule-based replies are English).
+- **Speech engines** (`src/voice/speech.ts`): native recognizer on phones, Web Speech on Chrome/Edge/Safari, **on-device recognizer** (first Whisper, now Moonshine — see below) on Firefox and as automatic fallback when the browser recognizer fails (network/service errors). Whisper = transformers.js 3.7.6 from jsDelivr + `Xenova/whisper-base` q8 (~77 MB, cached). Decision: whisper-tiny (~41 MB) misheard "118 over 76, pulse 64" as "187/76" in tests; base got it right. Voice-activity detection ends a turn after ~1.3 s of silence.
 - **TTS** (`src/voice/tts.ts`, expo-speech): picks the most natural voice for the language; safety timer so a browser that never fires `onend` can't freeze the loop.
 - **Mood voice note**: "Anything else? Say it" on the check-in (expo-audio, ≤ 60 s, live bars, play back / re-record / delete). Transcript: live via Web Speech, or Whisper after recording (Firefox / fallback). Phone: audio only. Saved as `mood.data.voiceNote`; the Mood overview lists "Your voice notes".
 - **Login robot** blinks, glances and tilts at random natural intervals (also onboarding 1). Reduced motion → static.
 - New icons (pause, stop, close, trash, wave) drawn in the same 24 px stroke style. New control sizes (voice mode mic 76, end 56) are not in the design; touch targets use `size.touch` (44) elsewhere.
 - Tested in headless Chrome with a fake microphone (Windows TTS WAVs): Web Speech removed (Firefox simulation) → Whisper transcribed EN and PT phrases exactly; browser recognizer forced to fail → automatic Whisper fallback; Fill voice mode created the BP card 118/76/64; voice note recorded, transcribed, saved and played back on the overview; TTS calls use "Google US English"; Private voice chat not saved to Journal.
 - Not verified here: real Firefox and real phones (no device); first Whisper download time depends on the connection.
+- Follow-up: the EN/PT recognition chips were removed on request (user reported it not understanding speech). Voice input is English only (`VOICE_LANG` in `src/voice/speech.ts`); the voice-mode header now names the active recognizer (browser / on-device Whisper / phone) to help diagnose.
+
+## Follow-up · Earth window views
+
+- 4 new window views in the shop (Room › Window view): **Beach** 400, **Countryside** 350, **Mountains** 450, **City lights** 500 (`window-beach`, `window-field`, `window-mountains`, `window-city`) in `src/mocks/mock-db.json`, `docs/design/data/mock-db.json` and `docs/design/data/mock/shop.json`.
+- Drawn by `EarthScene` (`ShopArt.tsx`) on a 100×100 canvas that fills any size; **only existing palette tokens** (sky = loginEarth/earthLight, sea = earthMid, sand, land/landLight/plantMid, gold sun, consoleBar/console/track for mountains and buildings, gold lit windows). Decision: the design has no art for these, so they are a "window screen" showing places on Earth, in the same flat style.
+- Home window: beach/countryside clouds drift (70 s loop, wraps); mountains (dusk) and city (night) get the twinkling, drifting stars only in the top 30 % of the sky. Reduced motion → static.
+
+## Follow-up · voice latency and noisy rooms
+
+User report (Firefox): answer took ~16 s, stayed "Listening…" and heard "sixty" for "sixty-four".
+- **Cause 1 — voice detection**: the noise floor was measured only in the first 0.3 s; steady room noise (fan, PC) above it kept the turn open until the 15 s limit. Now the floor adapts all the time (starts at the room level, creeps up over ~6 s, drops fast), speech must be ~7 dB above it (hysteresis), the turn ends after 1 s of quiet (max 12 s), and only the spoken part (+ margins) is transcribed. Reproduced with a −35 dBFS fan-noise WAV: end of speech detected 1.2 s after the last word (was ~10 s).
+- **Cause 2 — transcription speed**: Whisper always encodes a fixed 30 s window: 8.6 s for a 5 s answer (single-thread WebAssembly). Switched the on-device engine to **Moonshine base** (`onnx-community/moonshine-base-ONNX`, q8, ~63 MB, English): **~1.5 s** for the same clip, same phrase accuracy. Possible because voice input is English-only now.
+- The model is downloaded **and warmed up** (one silent inference) when a voice screen opens; voice mode waits for it ("Getting voice ready… N %") before opening the mic, so the first-use download/compile can't stall the voice detection.
+- Audio is trimmed and peak-normalized before transcription (Moonshine occasionally returned nothing for clips with a long silent start / clipped peaks: 1 of 4 runs → 5 of 5 after the fix), with one retry if the result is empty.
+- Listening label says "tap ■ when you finish" (manual stop always transcribes).
+- Result in tests (headless Chrome, model cached): Fill voice answer ~1–2 s after the last word, with background noise; voice-note transcript ~1 s after Stop.
+- Next idea if it is still slow on weak machines: run the model in a Web Worker and enable multithreaded WASM (needs COOP/COEP headers on Vercel).
+
+## Follow-up · numbers in words, "writing down…" loader, LLM note
+
+- Speech recognizers often write numbers in words ("sixty four") and the rule parser only read digits (plus one…twelve). New `src/data/spokenNumbers.ts` converts them before parsing: compounds, hundreds ("one hundred eighteen", "one eighteen"), thousands, decimals ("forty point five"), "and a half", "half an hour", "an hour and a half", spoken clock times ("at eleven thirty" → 11:30, "ten o'clock"), and the "sixty for" homophone. Tested: 18/18 converter cases; parser 11/11 spoken answers across mood, sleep, radiation, BP, meal, exercise (compiled with the project's tsc, run in Node).
+- Parser fixes found on the way: bedtime 7–11 without am/pm = evening; "calories" no longer cut to "ories" in meal names; no trailing comma in names.
+- Voice mode shows a loader as soon as the sentence ends: "Got it! Writing down what you said…" (spinner) → "Orbi is thinking…"; the Fill dictation mic shows the same.
+- Decision (user): **no LLM in this prototype** — fill predefined answers and numbers only. README now explains "Orbi today (rules) and next (LLM)": the LLM goes behind `OrbiFillParser` and `orbiReply`, on board or delay-tolerant, keeping confirm-before-save and Private mode.
+
+## Follow-up · examples everywhere, temporary-model tag, same listening behaviour everywhere
+
+- Example phrases are visible from the start in everything spoken: voice mode "Try saying" box (Fill: the current question's example, updated each question; chat: phrases the rule-based Orbi understands), Fill dictation (existing hint line, now English spoken-style examples), mood voice note ("e.g. Long lab shift today…").
+- `PrototypeTag` (gold): "Temporary speech recognition · a better model will replace it" — about the **listening model**, not Orbi — on voice mode, next to Fill's voice controls, and on the mood voice note.
+- Listening audit (3 places: voice mode for chat + Fill, Fill dictation mic, mood voice note): all use `startListening` / the same on-device model, adaptive voice detection, English, model download + warm-up before the mic opens (now inside `listenWhisper`, so every place gets it, with "Getting voice ready… N %"), and the same "Got it! Writing down what you said…" loader with spinner. The model now yields one frame before running so the loader is painted first.
+- While the voice is busy (getting the model ready / writing down), the mic is already closed (tracks stopped before transcribing; never open while Orbi speaks) and the controls now show it: voice-mode mic and Fill mic are dimmed and disabled, the Fill input placeholder says "Writing down what you said…", and the voice note hides Re-record / Delete until the transcript is done.
+- Fill shows answers with digits: the transcript is passed through `spokenToDigits` (now case-insensitive, keeps the rest of the text) before the chat bubble, the voice-mode "heard" line and the parser — "A hundred and eighteen over seventy-six, pulse sixty-four" → "118 over 76, pulse 64". Orbi chat and voice notes keep the natural words.
+
+## Follow-up · voice prepared up front, in a Web Worker
+
+User report: the page was very laggy while voice got ready; asked to download first and only allow voice after.
+- The on-device model now runs in a **module Web Worker** (`whisper.web.ts`, blob-URL worker importing transformers.js from jsDelivr); main-thread fallback only if module workers are unavailable. Loading + warm-up + transcription no longer block the UI: during the first-use download and setup the longest main-thread task was 225 ms / largest frame gap 334 ms (was several seconds of freeze).
+- **Gate** (`useVoiceGate` + `VoicePrep`): Orbi chat, Fill with Orbi and the mood check-in start the download **as soon as they open**; voice mode, mic and "Record a voice note" stay dimmed/disabled with "Preparing voice (one time only)… N % · you can type meanwhile" → "Voice almost ready…" → unlocked. Error → "Voice couldn't load · Retry". Typing always works. Browser / phone recognizers need no download, so nothing is gated there.
+- Timings (headless Chrome): first use ~22 s to unlock (one run took 150 s — download hiccup; raw model download is ~4 s at 10 MB/s), cached ~5 s.
+
+## Follow-up · "I finished talking but it keeps listening"
+
+- Likely cause: browsers (Firefox) deliver all-zero mic frames for a moment after the mic opens; the detector took that zero as the room level, so normal room noise counted as speech and the turn only ended at the 12 s limit.
+- Voice detection v3 (`listenWhisper` in `speech.ts`): ~300 ms room calibration that ignores zero frames (min of real frames); floor follows the room; to *keep* speaking the level must stay within ~14 dB of the voice's own peak (steady noise or gain pumping after you stop = silence); turn ends after 1 s of quiet; max 10 s per answer (was 12 s); browser auto-gain disabled on our mic stream (it raised the noise when you stopped).
+- Live feedback: "Listening… hearing you" while voice is detected, "Listening… finishing (or tap ■)" after 350 ms of quiet — in voice mode and in the Fill mic — so it is visible what the detector thinks.
+- Tested with the mic forced to start with 500 ms of zeros, on 4 recordings (steady fan noise, silent start + room noise, gain pumping to −30 dBFS after speech, clean speech): every turn ended ~1 s after the last word and the BP card was filled.
+
+## Follow-up · 6 counted logs, "All caught up" screen
+
+- Meditation (Relax is "coming soon") no longer counts: `COUNTED_TYPES` = mood, sleep, radiation, measurement, meal, exercise → Log ring "N/6", Status "N of 6 logs done", day scrubber, ground. Score bonus compares with the stored snapshot using the same 6 types.
+- Fill with Orbi with nothing left shows **"All caught up!"**: big check, the 6 categories "✓ Logged", "Come back tomorrow…", Back to Home / Talk to Orbi (was a single chat bubble). It doesn't start the voice download (nothing to say).
+- Tested: Ana 3/6 → filled BP, meal, exercise → confirm → ring 6/6, menu all Done, Fill shows All caught up, Status "6 of 6 logs done".
