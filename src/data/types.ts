@@ -252,6 +252,7 @@ export interface CalendarEvent {
 }
 
 export interface Db {
+  leaderboards?: { logs: LeaderboardRow[]; coins: LeaderboardRow[] };
   currentAstronautId: string;
   mission: Mission;
   astronauts: Astronaut[];
@@ -262,4 +263,12 @@ export interface Db {
   ground_messages: GroundMessage[];
   shop: ShopItem[];
   calendar: CalendarEvent[];
+}
+
+export interface LeaderboardRow {
+  astronaut: Astronaut;
+  logs: number;
+  coins: number;
+  rank: number;
+  value: number;
 }

@@ -3,10 +3,13 @@ import { DarkTheme, ThemeProvider, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import Stack from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { getSessionRole, subscribeSession, USE_MOCK_DATA } from '@/data/api';
 
 import { fontAssets } from '@/theme/fonts';
 import { C } from '@/theme/tokens';
@@ -18,9 +21,37 @@ const theme = {
   colors: { ...DarkTheme.colors, background: C.bg, card: C.bg, text: C.text, primary: C.primary, border: C.border },
 };
 
+const ASTRONAUT_ROUTES = [
+  '(tabs)',
+  'calendar',
+  'leaderboard',
+  'dev/components',
+  'logs/body/add',
+  'logs/body/index',
+  'logs/body/injury',
+  'logs/exercise/add',
+  'logs/exercise/index',
+  'logs/meals/add',
+  'logs/meals/index',
+  'logs/mood/add',
+  'logs/mood/index',
+  'logs/orbi-fill',
+  'logs/radiation/add',
+  'logs/radiation/index',
+  'logs/relax',
+  'logs/sleep/add',
+  'logs/sleep/index',
+  'onboarding/1',
+  'onboarding/2',
+  'onboarding/3',
+  'onboarding/4',
+  'onboarding/5',
+] as const;
+
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontAssets);
   const pathname = usePathname();
+  const role = useSyncExternalStore(subscribeSession, getSessionRole, () => null);
   const ready = loaded || !!error;
 
   useEffect(() => {
@@ -44,7 +75,17 @@ export default function RootLayout() {
           <StatusBar style="light" />
           {/* On web the app keeps a phone-like width (design base 390). */}
           <View style={[styles.frame, fluid ? { maxWidth: '100%' } : frameW ? { maxWidth: frameW } : null]}>
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }} />
+            {role && pathname !== '/login' ? <ConnectionStatus /> : null}
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="login" />
+              <Stack.Protected guard={USE_MOCK_DATA || role === 'astronaut'} redirectTo={role === 'ground' ? '/ground' : '/login'}>
+                {ASTRONAUT_ROUTES.map((name) => <Stack.Screen key={name} name={name} />)}
+              </Stack.Protected>
+              <Stack.Protected guard={USE_MOCK_DATA || role === 'ground'} redirectTo={role === 'astronaut' ? '/home' : '/login'}>
+                <Stack.Screen name="ground" />
+              </Stack.Protected>
+            </Stack>
           </View>
         </ThemeProvider>
       </SafeAreaProvider>

@@ -54,7 +54,7 @@ export type Drafts = Partial<{ [K in FillCategory]: DraftMap[K] }>;
 const MOOD_LABEL = { 5: 'great', 4: 'good', 3: 'okay', 2: 'tired', 1: 'stressed' } as const;
 
 /** Saves every confirmed draft with addLog (+10 each) and records a summary for Home. */
-export function saveDrafts(drafts: Drafts) {
+export async function saveDrafts(drafts: Drafts, onSaved?: (category: FillCategory) => void) {
   const today = getToday();
   const saved: string[] = [];
   let coins = 0;
@@ -62,14 +62,16 @@ export function saveDrafts(drafts: Drafts) {
 
   if (drafts.mood) {
     const d = drafts.mood;
-    coins += saveDailyLog('mood', { level: d.level, label: MOOD_LABEL[d.level], tags: d.tags }).coins;
+    coins += (await saveDailyLog('mood', { level: d.level, label: MOOD_LABEL[d.level], tags: d.tags })).coins;
     saved.push('Mood');
+    onSaved?.('mood');
+    session.orbiFill = { saved: [...saved], coins, at: Date.now() };
   }
   if (drafts.sleep) {
     const d = drafts.sleep;
     const b = parseHHMM(d.bed) ?? 0;
     const w = parseHHMM(d.wake) ?? 0;
-    coins += saveDailyLog(
+    coins += (await saveDailyLog(
       'sleep',
       {
         bedtime: isoAt(today, d.bed, b > w ? -1 : 0),
@@ -81,12 +83,14 @@ export function saveDrafts(drafts: Drafts) {
         band: lastSleep?.data.band,
       },
       { environmentId: 'sleep', timestamp: isoAt(today, d.wake), note: 'Filled with Orbi' },
-    ).coins;
+    )).coins;
     saved.push('Sleep');
+    onSaved?.('sleep');
+    session.orbiFill = { saved: [...saved], coins, at: Date.now() };
   }
   if (drafts.radiation) {
     const d = drafts.radiation;
-    coins += saveDailyLog(
+    coins += (await saveDailyLog(
       'radiation',
       {
         value: d.value,
@@ -98,30 +102,38 @@ export function saveDrafts(drafts: Drafts) {
         illustrative: true,
       },
       { timestamp: isoAt(today, d.readAt) },
-    ).coins;
+    )).coins;
     saved.push('Radiation');
+    onSaved?.('radiation');
+    session.orbiFill = { saved: [...saved], coins, at: Date.now() };
   }
   if (drafts.body) {
     const d = drafts.body;
-    addLog('measurement', { metric: 'blood_pressure', cadence: 'daily', values: { systolic: d.systolic, diastolic: d.diastolic, pulse: d.pulse } });
+    await addLog('measurement', { metric: 'blood_pressure', cadence: 'daily', values: { systolic: d.systolic, diastolic: d.diastolic, pulse: d.pulse } });
     coins += 10;
     saved.push('Blood pressure');
+    onSaved?.('body');
+    session.orbiFill = { saved: [...saved], coins, at: Date.now() };
   }
   if (drafts.meal) {
     const d = drafts.meal;
-    addLog(
+    await addLog(
       'meal',
       { name: d.name, items: d.name.split('+').map((s) => s.trim().toLowerCase()), kcal: d.kcal, ...estimateMacros(d.kcal), tasteRating: d.taste },
       { timestamp: isoAt(today, d.time), environmentId: 'galley' },
     );
     coins += 10;
     saved.push('Meal');
+    onSaved?.('meal');
+    session.orbiFill = { saved: [...saved], coins, at: Date.now() };
   }
   if (drafts.exercise) {
     const d = drafts.exercise;
-    addLog('exercise', { modality: d.modality, equipment: d.equipment, durationMin: d.minutes, effort: d.effort }, { environmentId: 'gym' });
+    await addLog('exercise', { modality: d.modality, equipment: d.equipment, durationMin: d.minutes, effort: d.effort }, { environmentId: 'gym' });
     coins += 10;
     saved.push('Exercise');
+    onSaved?.('exercise');
+    session.orbiFill = { saved: [...saved], coins, at: Date.now() };
   }
   session.orbiFill = { saved, coins, at: Date.now() };
   setDb((db) => ({ ...db })); // notify screens (Home shows the summary)

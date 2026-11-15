@@ -23,9 +23,9 @@ export default function ExerciseAdd() {
     setEquipment(m === 'resistive' ? 'resistive_device' : 'treadmill');
   };
 
-  const save = () => {
+  const save = async () => {
     if (effort === null) return;
-    addLog('exercise', { modality, equipment, durationMin: minutes, effort }, { environmentId: 'gym' });
+    await addLog('exercise', { modality, equipment, durationMin: minutes, effort }, { environmentId: 'gym' });
     goBackTo('/logs/exercise');
   };
 

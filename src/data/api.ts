@@ -1,3 +1,6 @@
+import { API_URL, ApiError, USE_MOCK_DATA, getSessionVersion, newRequestId, request, setSession, type LoginResponse } from './http';
+import { decodeLog, mutate, refreshData } from './remote';
+import { session } from './session';
 import { getDb, setDb } from './store';
 import type {
   AiMessage,
@@ -75,19 +78,38 @@ export function findAstronautByCrewId(crewId: string): Astronaut | undefined {
   return getDb().astronauts.find((a) => a.crewId.toUpperCase() === id);
 }
 
-/** Mock login: any 4-digit PIN works for a known Crew ID. */
-export function signIn(crewId: string, pin: string): Astronaut | null {
-  const a = findAstronautByCrewId(crewId);
-  if (!a || !/^\d{4}$/.test(pin)) return null;
-  setDb((db) => ({ ...db, currentAstronautId: a.id }));
-  return a;
+/** Authenticate with the same username/password contract as the backend. */
+export async function signIn(username: string, password: string): Promise<Astronaut | null> {
+  if (USE_MOCK_DATA) {
+    const a = findAstronautByCrewId(username);
+    if (!a || !/^\d{4}$/.test(password)) return null;
+    setDb((db) => ({ ...db, currentAstronautId: a.id }));
+    return a;
+  }
+  setSession(null);
+  const result = await request<LoginResponse>('/auth/login', {
+    method: 'POST', body: JSON.stringify({ username: username.trim(), password }),
+  }, false);
+  const role = result.user?.role ?? result.role;
+  if (role !== 'astronaut' && role !== 'ground') throw new Error('This account cannot access CosmoMedic.');
+  setSession(result);
+  try {
+    await refreshData();
+    session.orbiFill = null;
+    lastSaved = null;
+    return role === 'ground' ? null : getAstronaut();
+  } catch (error) { setSession(null); throw error; }
 }
 
 function updateAstronaut(id: string, fn: (a: Astronaut) => Astronaut) {
   setDb((db) => ({ ...db, astronauts: db.astronauts.map((a) => (a.id === id ? fn(a) : a)) }));
 }
 
-export function completeOnboarding(avatarName: string) {
+export async function completeOnboarding(avatarName: string) {
+  if (!USE_MOCK_DATA) {
+    await mutate('/app/me/onboarding', { avatarName: avatarName.trim() || 'Bolt', dailyReminders: session.reminders });
+    return;
+  }
   updateAstronaut(getCurrentAstronautId(), (a) => ({
     ...a,
     onboardingDone: true,
@@ -151,8 +173,35 @@ export interface AddLogOptions {
   timestamp?: string;
 }
 
+interface LogSaved<T extends LogType> {
+  log: LogOf<T>;
+  coins: number;
+  coinsEarned: number;
+  bonus?: { coins?: number } | null;
+}
+const pendingLogs = new Map<string, { key: string; body: unknown }>();
+
 /** Saves a new log for the current astronaut and gives +10 coins. */
-export function addLog<T extends LogType>(type: T, data: LogDataMap[T], opts: AddLogOptions = {}): LogOf<T> {
+export async function addLog<T extends LogType>(type: T, data: LogDataMap[T], opts: AddLogOptions = {}): Promise<LogOf<T>> {
+  if (!USE_MOCK_DATA) {
+    const signature = JSON.stringify([getSessionVersion(), type, data, opts]);
+    let pending = pendingLogs.get(signature);
+    if (!pending) {
+      pending = { key: newRequestId(), body: { type, data: await uploadLogMedia(type, data), ...opts, timestamp: opts.timestamp ?? getNow().toISOString() } };
+      pendingLogs.set(signature, pending);
+    }
+    let result: LogSaved<T>;
+    try { result = await mutate<LogSaved<T>>('/app/me/logs', pending.body, 'POST', pending.key); }
+    catch (error) {
+      if (error instanceof ApiError && error.status >= 400 && error.status < 500) pendingLogs.delete(signature);
+      throw error;
+    }
+    pendingLogs.delete(signature);
+    const log = decodeLog(result.log as Log) as LogOf<T>;
+    lastSaved = { type, at: Date.now(), coins: result.coinsEarned + (result.bonus?.coins ?? 0) };
+    setDb((db) => ({ ...db, logs: [...db.logs.filter((l) => l.id !== log.id), log as Log], astronauts: db.astronauts.map((a) => a.id === log.astronautId ? { ...a, avatar: { ...a.avatar, coins: result.coins } } : a) }));
+    return log;
+  }
   const me = getCurrentAstronautId();
   let created!: LogOf<T>;
   lastSaved = { type, at: Date.now(), coins: COINS_PER_LOG };
@@ -180,7 +229,16 @@ export function addLog<T extends LogType>(type: T, data: LogDataMap[T], opts: Ad
 }
 
 /** Edits an existing log (no extra coins). */
-export function updateLog<T extends LogType>(id: string, data: LogDataMap[T], opts: AddLogOptions = {}) {
+export async function updateLog<T extends LogType>(id: string, data: LogDataMap[T], opts: AddLogOptions = {}) {
+  if (!USE_MOCK_DATA) {
+    const old = getDb().logs.find((l) => l.id === id);
+    if (!old) throw new Error('Log not found. Refresh and try again.');
+    const result = await mutate<LogSaved<T>>(`/app/me/logs/${encodeURIComponent(id)}`, { type: old.type, data: await uploadLogMedia(old.type, data), note: old.note, environmentId: old.environmentId, timestamp: old.timestamp, ...opts }, 'PUT');
+    const log = result.log;
+    lastSaved = { type: old.type, at: Date.now(), coins: 0 };
+    setDb((db) => ({ ...db, logs: db.logs.map((l) => l.id === id ? decodeLog(log as Log) : l) }));
+    return;
+  }
   lastSaved = { type: getDb().logs.find((l) => l.id === id)?.type ?? 'mood', at: Date.now(), coins: 0 };
   setDb((db) => ({
     ...db,
@@ -194,15 +252,15 @@ export function updateLog<T extends LogType>(id: string, data: LogDataMap[T], op
  * Saves today's log of a once-a-day type: updates if it exists, otherwise adds (+10).
  * A new mood check-in that completes a 7-day streak also gives the +50 check-in bonus.
  */
-export function saveDailyLog<T extends LogType>(type: T, data: LogDataMap[T], opts: AddLogOptions = {}) {
+export async function saveDailyLog<T extends LogType>(type: T, data: LogDataMap[T], opts: AddLogOptions = {}) {
   const existing = getTodayLogs(type)[0];
   if (existing) {
-    updateLog<T>(existing.id, data, opts);
+    await updateLog<T>(existing.id, data, opts);
     return { log: existing, coins: 0 };
   }
-  const log = addLog(type, data, opts);
-  let coins = COINS_PER_LOG;
-  if (type === 'mood' && getCheckinStreak() % 7 === 0) {
+  const log = await addLog(type, data, opts);
+  let coins = USE_MOCK_DATA ? log.coinsEarned : lastSaved?.coins ?? log.coinsEarned;
+  if (USE_MOCK_DATA && type === 'mood' && getCheckinStreak() % 7 === 0) {
     coins += DAILY_CHECKIN_COINS;
     lastSaved = { type, at: Date.now(), coins };
     addCoins(DAILY_CHECKIN_COINS);
@@ -378,7 +436,12 @@ export function etaOf(m: Pick<GroundMessage, 'sentAt'>): Date {
   return new Date(new Date(m.sentAt).getTime() + getMission().commDelaySec * 1000);
 }
 
-export function sendGroundMessage(text: string, urgent = false, attachments: string[] = []): GroundMessage {
+export async function sendGroundMessage(text: string, urgent = false, attachments: string[] = []): Promise<GroundMessage> {
+  if (!USE_MOCK_DATA) {
+    const msg = await mutate<GroundMessage>('/app/me/ground-messages', { text, urgent, attachments }, 'POST', newRequestId());
+    setDb((db) => ({ ...db, ground_messages: [...db.ground_messages.filter((m) => m.id !== msg.id), msg] }));
+    return msg;
+  }
   const sentAt = getNow();
   const msg: GroundMessage = {
     id: `gm-${Date.now().toString(36)}`,
@@ -406,12 +469,13 @@ export function getShopItem(id: string | null | undefined) {
 }
 
 export type BuyResult = 'ok' | 'owned' | 'no_coins';
-export function buyItem(id: string): BuyResult {
+export async function buyItem(id: string): Promise<BuyResult> {
   const me = getAstronaut();
   const item = getShopItem(id);
   if (!item) throw new Error(`Unknown item ${id}`);
   if (me.avatar.owned.includes(id)) return 'owned';
   if (me.avatar.coins < item.price) return 'no_coins';
+  if (!USE_MOCK_DATA) { await mutate('/app/me/avatar/purchase', { itemId: id }); return 'ok'; }
   updateAstronaut(me.id, (a) => ({
     ...a,
     avatar: { ...a.avatar, coins: a.avatar.coins - item.price, owned: [...a.avatar.owned, id] },
@@ -420,9 +484,13 @@ export function buyItem(id: string): BuyResult {
 }
 
 /** Equips an owned item (pets can be toggled off). */
-export function equipItem(id: string) {
+export async function equipItem(id: string) {
   const item = getShopItem(id);
   if (!item) return;
+  if (!USE_MOCK_DATA) {
+    await mutate('/app/me/avatar/equip', { itemId: item.category === 'pet' && isEquipped(id) ? null : id, category: item.category });
+    return;
+  }
   updateAstronaut(getCurrentAstronautId(), (a) => {
     const eq = { ...a.avatar.equipped, room: { ...a.avatar.equipped.room } };
     if (item.category === 'helmet') eq.helmet = id;
@@ -448,6 +516,7 @@ export function isEquipped(id: string) {
 export type LeaderboardMode = 'logs' | 'coins';
 export function getLeaderboard(mode: LeaderboardMode) {
   const db = getDb();
+  if (!USE_MOCK_DATA) return db.leaderboards?.[mode] ?? [];
   return db.astronauts
     .map((a) => ({
       astronaut: a,
@@ -465,3 +534,48 @@ export function getCalendar(astronautId: string = getCurrentAstronautId()): Cale
 }
 
 export const getEnvironmentReadings = () => getDb().environment_readings;
+
+
+/** Persist device settings through the same API boundary as screens. */
+export async function pairDevice(device: 'bpCuff' | 'wristBandPaired') {
+  if (!USE_MOCK_DATA) await mutate('/app/me/devices', { [device]: true }, 'PATCH');
+}
+
+/** Chat response contract is validated because the OpenAPI response is untyped. */
+export async function chatWithOrbi(text: string, mode: ChatMode): Promise<{ message: AiMessage; reply: AiMessage }> {
+  type ChatResult = { message: AiMessage; reply: AiMessage };
+  const body = { text, mode };
+  const result = mode === 'private'
+    ? await request<ChatResult>('/app/me/orbi/chat', { method: 'POST', body: JSON.stringify(body) })
+    : await mutate<ChatResult>('/app/me/orbi/chat', body);
+  if (!result?.message?.id || !result?.reply?.text) throw new Error('Orbi returned an invalid response.');
+  if (mode === 'journal') {
+    setDb((db) => {
+      const ids = new Set([result.message.id, result.reply.id]);
+      return { ...db, ai_chat: { ...db.ai_chat, messages: [...db.ai_chat.messages.filter((m) => !ids.has(m.id)), result.message, result.reply] } };
+    });
+  }
+  return result;
+}
+
+async function uploadLogMedia<T extends LogType>(type: LogType, data: LogDataMap[T]): Promise<unknown> {
+  if (type !== 'mood') return data;
+  const mood = data as LogDataMap['mood'];
+  if (!mood.voiceNote) return data;
+  const { uri, ...note } = mood.voiceNote;
+  if (/^https?:/.test(uri)) return { ...mood, voiceNote: { ...note, url: uri } };
+  const form = new FormData();
+  if (/^blob:|^data:/.test(uri)) {
+    const blob = await fetch(uri).then((response) => response.blob());
+    form.append('file', blob, blob.type.includes('mp4') ? 'voice.m4a' : 'voice.webm');
+  } else {
+    // React Native's FormData accepts a local file descriptor.
+    form.append('file', { uri, name: 'voice.m4a', type: 'audio/mp4' } as unknown as Blob);
+  }
+  const uploaded = await request<{ url: string }>('/app/me/uploads', { method: 'POST', body: form });
+  const url = new URL(uploaded.url, API_URL.replace(/\/api\/v1$/, '') + '/').toString();
+  return { ...mood, voiceNote: { ...note, url } };
+}
+
+export { getSessionRole, logout, subscribeSession, USE_MOCK_DATA } from './http';
+export { getRefreshWarning, refreshData } from './remote';

@@ -20,8 +20,8 @@ export default function MoodAdd() {
   const [voiceNote, setVoiceNote] = useState<VoiceNote | null>(existing?.data.voiceNote ?? null);
   const m = MOOD_LEVELS.find((x) => x.level === level)!;
 
-  const save = () => {
-    saveDailyLog('mood', { level, label: m.label, tags, ...(voiceNote ? { voiceNote } : {}) });
+  const save = async () => {
+    await saveDailyLog('mood', { level, label: m.label, tags, ...(voiceNote ? { voiceNote } : {}) });
     goBackTo('/logs/mood');
   };
 

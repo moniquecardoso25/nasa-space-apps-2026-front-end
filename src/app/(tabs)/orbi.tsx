@@ -10,9 +10,10 @@ import { Chip, Segmented } from '@/components/Inputs';
 import { Txt } from '@/components/Txt';
 import { VoiceMode } from '@/components/VoiceMode';
 import { VoicePrep } from '@/components/VoicePrep';
-import { addAiMessage, addJournalEntry, dayOfDate, getAiMessages, getJournal, getTodayLogs } from '@/data/api';
+import { USE_MOCK_DATA, chatWithOrbi, addAiMessage, addJournalEntry, dayOfDate, getAiMessages, getJournal, getTodayLogs } from '@/data/api';
 import { hhmm, relativeDay } from '@/data/format';
 import { journalSummary, orbiReply, type OrbiAction } from '@/data/orbi';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useData } from '@/data/store';
 import type { AiMessage, ChatMode } from '@/data/types';
 import { useVoiceGate } from '@/voice/useVoiceGate';
@@ -24,6 +25,7 @@ type Msg = Pick<AiMessage, 'id' | 'author' | 'text' | 'timestamp'> & { actions?:
 /** Orbi AI chat. Journal mode persists + writes journal entries; Private mode never stores anything. */
 export default function Orbi() {
   const insets = useSafeAreaInsets();
+  const action = useAsyncAction();
   const [mode, setMode] = useState<ChatMode>('journal');
   const [text, setText] = useState('');
   const [privateMsgs, setPrivateMsgs] = useState<Msg[]>([]);
@@ -55,9 +57,16 @@ export default function Orbi() {
       : []);
 
   /** Sends a message (typed or spoken) and returns Orbi's reply text. */
-  const send = (raw: string): string => {
+  const send = async (raw: string): Promise<string> => {
     const body = raw.trim();
     if (!body) return '';
+    if (!USE_MOCK_DATA) {
+      const result = await chatWithOrbi(body, mode);
+      setText('');
+      if (mode === 'private') setPrivateMsgs((cur) => [...cur, result.message, result.reply]);
+      setLastActions([]);
+      return result.reply.text;
+    }
     setText('');
     const mine = addAiMessage(body, 'astronaut', mode);
     const reply = orbiReply(body);
@@ -74,7 +83,7 @@ export default function Orbi() {
 
   const runAction = (a: OrbiAction) => {
     if (a.href) router.push(a.href as never);
-    else if (a.send) send(a.send);
+    else if (a.send) void action.run(() => send(a.send!));
   };
 
   return (
@@ -171,6 +180,7 @@ export default function Orbi() {
           <VoicePrep gate={gate} />
         </View>
       ) : null}
+      {action.error ? <Txt color={C.danger} accessibilityLiveRegion="polite">{action.error}</Txt> : null}
       <View style={styles.composer}>
         <TextInput
           value={text}
@@ -178,7 +188,7 @@ export default function Orbi() {
           placeholder="Write or journal anything…"
           placeholderTextColor={C.muted}
           accessibilityLabel="Message Orbi"
-          onSubmitEditing={() => send(text)}
+          onSubmitEditing={() => { void action.run(() => send(text)); }}
           returnKeyType="send"
           style={styles.input}
         />
@@ -191,7 +201,7 @@ export default function Orbi() {
           style={[styles.round, styles.mic, !gate.ready && { opacity: 0.35 }]}>
           <Icon name="wave" size={20} color={C.teal} />
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Send" onPress={() => send(text)} style={[styles.round, styles.send]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Send" disabled={action.busy} onPress={() => { void action.run(() => send(text)); }} style={[styles.round, styles.send]}>
           <Icon name="send" size={20} color={C.bg} />
         </Pressable>
       </View>
@@ -201,7 +211,7 @@ export default function Orbi() {
         title={mode === 'private' ? 'Orbi · Private' : 'Orbi · Journal'}
         intro={mode === 'private' ? 'Private voice chat. Nothing is saved. What is on your mind?' : `I'm listening. How are you doing today?`}
         hint={'“I slept badly” · “I feel stressed” · “I miss my family” · “make a wind-down plan”'}
-        respond={(t) => ({ say: send(t) })}
+        respond={async (t) => ({ say: await send(t) })}
       />
     </KeyboardAvoidingView>
   );

@@ -29,8 +29,8 @@ export default function Onb5() {
       title="Meet your companion"
       intro="Everyone starts with the same astronaut. Keep logging to earn coins and customize it in the shop."
       cta="Start mission"
-      onCta={() => {
-        completeOnboarding(name);
+      onCta={async () => {
+        await completeOnboarding(name);
         session.onboardedThisSession = true;
         router.replace('/home');
       }}>

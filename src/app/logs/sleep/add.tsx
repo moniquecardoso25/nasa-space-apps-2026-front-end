@@ -30,7 +30,7 @@ export default function SleepAdd() {
   const total = sleepMinutes(bed, wake);
   const valid = total !== null && total > 0 && quality !== null;
 
-  const save = () => {
+  const save = async () => {
     if (!valid) return;
     const today = getToday();
     const b = parseHHMM(bed)!;
@@ -44,7 +44,7 @@ export default function SleepAdd() {
       source: existing?.data.source ?? (last?.data.band ? 'archer_band' : 'manual'),
       band: existing?.data.band ?? last?.data.band,
     };
-    saveDailyLog('sleep', data, { note: note.trim() || null, environmentId: 'sleep', timestamp: isoAt(today, wake) });
+    await saveDailyLog('sleep', data, { note: note.trim() || null, environmentId: 'sleep', timestamp: isoAt(today, wake) });
     goBackTo('/logs/sleep');
   };
 

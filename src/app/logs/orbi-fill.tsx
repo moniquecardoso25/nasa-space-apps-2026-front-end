@@ -231,8 +231,8 @@ export default function OrbiFill() {
   };
 
   const count = Object.keys(drafts).length;
-  const confirm = () => {
-    saveDrafts(drafts);
+  const confirm = async () => {
+    await saveDrafts(drafts, remove);
     router.navigate('/home');
   };
 

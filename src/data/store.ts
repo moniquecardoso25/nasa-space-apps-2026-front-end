@@ -5,10 +5,11 @@ import raw from '@/mocks/mock-db.json';
 import type { Db } from './types';
 
 /**
- * In-memory database seeded from src/mocks/mock-db.json.
+ * Reactive local snapshot, replaced by /app/snapshot after authentication.
  * Screens never import the JSON: they go through src/data/api.ts.
  * Writes replace the root object (immutable), so subscribers re-render.
- * Data resets on reload (no backend yet).
+ * The seed is used only in explicit mock mode; API routes are guarded until login.
+ * Remote writes are acknowledged before this cache changes.
  */
 let db: Db = structuredClone(raw as unknown as Db);
 let version = 0;
