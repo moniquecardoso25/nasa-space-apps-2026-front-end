@@ -42,4 +42,4 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## CosmoMedic UI
 
-UI work: follow docs/design/README.md, SCREENS.md and src/theme/tokens.ts (copied from docs/design/tokens/tokens.ts). Screens read data only through src/data/api.ts (seeded from src/mocks/mock-db.json until the backend exists). Build log: docs/design/PROGRESS.md.
+UI work: follow docs/design/README.md, SCREENS.md and src/theme/tokens.ts (copied from docs/design/tokens/tokens.ts). Screens read data only through src/data/api.ts. The data comes from the backend snapshot (same shape as src/mocks/mock-db.json) and writes go through the offline queue in src/data/sync.ts; see "Backend and offline use" in README.md. Build log: docs/design/PROGRESS.md.
