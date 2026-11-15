@@ -63,6 +63,12 @@ const ICONS = {
   ],
   mic: [{ r: [9, 3, 6, 11, 3] }, { p: 'M5 11a7 7 0 0 0 14 0M12 18v3' }],
   play: [{ p: 'M7 4l13 8-13 8z' }],
+  // added for voice mode / voice notes (same 24px stroke style)
+  pause: [{ p: 'M8 5v14M16 5v14' }],
+  stop: [{ r: [6, 6, 12, 12, 2] }],
+  close: [{ p: 'M6 6l12 12M18 6L6 18' }],
+  trash: [{ p: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3' }],
+  wave: [{ p: 'M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4M21 12h0' }],
   brain: [
     {
       p: 'M12 5a3 3 0 0 0-5.5 1.5A3 3 0 0 0 4 11a3 3 0 0 0 1.5 5A3 3 0 0 0 12 18zM12 5a3 3 0 0 1 5.5 1.5A3 3 0 0 1 20 11a3 3 0 0 1-1.5 5A3 3 0 0 1 12 18z',

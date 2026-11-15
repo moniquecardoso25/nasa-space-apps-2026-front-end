@@ -38,10 +38,15 @@ Icons: simple 24×24 stroke icons: smile, moon, sun, activity, utensils, leaf, c
 |---|---|---|
 | `Txt` | `Txt.tsx` | Text with Sora/Inter by weight (Android needs one family per weight) |
 | `InfoNote`, `StatTile`, `CardTitle`, `SectionLabel` | `Card.tsx` | Lilac tip row, small stat tile, card title row |
-| `Toggle`, `Ring`, `Gauge`, `ProgressBar`, `Badge`, `Legend` | `Inputs.tsx`, `Charts.tsx`, `Pills.tsx` | Switch, progress ring (log button, exercise), overall gauge, bars, small badges, ok/attention/alert legend |
+| `Toggle`, `Ring`, `Gauge`, `ProgressBar`, `Badge`, `Legend` | `Inputs.tsx`, `Charts.tsx`, `Pills.tsx` | Switch, progress ring (log button, exercise), gauge (dev catalogue only), bars, small badges, ok/attention/alert legend |
 | `LogScreen`, `SavedBanner`, `ListRow`, `MetricTile`, `Stars`, `Note`, `ComingSoon`, `Greyed`, `Stepper` | `LogKit.tsx` | Shared pieces of the log screens |
 | `OnboardingShell` | `Onboarding.tsx` | Step header, 5-step progress, sticky CTA |
 | `StationWindow`, `StationProps`, `StationWall` | `StationScene.tsx` | Home scene (window/Earth, console, plant, floor) using the equipped room items |
 | `HelmetIcon`, `SuitIcon`, `PetArt`, `WindowView`, `Surface`, `RoomSwatch` | `ShopArt.tsx` | Shop items drawn in SVG (`src/data/shopArt.ts`) |
 | `DraftCard` | `FillCards.tsx` | Editable confirmation card of Fill with Orbi |
+| `HealthTag` | `Pills.tsx` | Status tag (dot + "Doing well" / "Attention" / "Alert") shown instead of the overall score |
+| `AudioBars` | `AudioBars.tsx` | Live audio bars driven by a 0…1 level (mic input or synthetic while Orbi speaks) |
+| `VoiceMode` | `VoiceMode.tsx` | Full-screen hands-free conversation with Orbi (speak → listen → answer loop), used by Orbi chat and Fill with Orbi |
+| `VoiceNoteRecorder`, `VoiceNotePlayer` | `VoiceNote.tsx` | Record / play the optional voice note of the mood check-in (expo-audio) |
+| `LogoMark alive` | `Space.tsx` | Login/onboarding logo that blinks and glances around at random intervals |
 | `BoltFigure`, `BoltActor` | `Astronaut.tsx`, `src/avatar/BoltActor.tsx` | Bolt rig + animation state machine (`ANIMATIONS.md`) |

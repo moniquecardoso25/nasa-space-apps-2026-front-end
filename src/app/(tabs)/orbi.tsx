@@ -8,13 +8,14 @@ import { ChatBubble } from '@/components/ChatBubble';
 import { Icon } from '@/components/Icon';
 import { Chip, Segmented } from '@/components/Inputs';
 import { Txt } from '@/components/Txt';
+import { VoiceMode } from '@/components/VoiceMode';
 import { addAiMessage, addJournalEntry, dayOfDate, getAiMessages, getJournal, getTodayLogs } from '@/data/api';
 import { hhmm, relativeDay } from '@/data/format';
 import { journalSummary, orbiReply, type OrbiAction } from '@/data/orbi';
 import { useData } from '@/data/store';
 import type { AiMessage, ChatMode } from '@/data/types';
 import { fontFamily } from '@/theme/fonts';
-import { C, tokens } from '@/theme/tokens';
+import { C, X, tokens } from '@/theme/tokens';
 
 type Msg = Pick<AiMessage, 'id' | 'author' | 'text' | 'timestamp'> & { actions?: OrbiAction[]; saved?: boolean };
 
@@ -26,6 +27,7 @@ export default function Orbi() {
   const [privateMsgs, setPrivateMsgs] = useState<Msg[]>([]);
   const [lastActions, setLastActions] = useState<OrbiAction[] | null>(null);
   const scroll = useRef<ScrollViewInstance>(null);
+  const [voice, setVoice] = useState(false);
 
   const journalMsgs = useData(() => {
     const msgs = getAiMessages();
@@ -48,9 +50,10 @@ export default function Orbi() {
         ]
       : []);
 
-  const send = (raw: string) => {
+  /** Sends a message (typed or spoken) and returns Orbi's reply text. */
+  const send = (raw: string): string => {
     const body = raw.trim();
-    if (!body) return;
+    if (!body) return '';
     setText('');
     const mine = addAiMessage(body, 'astronaut', mode);
     const reply = orbiReply(body);
@@ -62,6 +65,7 @@ export default function Orbi() {
     }
     setLastActions(reply.actions ?? []);
     setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
+    return reply.text;
   };
 
   const runAction = (a: OrbiAction) => {
@@ -169,13 +173,20 @@ export default function Orbi() {
           returnKeyType="send"
           style={styles.input}
         />
-        <View accessibilityLabel="Voice message (coming soon)" accessibilityState={{ disabled: true }} style={[styles.round, styles.mic]}>
-          <Icon name="mic" size={20} />
-        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Voice mode: talk with Orbi" onPress={() => setVoice(true)} style={[styles.round, styles.mic]}>
+          <Icon name="wave" size={20} color={C.teal} />
+        </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Send" onPress={() => send(text)} style={[styles.round, styles.send]}>
           <Icon name="send" size={20} color={C.bg} />
         </Pressable>
       </View>
+      <VoiceMode
+        visible={voice}
+        onClose={() => setVoice(false)}
+        title={mode === 'private' ? 'Orbi · Private' : 'Orbi · Journal'}
+        intro={mode === 'private' ? 'Private voice chat. Nothing is saved. What is on your mind?' : `I'm listening. How are you doing today?`}
+        respond={(t) => ({ say: send(t) })}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -223,7 +234,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily('body', '400'),
   },
   round: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  mic: { opacity: 0.35, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
+  mic: { backgroundColor: X.tealSoft, borderWidth: 1, borderColor: C.teal },
   send: { backgroundColor: C.primary },
 });
 

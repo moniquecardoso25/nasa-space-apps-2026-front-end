@@ -106,3 +106,5 @@ All in `src/components/Space.tsx` and `StationScene.tsx`, with the `useLoop` (0�
 | `Stars` | Each star twinkles (opacity down to 30 % and back, 1.4–3.2 s, staggered). Two depth layers: big stars (size ≥ 3) are *near*, small ones *far*. Login: layers sway (near ±10 px / 7 s, far ±4 px / 11 s). Window (`driftWidth`): layers drift sideways and wrap (near 60 s, far 120 s per window width) |
 | `WindowEarth` (Home window) | Land turns (strip wraps every 90 s), clouds move faster with the wind (50 s), the planet floats ±4 px / 9 s. Night side and city lights stay fixed |
 | `LoginEarth` (login, relax) | Floats ±6 px vertical / ±3 px horizontal over 10 s |
+| `LogoMark alive` (login, onboarding 1) | Every 0.9–2.8 s (random) picks: blink (38 %), double blink (12 %), glance left (20 %) / right (20 %) / up (10 %). A glance moves the eyes ±3.2 and the visor ±1.5 (viewBox units), tilts the head ±6°, holds 0.7–1.6 s and comes back; 40 % of glances come with a blink |
+| `AudioBars` (voice mode, voice notes) | Height follows the level (mic input, or a synthetic level while Orbi speaks) with a slow wave on top. Reduced motion stops the wave; bars still follow the level |

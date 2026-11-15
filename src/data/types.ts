@@ -72,6 +72,15 @@ export interface MoodData {
   level: 1 | 2 | 3 | 4 | 5;
   label: MoodLabel;
   tags: string[];
+  /** Optional spoken comment recorded on the check-in (audio stays on the device in this prototype). */
+  voiceNote?: VoiceNote;
+}
+export interface VoiceNote {
+  /** Local audio URI (blob: on web, file:// on the phone). */
+  uri: string;
+  durationSec: number;
+  /** Best-effort transcript (browser speech recognition or on-device Whisper). */
+  transcript?: string;
 }
 export interface SleepData {
   bedtime: ISO;

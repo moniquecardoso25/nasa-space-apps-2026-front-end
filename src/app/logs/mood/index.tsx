@@ -9,6 +9,7 @@ import { Segmented } from '@/components/Inputs';
 import { LogScreen, SavedBanner } from '@/components/LogKit';
 import { MoodFace } from '@/components/Mood';
 import { Txt } from '@/components/Txt';
+import { VoiceNotePlayer } from '@/components/VoiceNote';
 import { dayOfDate, getAlerts, getJournal, getLogs, getToday, isLoggedToday } from '@/data/api';
 import { capitalize, relativeDay, weekdayOfDay } from '@/data/format';
 import { useData } from '@/data/store';
@@ -93,7 +94,11 @@ export default function MoodOverview() {
         const tags = moodByDay.get(day)?.data.tags ?? [];
         return { ...j, day, tags };
       });
+    const voiceNotes = getLogs({ type: 'mood' })
+      .filter((l) => l.data.voiceNote)
+      .slice(0, 3);
     return {
+      voiceNotes,
       points,
       avg,
       best,
@@ -146,6 +151,24 @@ export default function MoodOverview() {
           ? 'your mood dips after nights with low light exposure. Try the 21:00 wind-down.'
           : 'your mood has been steady. Keep sharing how your day went.'}
       </InfoNote>
+      {d.voiceNotes.length ? (
+        <Card padding={14} gap={12} shadow={false}>
+          <CardTitle title="Your voice notes" />
+          {d.voiceNotes.map((l) => (
+            <View key={l.id} style={{ gap: 6 }}>
+              <Txt size={tokens.font.size.caption} color={C.muted}>
+                {relativeDay(l.missionDay)} · {capitalize(l.data.label)}
+              </Txt>
+              <VoiceNotePlayer note={l.data.voiceNote!} />
+              {l.data.voiceNote!.transcript ? (
+                <Txt size={tokens.font.size.small} color={C.muted} lh={1.4}>
+                  “{l.data.voiceNote!.transcript}”
+                </Txt>
+              ) : null}
+            </View>
+          ))}
+        </Card>
+      ) : null}
       <Card padding={14} gap={0} shadow={false}>
         <CardTitle
           title="Shared with Orbi"

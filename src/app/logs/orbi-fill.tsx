@@ -12,6 +12,7 @@ import { BackButton } from '@/components/Header';
 import { Icon } from '@/components/Icon';
 import { Chip } from '@/components/Inputs';
 import { Txt } from '@/components/Txt';
+import { VoiceMode, type VoiceReply } from '@/components/VoiceMode';
 import { firstName, getAstronaut } from '@/data/api';
 import { FILL_LABEL, FILL_QUESTION, openCategories, parseContext, saveDrafts, type Drafts } from '@/data/fill';
 import { orbiParser, type DraftMap, type FillCategory } from '@/data/orbiParser';
@@ -66,6 +67,7 @@ export default function OrbiFill() {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [voice] = useState(() => speechAvailable());
   const stopRef = useRef<() => void>(() => {});
+  const [voiceMode, setVoiceMode] = useState(false);
   const name = firstName(getAstronaut());
   const current = queue[step] as FillCategory | undefined;
   const done = step >= queue.length;
@@ -89,40 +91,38 @@ export default function OrbiFill() {
     setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 60);
   };
 
-  const next = (afterText?: string) => {
+  /** Moves to the next category; returns what Orbi says (also spoken in voice mode). */
+  const next = (afterText?: string): VoiceReply => {
     const n = step + 1;
     setStep(n);
     setRetried(false);
     const msgs: Item[] = [];
     if (afterText) msgs.push({ id: nid(), kind: 'orbi', text: afterText });
-    if (n < queue.length) msgs.push({ id: nid(), kind: 'orbi', text: FILL_QUESTION[queue[n]].q });
+    const end = n >= queue.length;
+    if (!end) msgs.push({ id: nid(), kind: 'orbi', text: FILL_QUESTION[queue[n]].q });
     else msgs.push({ id: nid(), kind: 'orbi', text: 'That’s everything. Check the cards above, edit anything, then confirm.' });
     push(...msgs);
+    return { say: msgs.map((m) => (m.kind === 'card' ? '' : m.text)).join(' '), end };
   };
 
-  const answer = (raw: string) => {
+  const answer = (raw: string): VoiceReply => {
     const body = raw.trim();
-    if (!body || !current) return;
+    if (!current) return { say: 'We are done. Check the cards, then confirm.', end: true };
+    if (!body) return { say: FILL_QUESTION[current].q };
     setText('');
     push({ id: nid(), kind: 'me', text: body });
     const r = orbiParser.parse(current, body, parseContext());
-    if (r.skipped) {
-      next(`Skipped ${FILL_LABEL[current].toLowerCase()}.`);
-      return;
-    }
+    if (r.skipped) return next(`Skipped ${FILL_LABEL[current].toLowerCase()}.`);
     if (!r.understood && !retried) {
       setRetried(true);
-      push({
-        id: nid(),
-        kind: 'orbi',
-        text: `I didn't catch the ${r.assumed[0] ?? 'details'}. Could you say it again? ${FILL_QUESTION[current].hint}`,
-      });
-      return;
+      const again = `I didn't catch the ${r.assumed[0] ?? 'details'}. Could you say it again? ${FILL_QUESTION[current].hint}`;
+      push({ id: nid(), kind: 'orbi', text: again });
+      return { say: again };
     }
     setDrafts((d) => ({ ...d, [current]: r.draft }));
     setAssumed((a) => ({ ...a, [current]: r.assumed }));
     push({ id: nid(), kind: 'card', category: current });
-    next('Got it. Edit the card if something is off.');
+    return next('Got it. Edit the card if something is off.');
   };
 
   /** Manual option for mood: a draft card with the vertical slider open. */
@@ -181,6 +181,14 @@ export default function OrbiFill() {
           </Txt>
         </View>
       </View>
+      {!done ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Voice mode: answer hands-free" onPress={() => setVoiceMode(true)} style={styles.voiceBtn}>
+          <Icon name="wave" size={18} color={C.teal} />
+          <Txt weight="600" size={tokens.font.size.small} color={C.teal}>
+            Voice mode · answer hands-free
+          </Txt>
+        </Pressable>
+      ) : null}
       <View style={styles.steps}>
         {queue.map((c, i) => (
           <View key={c} style={[styles.stepChip, i === step && styles.stepNow, (drafts[c] || i < step) && styles.stepDone]}>
@@ -258,6 +266,13 @@ export default function OrbiFill() {
           </View>
         </View>
       )}
+      <VoiceMode
+        visible={voiceMode}
+        onClose={() => setVoiceMode(false)}
+        title="Fill with Orbi"
+        intro={current ? (step === 0 ? `Hi ${name}! ${FILL_QUESTION[current].q}` : FILL_QUESTION[current].q) : undefined}
+        respond={answer}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -290,4 +305,17 @@ const styles = StyleSheet.create({
   mic: { backgroundColor: X.tealSoft, borderWidth: 1, borderColor: C.teal },
   micOn: { backgroundColor: C.teal },
   send: { backgroundColor: C.primary },
+  voiceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: tokens.size.touch,
+    marginTop: 10,
+    marginHorizontal: 16,
+    borderRadius: tokens.radius.item,
+    backgroundColor: X.tealSoft,
+    borderWidth: 1,
+    borderColor: C.teal,
+  },
 });

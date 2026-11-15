@@ -11,7 +11,10 @@ npx expo start       # Expo Go / emulator
 ```
 
 - Sign in with Crew ID `ORB3-ANA` (or `ORB3-RAJ`, `ORB3-MIKA`, `ORB3-LEO`) and any 4-digit PIN.
-- Voice input in **Fill with Orbi** needs a development build on phones (`npx expo run:android` / `run:ios`); on the web it uses the browser's speech recognition when available. Without it, answers are typed.
+- **Voice** (Orbi chat voice mode, Fill with Orbi, mood voice notes):
+  - Orbi talks with `expo-speech` (system / browser voices).
+  - Listening: phone → system recognizer (needs a development build: `npx expo run:android` / `run:ios`); Chrome / Edge / Safari → the browser's speech recognition; **Firefox** (or when the browser recognizer fails) → **on-device Whisper** (`whisper-base`, ~77 MB, downloaded once from jsDelivr + Hugging Face and cached by the browser; audio never leaves the device).
+  - Mood voice notes are recorded with `expo-audio` and kept in memory with the log.
 - Data is an in-memory mock (`src/mocks/mock-db.json`) and resets on reload.
 - Dev catalogue of components and the Bolt animation lab: `/dev/components`. Ground team dashboard (web): `/ground`.
 

@@ -240,3 +240,15 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - Home window Earth turns: land and clouds (wind, faster) scroll inside the round clip; the planet floats. Login/Relax Earth floats.
 - Bolt's floor shadow removed (`BoltShadow` deleted).
 - Decision: speeds and amplitudes are motion values, not colors/sizes, so they live next to the components (documented in ANIMATIONS.md). Reduced motion keeps every background static (verified: identical frames).
+
+## Follow-up · status tag, voice mode, mood voice notes, alive logo
+
+- **Overall score removed from the UI.** Home pill, Status card and the ground table show a status tag only (`healthTag()`: ≥70 "Doing well", ≥50 "Attention", else "Alert"). `overallScore` stays in the data as the internal source of the tag. The `Gauge` remains in the dev catalogue only.
+- **Voice mode** (`VoiceMode`): hands-free loop speak → listen → answer, with a live audio bar (teal = mic level, violet = Orbi speaking, muted = thinking). In Orbi chat (Journal/Private respected) and Fill with Orbi (reads each question, fills the card, moves on; cards still need "Confirm & save"). EN/PT chips set the recognition language (`session.voiceLang`); Orbi always answers in English (rule-based replies are English).
+- **Speech engines** (`src/voice/speech.ts`): native recognizer on phones, Web Speech on Chrome/Edge/Safari, **on-device Whisper** on Firefox and as automatic fallback when the browser recognizer fails (network/service errors). Whisper = transformers.js 3.7.6 from jsDelivr + `Xenova/whisper-base` q8 (~77 MB, cached). Decision: whisper-tiny (~41 MB) misheard "118 over 76, pulse 64" as "187/76" in tests; base got it right. Voice-activity detection ends a turn after ~1.3 s of silence.
+- **TTS** (`src/voice/tts.ts`, expo-speech): picks the most natural voice for the language; safety timer so a browser that never fires `onend` can't freeze the loop.
+- **Mood voice note**: "Anything else? Say it" on the check-in (expo-audio, ≤ 60 s, live bars, play back / re-record / delete). Transcript: live via Web Speech, or Whisper after recording (Firefox / fallback). Phone: audio only. Saved as `mood.data.voiceNote`; the Mood overview lists "Your voice notes".
+- **Login robot** blinks, glances and tilts at random natural intervals (also onboarding 1). Reduced motion → static.
+- New icons (pause, stop, close, trash, wave) drawn in the same 24 px stroke style. New control sizes (voice mode mic 76, end 56) are not in the design; touch targets use `size.touch` (44) elsewhere.
+- Tested in headless Chrome with a fake microphone (Windows TTS WAVs): Web Speech removed (Firefox simulation) → Whisper transcribed EN and PT phrases exactly; browser recognizer forced to fail → automatic Whisper fallback; Fill voice mode created the BP card 118/76/64; voice note recorded, transcribed, saved and played back on the overview; TTS calls use "Google US English"; Private voice chat not saved to Journal.
+- Not verified here: real Firefox and real phones (no device); first Whisper download time depends on the connection.
