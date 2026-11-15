@@ -309,14 +309,12 @@ User report: the page was very laggy while voice got ready; asked to download fi
 
 ## Backend integration - username/password authentication
 
-- Default data source: Crew Health API at `https://crew-health-api-univesp.azurewebsites.net/api/v1`; opt-in mock mode remains available through `.env.local`.
-- Login uses `/auth/login` with username/password, following the standard backend contract; `/app/auth/login` with Crew ID/PIN is a separate supported backend route, not used by this UI.
-- Authenticated snapshot supplies the existing UI model, including mission, profile, baseline, logs, summaries, alerts, messages, shop, calendar and environment readings. Ground access is restricted by role.
-- Remote mutations: logs, edits, onboarding, device settings, purchases/equipment, messages, Orbi Journal/Private chat and audio uploads. API-confirmed IDs, balances and streak bonuses replace local reward calculation.
-- Async save actions show pending/error states and preserve forms on failure. Reads refresh after writes and every minute. Refresh-token rotation, logout and expired-session routing are connected.
-- Uploaded mood audio maps the backend `url` field to the player's `uri`. Simulated injury photos are disabled in real API mode.
-- Fill with Orbi saves sequentially and removes each confirmed card, allowing remaining cards to be retried after a partial failure.
-- Tests cover HTTP authentication, refresh concurrency, server log responses, failed writes, uncertain retry idempotency, audio URL mapping and Private mode. See README for configuration and limitations.
-- Live authenticated end-to-end validation remains pending a valid backend test account. No credentials are committed.
-
-- Validation: 11 HTTP tests passed, TypeScript and Expo lint passed, web production export completed. Public health/mission endpoints and CORS preflight accepted Authorization, Content-Type and Idempotency-Key. Authenticated server tests and real device testing require a valid account/device.
+- Login uses `/auth/login` with username/password; Crew ID/PIN is a separate backend contract. Inputs no longer restrict passwords to four digits.
+- Reconciled the new local integration with incoming main (`f6924f1`), preserving its `src/data/sync.ts` offline queue, localStorage snapshot, per-operation IDs, station clock conversion, sync banner, crew rankings and device-check alerts.
+- One shared transport now handles Bearer credentials, concurrent refresh requests, token rotation persistence, timeouts and errors. Medical/admin roles map to the ground dashboard as defined by the backend. Route guards prevent access without a session.
+- No silent demo fallback on a failed real login. The backend's missing-profile errors remain visible. Mock mode requires explicit environment configuration.
+- Logs, edits, ground messages and Journal exchanges continue through `/app/me/sync`; onboarding, shop and device pairing use queued REST calls. Private Orbi messages remain entirely on-device.
+- Mood audio uploads through `/app/me/uploads` before its queued log is submitted; returned URLs are adapted to the audio player's URI. Simulated injury photos are disabled with the real backend.
+- Async controls prevent duplicate taps and show errors. Fill with Orbi confirms each local save separately; the sync banner identifies changes awaiting server acknowledgment.
+- Validation: 12 automated HTTP/queue tests cover login, ground roles, missing profiles, invalid credentials, concurrent refresh, expired sessions, synchronization, offline replay, rejections, audio uploads, privacy and rankings. TypeScript, Expo lint and web export are checked before publication.
+- Public backend source documents a dedicated demo test account. Live authentication and snapshot reads were validated without writing health data. Real native-device testing remains pending.

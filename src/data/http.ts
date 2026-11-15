@@ -1,6 +1,7 @@
 /** HTTP transport. Tokens stay in memory and are never bundled or persisted. */
-export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'https://crew-health-api-univesp.azurewebsites.net/api/v1').replace(/\/+$/, '');
-export const USE_MOCK_DATA = process.env.EXPO_PUBLIC_USE_MOCK_DATA === 'true';
+const configuredUrl = (process.env.EXPO_PUBLIC_API_URL ?? 'https://crew-health-api-univesp.azurewebsites.net').replace(/\/+$/, '');
+export const USE_MOCK_DATA = process.env.EXPO_PUBLIC_USE_MOCK_DATA === 'true' || configuredUrl.toLowerCase() === 'mock';
+export const API_URL = configuredUrl.endsWith('/api/v1') ? configuredUrl : `${configuredUrl}/api/v1`;
 
 interface Tokens { accessToken: string; refreshToken: string }
 export interface LoginResponse extends Tokens {
@@ -14,6 +15,9 @@ let role: string | null = null;
 let sessionVersion = 0;
 let renewing: Promise<void> | null = null;
 const listeners = new Set<() => void>();
+const tokenListeners = new Set<() => void>();
+export const getSessionTokens = () => tokens;
+export function subscribeTokenChanges(listener: () => void) { tokenListeners.add(listener); return () => { tokenListeners.delete(listener); }; }
 export const getSessionRole = () => role;
 export const getSessionVersion = () => sessionVersion;
 export function subscribeSession(listener: () => void) {
@@ -25,6 +29,7 @@ export function setSession(value: LoginResponse | null) {
   tokens = value;
   role = value ? value.role ?? value.user?.role ?? 'astronaut' : null;
   listeners.forEach((listener) => listener());
+  tokenListeners.forEach((listener) => listener());
 }
 
 export class ApiError extends Error {
@@ -72,7 +77,7 @@ export async function request<T>(path: string, init: RequestInit = {}, authentic
       renewing = send<Tokens>('/auth/refresh', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: session?.refreshToken }),
-      }).then((next) => { if (tokens === session) tokens = next; }).catch((failure) => {
+      }).then((next) => { if (tokens === session) { tokens = next; tokenListeners.forEach((listener) => listener()); } }).catch((failure) => {
         if (tokens === session && failure instanceof ApiError && failure.status >= 400 && failure.status < 500) setSession(null);
         throw failure;
       }).finally(() => { renewing = null; });

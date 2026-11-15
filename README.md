@@ -15,7 +15,7 @@ npx expo start       # Expo Go / emulator
   - Orbi talks with `expo-speech` (system / browser voices).
   - Listening: phone → system recognizer (needs a development build: `npx expo run:android` / `run:ios`); Chrome / Edge / Safari → the browser's speech recognition; **Firefox** (or when the browser recognizer fails) → **on-device recognizer** (Moonshine base via transformers.js, ~63 MB, downloaded once from jsDelivr + Hugging Face and cached by the browser; audio never leaves the device; free and open source, no API key).
   - Mood voice notes are recorded with `expo-audio`, uploaded to `/app/me/uploads`, and linked to the saved log.
-- The app loads the authenticated `/api/v1/app/snapshot` into a reactive local cache. Writes go to the backend before success/navigation. Tokens stay in memory; reloading requires a new login, while server data persists.
+- The app loads the authenticated `/api/v1/app/snapshot` into a reactive local cache. Writes update the cache and enter the existing offline queue; the sync banner distinguishes queued changes from server synchronization. The queue, snapshot and rotated tokens persist in localStorage on web and in memory on phones.
 - Dev catalogue of components and the Bolt animation lab: `/dev/components`. Ground team dashboard (web): `/ground`.
 
 ## API configuration
@@ -30,13 +30,13 @@ EXPO_PUBLIC_USE_MOCK_DATA=false
 Restart/reload Expo after changing the environment. These variables are public configuration; never put passwords or tokens in them. `EXPO_PUBLIC_USE_MOCK_DATA=true` explicitly restores the original demo (use `ORB3-ANA` and any four-digit PIN in the username/password fields).
 
 - `/auth/login` accepts `{ username, password }`. The separate `/app/auth/login` endpoint accepts `{ crewId, pin }`; the app uses the first contract.
-- Access tokens are sent as Bearer credentials. A 401 triggers one shared `/auth/refresh` request; an invalid refresh ends the session. Sign out revokes the refresh token using `/auth/logout`.
+- Access tokens are sent as Bearer credentials. Backend roles `medical` and `admin` map to the ground dashboard, as defined by the server. A 401 triggers one shared `/auth/refresh` request; an invalid refresh ends the session. Sign out revokes the refresh token using `/auth/logout`.
 - `src/data/api.ts` remains the screen data boundary. It handles onboarding, device pairing, log create/edit, audio uploads, Orbi chat, ground messages and avatar purchases/equipment through `/app/me/*`.
-- Server snapshots and `/app/leaderboard?by=logs|coins` refresh after mutations and every 60 seconds, and can be refreshed manually. Connection failures retain the last loaded data and show an error; new writes require a connection.
-- Log retries after an uncertain connection reuse their idempotency key and original timestamp. Confirmed Fill-with-Orbi cards are removed individually so a partial failure can retry the remaining cards.
+- The existing `src/data/sync.ts` queue sends logs, edits, ground messages and Journal exchanges through `/app/me/sync`. Shop, onboarding and device settings use queued REST calls. The snapshot (including crew leaderboard counts) refreshes after sync and every 60 seconds; failed sends retry after 15 seconds. The sync banner shows pending changes and errors.
+- Queued operations retain their operation ID and original timestamp across connection failures, so `/sync` applies each at most once. Confirmed Fill-with-Orbi cards are removed individually so a partial failure can retry the remaining cards.
 - Backend roles and permissions control the snapshot: astronaut accounts see their own health records; ground accounts see the crew dashboard. The frontend also guards navigation.
 - Photos, hardware access, calendar and relaxation content retain prototype limitations. The simulated injury-photo button is disabled with a real backend; existing photo URLs are preserved. Device pairing records the backend setting, without implementing Bluetooth.
-- This integration does not add a persistent offline queue or token storage. The backend offers additional telemetry, meal-plan and offline-sync endpoints for future screens.
+- The remote branch's offline queue and storage are preserved. No demo fallback occurs on a failed real login. Native persistence across app restarts, hardware telemetry and meal-plan screens remain future work.
 
 Authenticated integration testing requires an actual account provisioned in the backend. The tests under `tests/` mock HTTP responses and do not write health data to the deployed API.
 
@@ -47,7 +47,7 @@ Authenticated integration testing requires an actual account provisioned in the 
 1. **Speech → text**: the phone / browser recognizer, or the on-device Moonshine model (only transcribes, understands nothing).
 2. **Text → action, by rules**:
    - `src/data/orbiParser.ts` fills the *Fill with Orbi* cards from **predefined answers and numbers**: numbers in digits or words ("one hundred eighteen over seventy-six, pulse sixty-four", "six and a half hours", `src/data/spokenNumbers.ts`), clock times ("bed at eleven thirty"), and keywords (moods, tags, foods, equipment, "hard", "easy", "skip"). Anything it can't read is filled with a default and marked "Orbi guessed", and nothing is saved before the astronaut confirms.
-   - `/app/me/orbi/chat` provides the server reply and persists Journal conversations. Private mode sends `mode: "private"` and never inserts messages in the local journal. `src/data/orbi.ts` remains available for explicit mock mode.
+   - `src/data/orbi.ts` answers locally, including without a connection. Journal exchanges enter the `/app/me/sync` queue; Private conversations never leave the device or enter the queue.
 
 **Next: a real LLM behind the same two interfaces**, so the screens don't change:
 
