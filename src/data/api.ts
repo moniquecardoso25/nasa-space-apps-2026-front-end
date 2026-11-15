@@ -11,6 +11,7 @@ import type {
   Db,
   GroundMessage,
   JournalEntry,
+  Level,
   Log,
   LogDataMap,
   LogOf,
@@ -299,6 +300,15 @@ export function overallLabel(score: number): OverallLabel {
   if (score >= 70) return 'Stable';
   if (score >= 50) return 'Attention';
   return 'Alert';
+}
+
+/**
+ * What the crew sees instead of a numeric overall score: a status tag only.
+ * The score stays internal (it only decides the tag).
+ */
+export function healthTag(score: number): { level: Level; label: string } {
+  const l = overallLabel(score);
+  return l === 'Stable' ? { level: 'ok', label: 'Doing well' } : l === 'Attention' ? { level: 'warn', label: 'Attention' } : { level: 'alert', label: 'Alert' };
 }
 
 

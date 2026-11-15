@@ -37,7 +37,7 @@ export default function Login() {
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <View style={styles.brand}>
             <View style={styles.logo}>
-              <LogoMark />
+              <LogoMark alive />
             </View>
             <Txt heading weight="700" size={tokens.ext.fontSize.brand}>
               CosmoMedic

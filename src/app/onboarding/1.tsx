@@ -33,7 +33,7 @@ export default function Onb1() {
       onCta={() => router.push('/onboarding/2')}>
       <Card>
         <View style={styles.idRow}>
-          <LogoMark size={52} />
+          <LogoMark size={52} alive />
           <View style={{ gap: 2 }}>
             <Txt weight="700" size={tokens.font.size.screenTitle}>
               {me.name}

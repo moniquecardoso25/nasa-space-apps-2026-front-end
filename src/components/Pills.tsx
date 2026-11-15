@@ -38,6 +38,19 @@ export function TodayChip({ state, label }: { state: Level | 'muted'; label: str
   );
 }
 
+/** Status tag shown instead of an overall score: dot + "Doing well" / "Attention" / "Alert". */
+export function HealthTag({ level, label }: { level: Level; label: string }) {
+  const color = levelColor(level);
+  return (
+    <View accessibilityLabel={`Status: ${label}`} style={[styles.today, styles.tag, { borderColor: color }]}>
+      <StatusDot state={level} size={8} />
+      <Txt weight="700" size={tokens.font.size.small} color={color}>
+        {label}
+      </Txt>
+    </View>
+  );
+}
+
 /** Small muted badge ("Prefilled by ARCHeR wrist band", "Coming soon"). */
 export function Badge({ label, color = C.muted, bg = X.mutedSoft }: { label: string; color?: string; bg?: string }) {
   return (
@@ -87,6 +100,7 @@ const styles = StyleSheet.create({
     borderColor: C.border,
   },
   today: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: tokens.radius.pill, borderWidth: 1 },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
   badge: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: tokens.radius.pill },
   legend: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16, flexWrap: 'wrap' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },

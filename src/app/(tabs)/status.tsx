@@ -14,7 +14,6 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, Ellipse, Line, LinearGradient, Pattern, Rect, Stop } from 'react-native-svg';
 
-import { Gauge } from '@/components/Charts';
 import {
   Callout,
   CalloutLines,
@@ -25,9 +24,9 @@ import {
   type CalloutSpec,
 } from '@/components/Hologram';
 import { Icon } from '@/components/Icon';
-import { CoinsPill, Legend, levelColor } from '@/components/Pills';
+import { CoinsPill, HealthTag, Legend } from '@/components/Pills';
 import { Txt } from '@/components/Txt';
-import { firstName, getAstronaut, getCheckinStreak, getDailySummary, getOpenInjuries, getToday, injuryAreas, isLoggedToday, overallLabel } from '@/data/api';
+import { firstName, getAstronaut, getCheckinStreak, getDailySummary, getOpenInjuries, getToday, healthTag, injuryAreas, isLoggedToday } from '@/data/api';
 import { dayVitals, injuryTitle, lastSyncIso } from '@/data/derived';
 import { hhmm } from '@/data/format';
 import { useData } from '@/data/store';
@@ -117,8 +116,7 @@ export default function Status() {
   }, [sel, today]);
 
   const { me, summary, vitals } = d;
-  const label = overallLabel(summary.overallScore);
-  const lvl: Level = label === 'Stable' ? 'ok' : label === 'Attention' ? 'warn' : 'alert';
+  const tag = healthTag(summary.overallScore);
   const isToday = sel === today;
   const dayLabel = isToday ? `Today, Day ${sel}${d.sync ? ` · synced ${hhmm(d.sync)}` : ''}` : `Day ${sel} · past day`;
   const go = (href: string) => () => router.push(href as never);
@@ -173,15 +171,9 @@ export default function Status() {
 
         <View style={styles.cards}>
           <View style={styles.overall}>
-            <Gauge score={summary.overallScore} color={levelColor(lvl)} />
-            <View style={{ gap: 2, flex: 1 }}>
+            <View style={{ gap: 8, flex: 1 }}>
+              <HealthTag level={tag.level} label={tag.label} />
               <Txt size={tokens.font.size.caption} color={C.muted}>
-                Overall
-              </Txt>
-              <Txt weight="700" size={tokens.font.size.body} color={levelColor(lvl)}>
-                {label}
-              </Txt>
-              <Txt size={tokens.font.size.tiny} color={C.muted}>
                 {summary.logsDoneCount} of {summary.logsTotal} logs done
               </Txt>
             </View>

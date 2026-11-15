@@ -160,8 +160,8 @@ export function LoginEarth({ size = 630, left = -120, top = 520 }: { size?: numb
   );
 }
 
-/** Orbi app logo (white head, dark visor, teal eyes). */
-export function LogoMark({ size = 56 }: { size?: number }) {
+/** Static Orbi app logo (white head, dark visor, teal eyes). */
+function LogoStatic({ size }: { size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 40 40">
       <Circle cx={20} cy={20} r={17} fill={X.suit} />
@@ -169,5 +169,88 @@ export function LogoMark({ size = 56 }: { size?: number }) {
       <Circle cx={16} cy={20} r={2} fill={C.teal} />
       <Circle cx={24} cy={20} r={2} fill={C.teal} />
     </Svg>
+  );
+}
+
+const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+
+/**
+ * Orbi app logo. `alive` → it blinks, glances left/right/up and tilts its head
+ * at random, natural intervals (never in a fixed loop). Reduced motion → static.
+ */
+export function LogoMark({ size = 56, alive = false }: { size?: number; alive?: boolean }) {
+  const reduced = useReducedMotion();
+  const lookX = useSharedValue(0); // −1 … 1 (left … right)
+  const lookY = useSharedValue(0); // −1 … 0 (up … center)
+  const blink = useSharedValue(1); // eye scaleY
+  const tilt = useSharedValue(0); // deg
+  const k = size / 40;
+  const live = alive && !reduced;
+
+  useEffect(() => {
+    const svs = [lookX, lookY, blink, tilt];
+    svs.forEach((v) => cancelAnimation(v));
+    lookX.set(0);
+    lookY.set(0);
+    blink.set(1);
+    tilt.set(0);
+    if (!live) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const doBlink = (twice: boolean) => {
+      const one = [withTiming(0.1, { duration: 70 }), withTiming(1, { duration: 110 })];
+      blink.set(twice ? withSequence(...one, withDelay(90, withTiming(0.1, { duration: 70 })), withTiming(1, { duration: 110 })) : withSequence(...one));
+    };
+    const glance = (x: number, y: number) => {
+      const hold = rnd(700, 1600);
+      const move = rnd(180, 300);
+      lookX.set(withSequence(withTiming(x, { duration: move, easing: ease }), withDelay(hold, withTiming(0, { duration: move + 80, easing: ease }))));
+      lookY.set(withSequence(withTiming(y, { duration: move, easing: ease }), withDelay(hold, withTiming(0, { duration: move + 80, easing: ease }))));
+      tilt.set(withSequence(withTiming(x * 6, { duration: move + 60, easing: ease }), withDelay(hold, withTiming(0, { duration: move + 120, easing: ease }))));
+      // people often blink when they shift their gaze
+      if (Math.random() < 0.4) doBlink(false);
+      return hold + move * 2 + 120;
+    };
+    const step = () => {
+      const r = Math.random();
+      let busy = 200;
+      if (r < 0.38) doBlink(false);
+      else if (r < 0.5) doBlink(true);
+      else if (r < 0.7) busy = glance(-1, 0);
+      else if (r < 0.9) busy = glance(1, 0);
+      else busy = glance(rnd(-0.4, 0.4), -1);
+      timer = setTimeout(step, busy + rnd(900, 2800));
+    };
+    timer = setTimeout(step, rnd(600, 1400));
+    return () => {
+      clearTimeout(timer);
+      svs.forEach((v) => cancelAnimation(v));
+    };
+  }, [live, lookX, lookY, blink, tilt]);
+
+  const headStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${tilt.value}deg` }] }));
+  const visorStyle = useAnimatedStyle(() => ({ transform: [{ translateX: lookX.value * 1.5 * k }, { translateY: lookY.value * 1 * k }] }));
+  const eyesStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: lookX.value * 3.2 * k }, { translateY: lookY.value * 2.2 * k }, { scaleY: blink.value }],
+  }));
+
+  if (!alive) return <LogoStatic size={size} />;
+  const layer = { position: 'absolute', left: 0, top: 0, width: size, height: size } as const;
+  return (
+    <Animated.View accessibilityLabel="Orbi" style={[{ width: size, height: size }, headStyle]}>
+      <Svg width={size} height={size} viewBox="0 0 40 40" style={layer}>
+        <Circle cx={20} cy={20} r={17} fill={X.suit} />
+      </Svg>
+      <Animated.View style={[layer, visorStyle]}>
+        <Svg width={size} height={size} viewBox="0 0 40 40">
+          <Rect x={9} y={13} width={22} height={14} rx={7} fill={C.surfaceSolid} />
+        </Svg>
+      </Animated.View>
+      <Animated.View style={[layer, eyesStyle]}>
+        <Svg width={size} height={size} viewBox="0 0 40 40">
+          <Circle cx={16} cy={20} r={2} fill={C.teal} />
+          <Circle cx={24} cy={20} r={2} fill={C.teal} />
+        </Svg>
+      </Animated.View>
+    </Animated.View>
   );
 }

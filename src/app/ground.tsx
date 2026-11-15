@@ -5,10 +5,10 @@ import { Card, CardTitle } from '@/components/Card';
 import { ProgressBar } from '@/components/Charts';
 import { Icon, type IconName } from '@/components/Icon';
 import { Chip } from '@/components/Inputs';
-import { levelColor } from '@/components/Pills';
+import { HealthTag, levelColor } from '@/components/Pills';
 import { LogoMark } from '@/components/Space';
 import { Txt } from '@/components/Txt';
-import { getAlerts, getAstronauts, getDailySummary, getEnvironmentReadings, getLogs, getMission, getToday } from '@/data/api';
+import { getAlerts, getAstronauts, getDailySummary, getEnvironmentReadings, getLogs, getMission, getToday, healthTag } from '@/data/api';
 import { MOOD_TITLE, radiationTotalMsv } from '@/data/derived';
 import { formatDuration } from '@/data/format';
 import { useData } from '@/data/store';
@@ -71,7 +71,6 @@ export default function Ground() {
     return { mission, today, crew, alerts, readings, delay: Math.round(mission.commDelaySec / 60) };
   });
 
-  const scoreLevel = (s: number): Level => (s >= 70 ? 'ok' : s >= 60 ? 'warn' : 'alert');
   const sleepLevel = (h: number): Level => (h >= 7 ? 'ok' : h >= 5 ? 'warn' : 'alert');
 
   return (
@@ -120,8 +119,8 @@ export default function Ground() {
           <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>
             <View style={{ minWidth: 640, flex: 1 }}>
               <View style={[styles.tr, styles.th]}>
-                {['Crew', 'Overall', 'Mood', 'Sleep', 'Radiation (mSv)*', 'Orbi alert'].map((h, i) => (
-                  <Txt key={h} weight="600" size={tokens.font.size.small} color={C.muted} style={[styles.td, i === 5 && { flex: 1.6 }]}>
+                {['Crew', 'Status', 'Mood', 'Sleep', 'Radiation (mSv)*', 'Orbi alert'].map((h, i) => (
+                  <Txt key={h} weight="600" size={tokens.font.size.small} color={C.muted} style={[styles.td, i === 1 && { flex: 1.4 }, i === 5 && { flex: 1.6 }]}>
                     {h}
                   </Txt>
                 ))}
@@ -131,12 +130,9 @@ export default function Ground() {
                   <Txt weight="700" size={tokens.font.size.body} style={styles.td}>
                     {c.a.name.split(' ')[0]}
                   </Txt>
-                  <Txt size={tokens.font.size.body} style={styles.td}>
-                    <Txt weight="700" size={tokens.font.size.body} color={levelColor(scoreLevel(c.score))}>
-                      {c.score}
-                    </Txt>
-                    /100
-                  </Txt>
+                  <View style={[styles.td, { flex: 1.4 }]}>
+                    <HealthTag {...healthTag(c.score)} />
+                  </View>
                   <Txt size={tokens.font.size.body} style={styles.td}>
                     {c.mood}
                   </Txt>

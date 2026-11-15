@@ -8,18 +8,18 @@ import { ProgressBar, Ring } from '@/components/Charts';
 import { Icon } from '@/components/Icon';
 import { LogMenu, type LogMenuItem } from '@/components/LogMenu';
 import { CoinIcon } from '@/components/Buttons';
-import { CoinsPill, levelColor } from '@/components/Pills';
+import { CoinsPill, StatusDot, levelColor } from '@/components/Pills';
 import { PetArt } from '@/components/ShopArt';
 import { StationProps, StationWall, StationWindow, WINDOW } from '@/components/StationScene';
 import { Txt } from '@/components/Txt';
 import { BoltActor } from '@/avatar/BoltActor';
 import { deriveStatuses } from '@/avatar/status';
-import { firstName, getAstronaut, getDailySummary, getLastSaved, getMission, isLoggedToday, overallLabel } from '@/data/api';
+import { firstName, getAstronaut, getDailySummary, getLastSaved, getMission, healthTag, isLoggedToday } from '@/data/api';
 import { orbiNudge } from '@/data/derived';
 import { boltColors } from '@/data/shopArt';
 import { session } from '@/data/session';
 import { useData } from '@/data/store';
-import type { Level, LogType } from '@/data/types';
+import type { LogType } from '@/data/types';
 import { C, X, tokens } from '@/theme/tokens';
 
 const MENU: { key: string; type: LogType | null; label: string; icon: LogMenuItem['icon']; href: string }[] = [
@@ -53,8 +53,7 @@ export default function Home() {
     };
   });
   const { me, summary, mission } = data;
-  const label = overallLabel(summary.overallScore);
-  const lvl: Level = label === 'Stable' ? 'ok' : label === 'Attention' ? 'warn' : 'alert';
+  const tag = healthTag(summary.overallScore);
 
   // Window shrinks on short screens so the floor never overlaps it.
   const winH = Math.max(180, Math.min(WINDOW.height, size.h - 210 - WINDOW.top - 20));
@@ -133,10 +132,10 @@ export default function Home() {
               <ProgressBar value={mission.today / mission.lengthDays} width={60} />
             </View>
           </View>
-          <Pressable accessibilityRole="link" onPress={() => router.push('/status')} style={styles.stable}>
-            <Icon name="status" size={16} color={levelColor(lvl)} />
-            <Txt weight="600" size={tokens.font.size.small}>
-              {label} {summary.overallScore}
+          <Pressable accessibilityRole="link" accessibilityLabel={`Crew status: ${tag.label}`} onPress={() => router.push('/status')} style={styles.stable}>
+            <StatusDot state={tag.level} size={8} />
+            <Txt weight="600" size={tokens.font.size.small} color={levelColor(tag.level)}>
+              {tag.label}
             </Txt>
           </Pressable>
         </View>
