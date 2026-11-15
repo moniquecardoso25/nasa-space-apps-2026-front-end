@@ -1,4 +1,5 @@
 import { getDb, setDb } from './store';
+import { backendLogin, backendRequest, clearBackendSession, hasBackendSession } from './backend';
 import type {
   AiMessage,
   Areas,
@@ -29,6 +30,133 @@ export const DAILY_CHECKIN_COINS = 50;
  */
 export const COUNTED_TYPES: LogType[] = ['mood', 'sleep', 'radiation', 'meal', 'exercise', 'measurement'];
 export const LOGS_TOTAL = COUNTED_TYPES.length;
+
+type JsonRecord = Record<string, unknown>;
+
+function record(value: unknown): JsonRecord {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as JsonRecord) : {};
+}
+
+function list(value: unknown, ...keys: string[]): unknown[] {
+  if (Array.isArray(value)) return value;
+  const body = record(value);
+  for (const key of keys) if (Array.isArray(body[key])) return body[key] as unknown[];
+  return [];
+}
+
+function levelFromBackend(value: unknown): Level {
+  if (value === 'ok' || value === 'normal' || value === 'stable') return 'ok';
+  if (value === 'alert' || value === 'out_of_range' || value === 'invalid' || value === 'high') return 'alert';
+  if (value === 'warn' || value === 'watch' || value === 'no_data' || value === 'no_reference' || value === 'attention') return 'warn';
+  return 'ok';
+}
+
+function optionalRequest<T>(path: string): Promise<T | null> {
+  return backendRequest<T>(path).catch(() => null);
+}
+
+function blankAstronaut(id: string, name: string, crewId: string): Astronaut {
+  return {
+    id,
+    name,
+    crewId,
+    role: 'astronaut',
+    profile: { age: 0, heightCm: 0, weightKg: 0, foodPreferences: [] },
+    baseline: {
+      boneDensity: 0,
+      muscleMassKg: 0,
+      strengthScore: 0,
+      aerobicScore: 0,
+      bodyFatPct: 0,
+      restingHr: 0,
+      restingBp: '—',
+      usualSleepH: 0,
+      usualBedtime: '—',
+    },
+    devices: { wristBand: { model: 'ARCHeR', paired: false }, dosimeterBadgeId: '', bpCuff: false },
+    avatar: {
+      name: 'Bolt',
+      level: 1,
+      coins: 0,
+      owned: [],
+      equipped: { helmet: '', suit: '', pet: null, room: { window: '', wall: '', floor: '' } },
+      state: 'idle',
+    },
+    onboardingDone: false,
+  };
+}
+
+function astronautFromBackend(response: unknown, id: string, crewId: string, displayName: string): Astronaut {
+  const root = record(response);
+  const raw = { ...root, ...record(root.astronaut ?? root.crewMember) };
+  const defaults = blankAstronaut(
+    id,
+    String(raw.name ?? raw.displayName ?? displayName),
+    String(raw.crewId ?? raw.username ?? crewId),
+  );
+  const profile = record(raw.profile);
+  const baseline = record(raw.baseline ?? raw.preflightBaseline);
+  const rawDevices = record(raw.devices);
+  const band = record(rawDevices.wristBand ?? rawDevices.wristband);
+  const rawAvatar = record(raw.avatar);
+  const equipped = record(rawAvatar.equipped);
+  const room = record(equipped.room);
+
+  return {
+    ...defaults,
+    ...raw,
+    id,
+    name: defaults.name,
+    crewId: defaults.crewId,
+    role: 'astronaut',
+    profile: { ...defaults.profile, ...profile } as Astronaut['profile'],
+    baseline: { ...defaults.baseline, ...baseline } as Astronaut['baseline'],
+    devices: {
+      ...defaults.devices,
+      ...rawDevices,
+      wristBand: { ...defaults.devices.wristBand, ...band, paired: Boolean(band.paired ?? rawDevices.wristBandPaired) },
+      bpCuff: Boolean(rawDevices.bpCuff),
+    } as Astronaut['devices'],
+    avatar: {
+      ...defaults.avatar,
+      ...rawAvatar,
+      equipped: {
+        ...defaults.avatar.equipped,
+        ...equipped,
+        room: { ...defaults.avatar.equipped.room, ...room },
+      },
+    } as Astronaut['avatar'],
+    onboardingDone: Boolean(raw.onboardingDone ?? raw.onboarded ?? false),
+  };
+}
+
+function missionFromBackend(response: unknown, today: number): Db['mission'] {
+  const root = record(response);
+  const remote = record(root.mission ?? response);
+  const seed = getDb().mission;
+  const firstDay = Number(remote.firstDay ?? 1);
+  const lastDay = Number(remote.lastDay ?? remote.lengthDays ?? seed.lengthDays);
+  const lengthDays = Number(remote.lengthDays ?? (firstDay <= 0 ? lastDay : lastDay - firstDay + 1));
+  const goals = record(remote.goals);
+  const environments = list(remote.environments ?? remote.modules, 'items', 'environments', 'modules');
+  return {
+    ...seed,
+    id: String(remote.id ?? seed.id),
+    name: String(remote.name ?? seed.name),
+    startDate: String(remote.launchDate ?? remote.startDate ?? seed.startDate).slice(0, 10),
+    lengthDays: Math.max(1, lengthDays),
+    today: Number(remote.today ?? remote.missionDay ?? root.missionDay ?? today),
+    commDelaySec: Number(remote.commDelaySec ?? seed.commDelaySec),
+    goals: { ...seed.goals, ...goals } as Db['mission']['goals'],
+    environments: environments.length ? (environments as Db['mission']['environments']) : seed.environments,
+  };
+}
+
+function syncInBackground(task: Promise<unknown>) {
+  void task.catch(() => {
+    console.warn('[Crew Health API] A background update could not be synchronized.');
+  });
+}
 
 // ---------------------------------------------------------------- mission / time
 
@@ -75,24 +203,159 @@ export function findAstronautByCrewId(crewId: string): Astronaut | undefined {
   return getDb().astronauts.find((a) => a.crewId.toUpperCase() === id);
 }
 
-/** Mock login: any 4-digit PIN works for a known Crew ID. */
-export function signIn(crewId: string, pin: string): Astronaut | null {
-  const a = findAstronautByCrewId(crewId);
-  if (!a || !/^\d{4}$/.test(pin)) return null;
-  setDb((db) => ({ ...db, currentAstronautId: a.id }));
-  return a;
+/** Sign in through the API and replace demo data with the authenticated crew member's data. */
+export async function signIn(crewId: string, pin: string): Promise<Astronaut> {
+  const user = await backendLogin(crewId, pin);
+  if (user.role !== 'astronaut' || !user.astronautId) {
+    clearBackendSession();
+    throw new Error('This account does not have access to the astronaut app.');
+  }
+
+  let profile: unknown;
+  let missionResponse: unknown;
+  let logsResponse: unknown;
+  try {
+    [profile, missionResponse, logsResponse] = await Promise.all([
+      backendRequest('/api/v1/app/me/profile'),
+      backendRequest('/api/v1/app/mission'),
+      backendRequest('/api/v1/app/me/logs?limit=1000'),
+    ]);
+  } catch (error) {
+    clearBackendSession();
+    throw error;
+  }
+
+  const id = user.astronautId;
+  const profileRoot = record(profile);
+  const missionDay = Number(profileRoot.missionDay ?? record(profileRoot.mission).today ?? getDb().mission.today);
+  const astronaut = astronautFromBackend(profile, id, crewId, user.displayName);
+  const mission = missionFromBackend(missionResponse, missionDay);
+  const remoteLogs = list(logsResponse, 'logs', 'items').filter((entry) => {
+    const item = record(entry);
+    return typeof item.id === 'string' && typeof item.type === 'string' && typeof item.timestamp === 'string';
+  }) as Log[];
+
+  const [summariesResponse, groundResponse, shopResponse, alertsResponse, chatResponse, journalResponse] = await Promise.all([
+    optionalRequest<unknown>('/api/v1/app/me/summaries'),
+    optionalRequest<unknown>('/api/v1/app/me/ground-messages'),
+    optionalRequest<unknown>('/api/v1/app/shop'),
+    optionalRequest<unknown>('/api/v1/app/me/alerts'),
+    optionalRequest<unknown>('/api/v1/app/me/orbi/messages'),
+    optionalRequest<unknown>('/api/v1/app/me/journal'),
+  ]);
+  const summaries = list(summariesResponse, 'summaries', 'items').map((value) => {
+    const summary = record(value);
+    const areas = record(summary.areas);
+    const supportedTypes: LogType[] = ['mood', 'sleep', 'radiation', 'measurement', 'injury', 'meal', 'exercise', 'meditation'];
+    return {
+      astronautId: id,
+      missionDay: Number(summary.missionDay ?? 0),
+      logsDone: Array.isArray(summary.logsDone)
+        ? summary.logsDone.filter((type): type is LogType => typeof type === 'string' && supportedTypes.includes(type as LogType))
+        : [],
+      logsDoneCount: Number(summary.logsDoneCount ?? 0),
+      logsTotal: Number(summary.logsTotal ?? LOGS_TOTAL),
+      overallScore: Number(summary.overallScore ?? 60),
+      areas: {
+        head: levelFromBackend(areas.head),
+        torso: levelFromBackend(areas.torso),
+        armL: levelFromBackend(areas.armL),
+        armR: levelFromBackend(areas.armR),
+        legL: levelFromBackend(areas.legL),
+        legR: levelFromBackend(areas.legR),
+      },
+    } satisfies DailySummary;
+  });
+  const messages = list(groundResponse, 'messages', 'items').map((value) => {
+    const message = record(value);
+    return { ...message, from: message.from === 'astronaut' ? 'astronaut' : 'ground' } as GroundMessage;
+  });
+  const alerts = list(alertsResponse, 'alerts', 'items') as Db['ai_chat']['alerts'];
+  const chatMessages = list(chatResponse, 'messages', 'items').flatMap((value): AiMessage[] => {
+    const message = record(value);
+    const text = message.text ?? message.content;
+    if (typeof text !== 'string') return [];
+    const role = message.author ?? message.role;
+    return [
+      {
+        id: String(message.id ?? `api-msg-${Math.random().toString(36).slice(2)}`),
+        astronautId: id,
+        author: role === 'astronaut' || role === 'user' ? 'astronaut' : 'orbi',
+        text,
+        timestamp: String(message.timestamp ?? message.createdAt ?? new Date().toISOString()),
+        mode: 'journal',
+      },
+    ];
+  });
+  const journal = list(journalResponse, 'journal', 'entries', 'items').map((value) => {
+    const entry = record(value);
+    return {
+      id: String(entry.id ?? ''),
+      astronautId: id,
+      timestamp: String(entry.timestamp ?? entry.createdAt ?? new Date().toISOString()),
+      summary: String(entry.summary ?? entry.text ?? ''),
+      ...(typeof entry.moodLevel === 'number' ? { moodLevel: entry.moodLevel } : {}),
+      sourceMessageIds: Array.isArray(entry.sourceMessageIds) ? (entry.sourceMessageIds as string[]) : [],
+    } as JournalEntry;
+  });
+  const remoteItems = list(shopResponse, 'items', 'shop');
+  const shop = remoteItems.length
+    ? remoteItems
+        .map((value) => {
+          const remoteItem = record(value);
+          return getDb().shop.find((item) => item.id === remoteItem.id);
+        })
+        .filter((item): item is ShopItem => Boolean(item))
+    : getDb().shop;
+
+  setDb((db) => ({
+    ...db,
+    currentAstronautId: id,
+    mission,
+    astronauts: [astronaut],
+    logs: remoteLogs,
+    daily_summaries: summaries,
+    ground_messages: messages,
+    shop,
+    calendar: [],
+    environment_readings: [],
+    ai_chat: { messages: chatMessages, journal, alerts },
+  }));
+  return astronaut;
 }
 
 function updateAstronaut(id: string, fn: (a: Astronaut) => Astronaut) {
   setDb((db) => ({ ...db, astronauts: db.astronauts.map((a) => (a.id === id ? fn(a) : a)) }));
 }
 
-export function completeOnboarding(avatarName: string) {
+export function completeOnboarding(avatarName: string, dailyReminders?: boolean) {
+  const name = avatarName.trim() || 'Bolt';
   updateAstronaut(getCurrentAstronautId(), (a) => ({
     ...a,
     onboardingDone: true,
-    avatar: { ...a.avatar, name: avatarName.trim() || 'Bolt' },
+    avatar: { ...a.avatar, name },
   }));
+  if (hasBackendSession()) {
+    syncInBackground(
+      backendRequest('/api/v1/app/me/onboarding', { method: 'POST', body: { avatarName: name, dailyReminders } }),
+    );
+  }
+}
+
+export function updateDevicePairing(values: { wristBandPaired?: boolean; bpCuff?: boolean }) {
+  updateAstronaut(getCurrentAstronautId(), (astronaut) => ({
+    ...astronaut,
+    devices: {
+      ...astronaut.devices,
+      ...(typeof values.wristBandPaired === 'boolean'
+        ? { wristBand: { ...astronaut.devices.wristBand, paired: values.wristBandPaired } }
+        : {}),
+      ...(typeof values.bpCuff === 'boolean' ? { bpCuff: values.bpCuff } : {}),
+    },
+  }));
+  if (hasBackendSession()) {
+    syncInBackground(backendRequest('/api/v1/app/me/devices', { method: 'PATCH', body: values }));
+  }
 }
 
 export function firstName(a: Astronaut = getAstronaut()) {
@@ -151,6 +414,49 @@ export interface AddLogOptions {
   timestamp?: string;
 }
 
+function backendLogBody(log: Log) {
+  const data = { ...(log.data as unknown as Record<string, unknown>) };
+  const voiceNote = record(data.voiceNote);
+  if (Object.keys(voiceNote).length) {
+    const shareableVoiceNote = { ...voiceNote };
+    delete shareableVoiceNote.uri;
+    data.voiceNote = shareableVoiceNote;
+  }
+  return {
+    type: log.type,
+    data,
+    timestamp: log.timestamp,
+    environmentId: log.environmentId,
+    note: log.note,
+  };
+}
+
+function syncSavedLog(localLog: Log, method: 'POST' | 'PUT') {
+  if (!hasBackendSession()) return;
+  const path = method === 'POST' ? '/api/v1/app/me/logs' : `/api/v1/app/me/logs/${encodeURIComponent(localLog.id)}`;
+  syncInBackground(
+    backendRequest<unknown>(path, { method, body: backendLogBody(localLog) }).then((response) => {
+      const result = record(response);
+      const remoteLog = record(result.log ?? response);
+      if (typeof remoteLog.id !== 'string') return;
+      setDb((db) => ({
+        ...db,
+        logs: db.logs.map((entry) =>
+          entry.id === localLog.id
+            ? ({ ...entry, id: String(remoteLog.id), missionDay: Number(remoteLog.missionDay ?? entry.missionDay), coinsEarned: Number(remoteLog.coinsEarned ?? entry.coinsEarned) } as Log)
+            : entry,
+        ),
+        astronauts:
+          typeof result.coins === 'number'
+            ? db.astronauts.map((astronaut) =>
+                astronaut.id === localLog.astronautId ? { ...astronaut, avatar: { ...astronaut.avatar, coins: result.coins as number } } : astronaut,
+              )
+            : db.astronauts,
+      }));
+    }),
+  );
+}
+
 /** Saves a new log for the current astronaut and gives +10 coins. */
 export function addLog<T extends LogType>(type: T, data: LogDataMap[T], opts: AddLogOptions = {}): LogOf<T> {
   const me = getCurrentAstronautId();
@@ -176,18 +482,23 @@ export function addLog<T extends LogType>(type: T, data: LogDataMap[T], opts: Ad
       ),
     };
   });
+  syncSavedLog(created as Log, 'POST');
   return created;
 }
 
 /** Edits an existing log (no extra coins). */
 export function updateLog<T extends LogType>(id: string, data: LogDataMap[T], opts: AddLogOptions = {}) {
   lastSaved = { type: getDb().logs.find((l) => l.id === id)?.type ?? 'mood', at: Date.now(), coins: 0 };
+  let updated: Log | undefined;
   setDb((db) => ({
     ...db,
-    logs: db.logs.map((l) =>
-      l.id === id ? ({ ...l, data, note: opts.note !== undefined ? opts.note : l.note } as Log) : l,
-    ),
+    logs: db.logs.map((l) => {
+      if (l.id !== id) return l;
+      updated = { ...l, data, note: opts.note !== undefined ? opts.note : l.note, timestamp: opts.timestamp ?? l.timestamp } as Log;
+      return updated;
+    }),
   }));
+  if (updated) syncSavedLog(updated, 'PUT');
 }
 
 /**
@@ -263,19 +574,16 @@ export function getOpenInjuries(day: number = getToday(), astronautId?: string) 
   return getLogs({ type: 'injury', astronautId, toDay: day }).filter((l) => l.data.status !== 'resolved');
 }
 
-/**
- * Daily summary. The mock file is the base (score, areas); logsDone is always
- * recomputed from logs so new logs show up immediately. Each new log after the
- * stored snapshot adds +2 to the score (cap 100).
- */
+/** Uses the server summary as the baseline and overlays logs created in this session. */
 export function getDailySummary(day: number = getToday(), astronautId: string = getCurrentAstronautId()): DailySummary {
   const stored = getDb().daily_summaries.find((d) => d.astronautId === astronautId && d.missionDay === day);
   const dayLogs = getLogs({ astronautId, missionDay: day });
-  const logsDone = COUNTED_TYPES.filter((t) => dayLogs.some((l) => l.type === t));
-  // compare with the stored snapshot using the same counted types
-  const storedCount = stored?.logsDone ? stored.logsDone.filter((t) => COUNTED_TYPES.includes(t as LogType)).length : (stored?.logsDoneCount ?? 0);
+  const serverTypes = new Set((stored?.logsDone ?? []).filter((type): type is LogType => COUNTED_TYPES.includes(type)));
+  const sessionTypes = new Set(dayLogs.map((log) => log.type).filter((type) => COUNTED_TYPES.includes(type)));
+  const logsDone = COUNTED_TYPES.filter((type) => serverTypes.has(type) || sessionTypes.has(type));
+  const newSessionTypes = [...sessionTypes].filter((type) => !serverTypes.has(type)).length;
   const baseScore = stored?.overallScore ?? 60;
-  const overallScore = Math.min(100, baseScore + Math.max(0, logsDone.length - storedCount) * 2);
+  const overallScore = Math.min(100, baseScore + newSessionTypes * 2);
   return {
     astronautId,
     missionDay: day,
@@ -322,41 +630,86 @@ export function getAiMessages(astronautId: string = getCurrentAstronautId()): Ai
   return getDb().ai_chat.messages.filter((m) => m.astronautId === astronautId);
 }
 
-/**
- * Adds a chat message. Private mode never touches the database: the caller
- * keeps those messages in component state only.
- */
-export function addAiMessage(text: string, author: AiMessage['author'], mode: ChatMode): AiMessage {
-  const msg: AiMessage = {
-    id: `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-    astronautId: getCurrentAstronautId(),
-    author,
-    text,
-    timestamp: getNow().toISOString(),
-    mode,
+export interface OrbiChatResult {
+  reply: string;
+  mode: ChatMode;
+  topic: string | null;
+  saved: boolean;
+  journalEntry: JournalEntry | null;
+  messages: AiMessage[];
+  provenance: string | null;
+}
+
+/** Sends a real chat request. Only server-returned Journal messages enter the shared store. */
+export async function sendOrbiChat(text: string, mode: ChatMode): Promise<OrbiChatResult> {
+  const response = record(
+    await backendRequest<unknown>('/api/v1/app/me/orbi/chat', { method: 'POST', body: { text, mode } }),
+  );
+  if (typeof response.reply !== 'string') throw new Error('Orbi returned an invalid response. Please try again.');
+  const actualMode: ChatMode = response.mode === 'private' || response.mode === 'journal' ? response.mode : mode;
+
+  const messages = list(response.messages).flatMap((value): AiMessage[] => {
+    const message = record(value);
+    const content = message.text ?? message.content;
+    if (typeof content !== 'string') return [];
+    const role = message.author ?? message.role;
+    return [
+      {
+        id: String(message.id ?? `orbi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`),
+        astronautId: String(message.astronautId ?? getCurrentAstronautId()),
+        author: role === 'astronaut' || role === 'user' ? 'astronaut' : 'orbi',
+        text: content,
+        timestamp: String(message.timestamp ?? message.createdAt ?? new Date().toISOString()),
+        mode: actualMode,
+      },
+    ];
+  });
+
+  let journalEntry: JournalEntry | null = null;
+  const rawEntry = record(response.journalEntry);
+  if (actualMode === 'journal' && response.saved === true && Object.keys(rawEntry).length) {
+    journalEntry = {
+      id: String(rawEntry.id ?? ''),
+      astronautId: String(rawEntry.astronautId ?? getCurrentAstronautId()),
+      timestamp: String(rawEntry.timestamp ?? rawEntry.createdAt ?? new Date().toISOString()),
+      summary: String(rawEntry.summary ?? ''),
+      ...(typeof rawEntry.moodLevel === 'number' ? { moodLevel: rawEntry.moodLevel } : {}),
+      sourceMessageIds: Array.isArray(rawEntry.sourceMessageIds) ? (rawEntry.sourceMessageIds as string[]) : [],
+    };
+  }
+
+  if (actualMode === 'journal') {
+    setDb((db) => {
+      const knownIds = new Set(db.ai_chat.messages.map((message) => message.id));
+      return {
+        ...db,
+        ai_chat: {
+          ...db.ai_chat,
+          messages: [...db.ai_chat.messages, ...messages.filter((message) => !knownIds.has(message.id))],
+          journal:
+            journalEntry && !db.ai_chat.journal.some((entry) => entry.id === journalEntry?.id)
+              ? [...db.ai_chat.journal, journalEntry]
+              : db.ai_chat.journal,
+        },
+      };
+    });
+  }
+
+  return {
+    reply: response.reply,
+    mode: actualMode,
+    topic: typeof response.topic === 'string' ? response.topic : null,
+    saved: response.saved === true,
+    journalEntry,
+    messages,
+    provenance: typeof response.provenance === 'string' ? response.provenance : null,
   };
-  if (mode === 'private') return msg;
-  setDb((db) => ({ ...db, ai_chat: { ...db.ai_chat, messages: [...db.ai_chat.messages, msg] } }));
-  return msg;
 }
 
 export function getJournal(astronautId: string = getCurrentAstronautId()): JournalEntry[] {
   return getDb()
     .ai_chat.journal.filter((j) => j.astronautId === astronautId)
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-}
-
-export function addJournalEntry(summary: string, sourceMessageIds: string[], moodLevel?: number) {
-  const entry: JournalEntry = {
-    id: `jr-${Date.now().toString(36)}`,
-    astronautId: getCurrentAstronautId(),
-    timestamp: getNow().toISOString(),
-    summary,
-    moodLevel,
-    sourceMessageIds,
-  };
-  setDb((db) => ({ ...db, ai_chat: { ...db.ai_chat, journal: [...db.ai_chat.journal, entry] } }));
-  return entry;
 }
 
 export function getAlerts(astronautId: string = getCurrentAstronautId()) {
@@ -392,6 +745,19 @@ export function sendGroundMessage(text: string, urgent = false, attachments: str
     attachments,
   };
   setDb((db) => ({ ...db, ground_messages: [...db.ground_messages, msg] }));
+  if (hasBackendSession()) {
+    syncInBackground(
+      backendRequest<unknown>('/api/v1/app/me/ground-messages', {
+        method: 'POST',
+        body: { text, urgent, attachments },
+      }).then((response) => {
+        const remote = record(response);
+        if (typeof remote.id !== 'string') return;
+        const saved = { ...msg, ...remote, from: remote.from === 'ground' ? 'ground' : 'astronaut' } as GroundMessage;
+        setDb((db) => ({ ...db, ground_messages: db.ground_messages.map((entry) => (entry.id === msg.id ? saved : entry)) }));
+      }),
+    );
+  }
   return msg;
 }
 
@@ -416,6 +782,24 @@ export function buyItem(id: string): BuyResult {
     ...a,
     avatar: { ...a.avatar, coins: a.avatar.coins - item.price, owned: [...a.avatar.owned, id] },
   }));
+  if (hasBackendSession()) {
+    syncInBackground(
+      backendRequest<unknown>('/api/v1/app/me/avatar/purchase', { method: 'POST', body: { itemId: id } }).then((response) => {
+        const result = record(response);
+        const remoteAvatar = record(result.avatar ?? response);
+        if (typeof remoteAvatar.coins === 'number' || Array.isArray(remoteAvatar.owned)) {
+          updateAstronaut(me.id, (a) => ({
+            ...a,
+            avatar: {
+              ...a.avatar,
+              ...(typeof remoteAvatar.coins === 'number' ? { coins: remoteAvatar.coins } : {}),
+              ...(Array.isArray(remoteAvatar.owned) ? { owned: remoteAvatar.owned as string[] } : {}),
+            },
+          }));
+        }
+      }),
+    );
+  }
   return 'ok';
 }
 
@@ -423,6 +807,7 @@ export function buyItem(id: string): BuyResult {
 export function equipItem(id: string) {
   const item = getShopItem(id);
   if (!item) return;
+  const backendItemId = item.category === 'pet' && getAstronaut().avatar.equipped.pet === id ? null : id;
   updateAstronaut(getCurrentAstronautId(), (a) => {
     const eq = { ...a.avatar.equipped, room: { ...a.avatar.equipped.room } };
     if (item.category === 'helmet') eq.helmet = id;
@@ -431,6 +816,11 @@ export function equipItem(id: string) {
     else eq.room[item.category] = id;
     return { ...a, avatar: { ...a.avatar, equipped: eq } };
   });
+  if (hasBackendSession()) {
+    syncInBackground(
+      backendRequest('/api/v1/app/me/avatar/equip', { method: 'POST', body: { itemId: backendItemId, category: item.category } }),
+    );
+  }
 }
 
 export function isOwned(id: string) {

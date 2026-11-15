@@ -14,8 +14,7 @@ import { StationProps, StationWall, StationWindow, WINDOW } from '@/components/S
 import { Txt } from '@/components/Txt';
 import { BoltActor } from '@/avatar/BoltActor';
 import { deriveStatuses } from '@/avatar/status';
-import { firstName, getAstronaut, getDailySummary, getLastSaved, getMission, healthTag, isLoggedToday } from '@/data/api';
-import { orbiNudge } from '@/data/derived';
+import { firstName, getAiMessages, getAstronaut, getDailySummary, getLastSaved, getMission, healthTag, isLoggedToday } from '@/data/api';
 import { boltColors } from '@/data/shopArt';
 import { session } from '@/data/session';
 import { useData } from '@/data/store';
@@ -45,7 +44,7 @@ export default function Home() {
       me,
       summary,
       mission: getMission(),
-      nudge: orbiNudge(),
+      nudge: [...getAiMessages()].reverse().find((message) => message.author === 'orbi')?.text ?? 'Tap to ask Orbi about your mission.',
       fill: session.orbiFill,
       statuses: deriveStatuses(),
       lastSavedAt: getLastSaved()?.at,
@@ -97,7 +96,7 @@ export default function Home() {
           accessibilityLabel={`Orbi: ${data.nudge}`}
           onPress={() => router.push('/orbi')}
           style={[styles.bubble, { top: winBottom - 34 }]}>
-          <Txt size={tokens.font.size.caption} lh={1.4}>
+          <Txt size={tokens.font.size.caption} lh={1.4} numberOfLines={4}>
             <Txt weight="700" size={tokens.font.size.caption} color={C.teal}>
               Orbi:{' '}
             </Txt>

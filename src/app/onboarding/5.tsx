@@ -30,7 +30,7 @@ export default function Onb5() {
       intro="Everyone starts with the same astronaut. Keep logging to earn coins and customize it in the shop."
       cta="Start mission"
       onCta={() => {
-        completeOnboarding(name);
+        completeOnboarding(name, session.reminders);
         session.onboardedThisSession = true;
         router.replace('/home');
       }}>

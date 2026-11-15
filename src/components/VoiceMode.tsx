@@ -126,7 +126,15 @@ function VoiceSession({ onClose, title, intro, hint, normalize, respond }: Props
     const text = normalizeRef.current ? normalizeRef.current(raw) : raw;
     setHeard(text);
     setPhase('thinking');
-    const r = await respondRef.current(text);
+    let r: VoiceReply;
+    try {
+      r = await respondRef.current(text);
+    } catch (cause) {
+      if (!alive.current) return;
+      setNote(cause instanceof Error ? cause.message : 'Orbi could not respond. Check your connection and try again.');
+      setPhase('idle');
+      return;
+    }
     if (!alive.current) return;
     say(r.say, () => {
       if (!r.end) listen();

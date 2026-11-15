@@ -15,18 +15,23 @@ import { C, X, tokens } from '@/theme/tokens';
 export default function Login() {
   const insets = useSafeAreaInsets();
   const [crewId, setCrewId] = useState('ORB3-ANA');
-  const [pin, setPin] = useState('1234');
+  const [pin, setPin] = useState('2026');
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submit = () => {
-    const a = signIn(crewId, pin);
-    if (!a) {
-      setError('Unknown Crew ID or PIN. Use your Crew ID (e.g. ORB3-ANA) and a 4-digit PIN.');
-      return;
-    }
+  const submit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError(null);
-    // First sign-in of the session (or onboarding not done) → onboarding; otherwise Home.
-    router.replace(session.onboardedThisSession && a.onboardingDone ? '/home' : '/onboarding/1');
+    try {
+      const a = await signIn(crewId, pin);
+      // First sign-in of the session (or onboarding not done) -> onboarding; otherwise Home.
+      router.replace(session.onboardedThisSession && a.onboardingDone ? '/home' : '/onboarding/1');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Sign in failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -63,14 +68,14 @@ export default function Login() {
               keyboardType="number-pad"
               placeholder="••••"
               accessibilityLabel="PIN"
-              onSubmitEditing={submit}
+              onSubmitEditing={() => void submit()}
             />
             {error ? (
               <Txt size={tokens.font.size.caption} color={C.danger} accessibilityLiveRegion="polite">
                 {error}
               </Txt>
             ) : null}
-            <PrimaryButton label="Sign in" onPress={submit} />
+            <PrimaryButton label={isSubmitting ? 'Connecting…' : 'Sign in'} onPress={() => void submit()} disabled={isSubmitting} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
