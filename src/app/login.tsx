@@ -7,26 +7,44 @@ import { PrimaryButton } from '@/components/Buttons';
 import { Field } from '@/components/Inputs';
 import { LOGIN_STARS, LoginEarth, LogoMark, Stars } from '@/components/Space';
 import { Txt } from '@/components/Txt';
-import { signIn } from '@/data/api';
+import { getAstronaut, signIn } from '@/data/api';
 import { session } from '@/data/session';
+import { signInLive } from '@/data/sync';
 import { C, X, tokens } from '@/theme/tokens';
 
-/** Login · Crew ID + PIN (mock: any 4-digit PIN for a known Crew ID). */
+/** Login · Crew ID + PIN, checked by the backend (demo PIN 2026). Mock mode: any 4-digit PIN for a known Crew ID. */
 export default function Login() {
   const insets = useSafeAreaInsets();
   const [crewId, setCrewId] = useState('ORB3-ANA');
-  const [pin, setPin] = useState('1234');
+  const [pin, setPin] = useState('2026');
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const submit = () => {
-    const a = signIn(crewId, pin);
-    if (!a) {
-      setError('Unknown Crew ID or PIN. Use your Crew ID (e.g. ORB3-ANA) and a 4-digit PIN.');
-      return;
-    }
+  const submit = async () => {
+    if (busy) return;
+    setBusy(true);
     setError(null);
-    // First sign-in of the session (or onboarding not done) → onboarding; otherwise Home.
-    router.replace(session.onboardedThisSession && a.onboardingDone ? '/home' : '/onboarding/1');
+    try {
+      // Backend first. With no server (or EXPO_PUBLIC_API_URL=mock) the app runs on the demo data.
+      const live = await signInLive(crewId, pin);
+      if (live.ok && live.role === 'ground') {
+        router.replace('/ground');
+        return;
+      }
+      if (!live.ok && live.reason === 'credentials') {
+        setError('Unknown Crew ID or PIN. Use your Crew ID (e.g. ORB3-ANA) and your 4-digit PIN.');
+        return;
+      }
+      const a = live.ok ? getAstronaut() : signIn(crewId, pin);
+      if (!a) {
+        setError('Unknown Crew ID or PIN. Use your Crew ID (e.g. ORB3-ANA) and a 4-digit PIN.');
+        return;
+      }
+      // First sign-in of the session (or onboarding not done) → onboarding; otherwise Home.
+      router.replace(session.onboardedThisSession && a.onboardingDone ? '/home' : '/onboarding/1');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -70,7 +88,7 @@ export default function Login() {
                 {error}
               </Txt>
             ) : null}
-            <PrimaryButton label="Sign in" onPress={submit} />
+            <PrimaryButton label={busy ? 'Signing in…' : 'Sign in'} onPress={submit} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

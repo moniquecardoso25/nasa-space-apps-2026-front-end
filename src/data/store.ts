@@ -8,7 +8,8 @@ import type { Db } from './types';
  * In-memory database seeded from src/mocks/mock-db.json.
  * Screens never import the JSON: they go through src/data/api.ts.
  * Writes replace the root object (immutable), so subscribers re-render.
- * Data resets on reload (no backend yet).
+ * With the backend on (src/data/sync.ts) the mock is replaced at sign-in by the
+ * server snapshot, which has the same shape; without it, data resets on reload.
  */
 let db: Db = structuredClone(raw as unknown as Db);
 let version = 0;
@@ -22,6 +23,16 @@ export function setDb(update: (draft: Db) => Db) {
   db = update(db);
   version++;
   listeners.forEach((l) => l());
+}
+
+/** Replaces the whole database (server snapshot or a copy saved on the device). */
+export function replaceDb(next: Db) {
+  setDb(() => next);
+}
+
+/** Runs `l` after every change (used to keep a copy on the device). */
+export function onDbChange(l: () => void) {
+  return subscribe(l);
 }
 
 /** Test/dev helper: restore the original mock. */
