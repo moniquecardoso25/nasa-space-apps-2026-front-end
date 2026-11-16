@@ -30,10 +30,10 @@ export default function MealsExtra() {
     }
   };
 
-  const save = () => {
+  const save = async () => {
     if (!valid) return;
     const k = Number(kcal);
-    addLog(
+    await addLog(
       'meal',
       {
         name: name.trim(),

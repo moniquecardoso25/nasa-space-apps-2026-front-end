@@ -347,3 +347,15 @@ Only the items the user picked from the team's screen-by-screen review, done wit
 - "Orbi insight" card as the last item of Sleep, Mood, Body and Meals (`InsightCard`). Text from `insights` in mock-db.json (one per astronaut and area, backend later); fallback per screen, or "Not enough data yet…" for a new crew member (TEST). Mood's Orbi note and Sleep's ISS note became these fallbacks.
 - App renamed **CosmoMedic → Orbi** everywhere (app.json name/slug/scheme, package name, login logo, onboarding, mic permission texts, READMEs, AGENTS.md, design docs and tokens). The assistant inside the app is still Orbi too.
 - Everything in English: removed the Portuguese keywords from the answer parser (the recognizer is English only) and renamed the "Etapa" headings of this log to "Stage".
+
+## Backend integration - username/password authentication
+
+- Login uses `/auth/login` with username/password; Crew ID/PIN is a separate backend contract. Inputs no longer restrict passwords to four digits.
+- Reconciled the new local integration with incoming main (`f6924f1`), preserving its `src/data/sync.ts` offline queue, localStorage snapshot, per-operation IDs, station clock conversion, sync banner, crew rankings and device-check alerts.
+- One shared transport now handles Bearer credentials, concurrent refresh requests, token rotation persistence, timeouts and errors. Medical/admin roles map to the ground dashboard as defined by the backend. Route guards prevent access without a session.
+- No silent demo fallback on a failed real login. The backend's missing-profile errors remain visible. Mock mode requires explicit environment configuration.
+- Logs, edits, ground messages and Journal exchanges continue through `/app/me/sync`; onboarding, shop and device pairing use queued REST calls. Private Orbi messages remain entirely on-device.
+- Mood audio uploads through `/app/me/uploads` before its queued log is submitted; returned URLs are adapted to the audio player's URI. Simulated injury photos are disabled with the real backend.
+- Async controls prevent duplicate taps and show errors. Fill with Orbi confirms each local save separately; the sync banner identifies changes awaiting server acknowledgment.
+- Validation: 12 automated HTTP/queue tests cover login, ground roles, missing profiles, invalid credentials, concurrent refresh, expired sessions, synchronization, offline replay, rejections, audio uploads, privacy and rankings. TypeScript, Expo lint and web export are checked before publication.
+- Public backend source documents a dedicated demo test account. Live authentication and snapshot reads were validated without writing health data. Real native-device testing remains pending.

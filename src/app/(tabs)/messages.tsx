@@ -7,6 +7,7 @@ import { Icon } from '@/components/Icon';
 import { Chip } from '@/components/Inputs';
 import { Txt } from '@/components/Txt';
 import { dayOfDate, etaOf, getGroundMessages, getMission, getNow, getTodayLogs, sendGroundMessage } from '@/data/api';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { hhmm, relativeDay } from '@/data/format';
 import { useData } from '@/data/store';
 import { fontFamily } from '@/theme/fonts';
@@ -20,6 +21,7 @@ const SUPPORT_HEADER = 'Medical support request';
 /** Messages with the ground team. Status and ETA come from sentAt + mission.commDelaySec. */
 export default function Messages() {
   const insets = useSafeAreaInsets();
+  const action = useAsyncAction();
   const [text, setText] = useState('');
   const [urgent, setUrgent] = useState(false);
   const [attach, setAttach] = useState(false);
@@ -80,21 +82,21 @@ export default function Messages() {
   }));
   const delayMs = delayMin * 60000;
 
-  const send = () => {
+  const send = () => action.run(async () => {
     const body = text.trim();
     if (!body) return;
-    sendGroundMessage(supportNote ? `${SUPPORT_HEADER}
-${body}` : body, urgent, attach ? todayLogIds : []);
+    await sendGroundMessage(supportNote ? `${SUPPORT_HEADER}\n${body}` : body, urgent, attach ? todayLogIds : []);
     setText('');
     setUrgent(false);
     setAttach(false);
     setSupportNote(false);
     setNow(getNow().getTime());
     setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
-  };
+  });
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, { paddingTop: insets.top }]}>
+      {action.error ? <Txt color={C.danger} accessibilityLiveRegion="polite">{action.error}</Txt> : null}
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={{ gap: 2, flex: 1 }}>

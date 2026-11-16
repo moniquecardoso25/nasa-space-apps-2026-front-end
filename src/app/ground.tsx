@@ -22,6 +22,7 @@ const ALERT_LABEL: Record<Alert['type'], string> = {
   fitness_drop: 'Fitness drop',
   menu_fatigue: 'Menu fatigue',
   injury: 'Injury',
+  device_check: 'Device check',
 };
 const alertLevel = (a: Alert): Level => (a.level === 'high' ? 'alert' : 'warn');
 const NAV: { icon: IconName; label: string }[] = [

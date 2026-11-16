@@ -7,26 +7,22 @@ import { PrimaryButton } from '@/components/Buttons';
 import { Field } from '@/components/Inputs';
 import { LOGIN_STARS, LoginEarth, LogoMark, Stars } from '@/components/Space';
 import { Txt } from '@/components/Txt';
-import { signIn } from '@/data/api';
-import { session } from '@/data/session';
+import { getSessionRole, signIn } from '@/data/api';
 import { C, X, tokens } from '@/theme/tokens';
 
-/** Login · Crew ID + PIN (mock: any 4-digit PIN for a known Crew ID). */
+/** Authenticate with the backend username/password contract. */
 export default function Login() {
   const insets = useSafeAreaInsets();
-  const [crewId, setCrewId] = useState('ORB3-ANA');
-  const [pin, setPin] = useState('1234');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const submit = () => {
-    const a = signIn(crewId, pin);
-    if (!a) {
-      setError('Unknown Crew ID or PIN. Use your Crew ID (e.g. ORB3-ANA) and a 4-digit PIN.');
-      return;
-    }
+  const submit = async () => {
     setError(null);
-    // First sign-in of the session (or onboarding not done) → onboarding; otherwise Home.
-    router.replace(session.onboardedThisSession && a.onboardingDone ? '/home' : '/onboarding/1');
+    const a = await signIn(username, password);
+    if (getSessionRole() === 'ground') { router.replace('/ground'); return; }
+    if (!a) { setError('Invalid username or password.'); return; }
+    router.replace(a.onboardingDone ? '/home' : '/onboarding/1');
   };
 
   return (
@@ -48,29 +44,27 @@ export default function Login() {
           </View>
           <View style={styles.card}>
             <Field
-              label="Crew ID"
-              value={crewId}
-              onChangeText={setCrewId}
-              autoCapitalize="characters"
+              label="Username"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
               autoCorrect={false}
-              accessibilityLabel="Crew ID"
+              accessibilityLabel="Username"
             />
             <Field
-              label="PIN"
-              value={pin}
-              onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 4))}
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
               secureTextEntry
-              keyboardType="number-pad"
               placeholder="••••"
-              accessibilityLabel="PIN"
-              onSubmitEditing={submit}
+              accessibilityLabel="Password"
             />
             {error ? (
               <Txt size={tokens.font.size.caption} color={C.danger} accessibilityLiveRegion="polite">
                 {error}
               </Txt>
             ) : null}
-            <PrimaryButton label="Sign in" onPress={submit} />
+            <PrimaryButton label="Sign in" onPress={submit} disabled={!username.trim() || !password} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

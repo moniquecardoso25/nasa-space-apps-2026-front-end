@@ -407,8 +407,8 @@ export default function OrbiFill() {
   const sessionsOk = sessions.filter((c) => c.status === 'done' || c.status === 'changed').length;
   const count = Object.keys(drafts).length + (mealsOk ? 1 : 0) + (sessionsOk ? 1 : 0);
   const coins = Object.keys(drafts).length * 10 + mealsOk * 10 + sessionsOk * 10;
-  const confirm = () => {
-    saveDrafts(drafts, { meals, sessions });
+  const confirm = async () => {
+    await saveDrafts(drafts, { meals, sessions }, remove);
     router.navigate('/home');
   };
   // the 6 logs in the order the check-in fills them (devices first, then the questions)

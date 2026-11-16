@@ -1,12 +1,18 @@
 import { Tabs } from 'expo-router/js-tabs';
 
+import { SyncBanner } from '@/components/SyncBanner';
 import { TabBar } from '@/components/TabBar';
 import { C } from '@/theme/tokens';
 
 export default function TabsLayout() {
   return (
     <Tabs
-      tabBar={(props) => <TabBar {...props} />}
+      tabBar={(props) => (
+        <>
+          <SyncBanner />
+          <TabBar {...props} />
+        </>
+      )}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.bg } }}>
       <Tabs.Screen name="home" />
       <Tabs.Screen name="status" />

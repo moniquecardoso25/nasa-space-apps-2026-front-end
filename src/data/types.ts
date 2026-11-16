@@ -213,7 +213,7 @@ export interface JournalEntry {
   moodLevel?: number;
   sourceMessageIds: string[];
 }
-export type AlertType = 'poor_sleep' | 'low_mood' | 'bone_loss' | 'fitness_drop' | 'menu_fatigue' | 'injury';
+export type AlertType = 'poor_sleep' | 'low_mood' | 'bone_loss' | 'fitness_drop' | 'menu_fatigue' | 'injury' | 'device_check';
 export interface Alert {
   id: string;
   astronautId: string;
@@ -283,4 +283,8 @@ export interface Db {
   shop: ShopItem[];
   calendar: CalendarEvent[];
   insights?: Insight[];
+  /** Backend only: who is signed in. Astronauts get their own data; the ground team gets the crew's. */
+  role?: 'astronaut' | 'ground';
+  /** Backend only: ranking numbers of the crew (an astronaut's snapshot has no logs of the others). */
+  leaderboard?: { astronautId: string; logs: number; coins: number }[];
 }

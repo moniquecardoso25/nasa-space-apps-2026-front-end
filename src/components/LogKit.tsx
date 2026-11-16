@@ -42,7 +42,7 @@ export function goBackTo(href: string) {
 }
 
 /** Sticky "Save … +10" button for add forms. */
-export function SaveButton({ label, onPress, reward = 10, disabled }: { label: string; onPress: () => void; reward?: number; disabled?: boolean }) {
+export function SaveButton({ label, onPress, reward = 10, disabled }: { label: string; onPress: () => void | Promise<void>; reward?: number; disabled?: boolean }) {
   return <PrimaryButton label={label} reward={reward || undefined} onPress={onPress} disabled={disabled} />;
 }
 

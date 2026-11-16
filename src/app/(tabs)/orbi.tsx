@@ -14,6 +14,7 @@ import { addAiMessage, addJournalEntry, dayOfDate, etaOf, getAiMessages, getAstr
 import { hhmm, relativeDay } from '@/data/format';
 import { journalSummary, orbiReply, type OrbiAction } from '@/data/orbi';
 import { useData } from '@/data/store';
+import { remote } from '@/data/sync';
 import type { AiMessage, ChatMode } from '@/data/types';
 import { useVoiceGate } from '@/voice/useVoiceGate';
 import { fontFamily } from '@/theme/fonts';
@@ -73,7 +74,10 @@ export default function Orbi() {
     const reply = orbiReply(body);
     const answer = addAiMessage(reply.text, 'orbi', mode);
     if (mode === 'journal') {
-      addJournalEntry(journalSummary(body), [mine.id], getTodayLogs('mood')[0]?.data.level);
+      const mood = getTodayLogs('mood')[0]?.data.level;
+      addJournalEntry(journalSummary(body), [mine.id], mood);
+      // Journal mode is shared with the medical team as summaries; Private mode never leaves the device.
+      remote.chatSaved(body, reply.text, journalSummary(body), mood);
     } else {
       setPrivateMsgs((cur) => [...cur, mine, { ...answer }]);
     }

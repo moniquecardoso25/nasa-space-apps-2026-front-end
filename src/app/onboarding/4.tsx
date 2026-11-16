@@ -9,7 +9,7 @@ import { Toggle } from '@/components/Inputs';
 import { OnboardingShell } from '@/components/Onboarding';
 import { Badge } from '@/components/Pills';
 import { Txt } from '@/components/Txt';
-import { getAstronaut } from '@/data/api';
+import { getAstronaut, pairDevice } from '@/data/api';
 import { session } from '@/data/session';
 import { useData } from '@/data/store';
 import { C, tokens, X } from '@/theme/tokens';
@@ -74,7 +74,7 @@ export default function Onb4() {
           icon="band"
           title="ARCHeR wrist band"
           sub="Sleep, movement, light exposure"
-          right={<DeviceStatus state={me.devices.wristBand.paired ? 'demo' : 'none'} sync="06:02" />}
+          right={me.devices.wristBand.paired ? <DeviceStatus state="demo" sync="06:02" /> : <PrimaryButton size="sm" label="Pair" onPress={() => pairDevice('wristBandPaired')} />}
         />
         <DeviceRow
           icon="radiation"
@@ -93,7 +93,8 @@ export default function Onb4() {
               <PrimaryButton
                 size="sm"
                 label="Use demo"
-                onPress={() => {
+                onPress={async () => {
+                  await pairDevice('bpCuff');
                   session.bpCuffPaired = true;
                   setPaired(true);
                 }}

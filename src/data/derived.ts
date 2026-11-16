@@ -144,6 +144,8 @@ export function orbiNudge(): string {
       return 'same menu again? Try a new combo today.';
     case 'bone_loss':
       return 'bone density is dropping. Resistive exercise today?';
+    case 'device_check':
+      return 'a device reading was off. How are you feeling now?';
   }
 }
 

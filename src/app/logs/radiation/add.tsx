@@ -41,7 +41,7 @@ export default function RadiationAdd() {
     setScanned(true);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!valid) return;
     const data: RadiationData = {
       value: num,
@@ -52,7 +52,7 @@ export default function RadiationAdd() {
       particle: 'total',
       illustrative: true,
     };
-    saveDailyLog('radiation', data, { timestamp: isoAt(getToday(), readAt) });
+    await saveDailyLog('radiation', data, { timestamp: isoAt(getToday(), readAt) });
     goBackTo('/logs/radiation');
   };
 

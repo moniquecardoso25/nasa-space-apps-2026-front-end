@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { useAsyncAction } from '@/hooks/useAsyncAction';
+
 import { C, X, tokens } from '@/theme/tokens';
 
 import { Icon, type IconName } from './Icon';
@@ -13,7 +15,7 @@ const go = (href?: string) => href && router.push(href as never);
 type PrimaryProps = {
   label: string;
   reward?: number;
-  onPress?: () => void;
+  onPress?: () => void | Promise<void>;
   href?: string;
   disabled?: boolean;
   tone?: 'primary' | 'gold';
@@ -25,36 +27,41 @@ type PrimaryProps = {
 
 /** Lilac CTA, radius 18, min-height 54, glow. `tone="gold"` = daily check-in style. */
 export function PrimaryButton({ label, reward, onPress, href, disabled, tone = 'primary', icon, style, size = 'md' }: PrimaryProps) {
+  const action = useAsyncAction();
+  const blocked = disabled || action.busy;
   const sm = size === 'sm';
   const gold = tone === 'gold';
   const fg = gold ? C.onGold : C.onPrimary;
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress ?? (() => go(href))}
-      style={({ pressed }) => [
-        styles.primary,
-        gold && { backgroundColor: C.gold, boxShadow: tokens.shadow.goldGlow },
-        sm && styles.sm,
-        disabled && styles.disabled,
-        pressed && { opacity: 0.85 },
-        style,
-      ]}>
-      {icon ? <Icon name={icon} size={18} color={fg} strokeWidth={2.5} /> : null}
-      <Txt weight="700" size={sm ? tokens.font.size.small : tokens.font.size.body} color={fg}>
-        {label}
-      </Txt>
-      {reward ? <RewardChip amount={reward} color={fg} /> : null}
-    </Pressable>
+    <View style={{ gap: 6 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: blocked, busy: action.busy }}
+        disabled={blocked}
+        onPress={() => { void action.run(onPress ?? (() => go(href))); }}
+        style={({ pressed }) => [
+          styles.primary,
+          gold && { backgroundColor: C.gold, boxShadow: tokens.shadow.goldGlow },
+          sm && styles.sm,
+          blocked && styles.disabled,
+          pressed && { opacity: 0.85 },
+          style,
+        ]}>
+        {icon ? <Icon name={icon} size={18} color={fg} strokeWidth={2.5} /> : null}
+        <Txt weight="700" size={sm ? tokens.font.size.small : tokens.font.size.body} color={fg}>
+          {action.busy ? 'Please wait...' : label}
+        </Txt>
+        {reward ? <RewardChip amount={reward} color={fg} /> : null}
+      </Pressable>
+      {action.error ? <Txt color={C.danger} size={tokens.font.size.caption} accessibilityLiveRegion="polite">{action.error}</Txt> : null}
+    </View>
   );
 }
 
 type SecondaryProps = {
   label?: string;
   icon?: IconName;
-  onPress?: () => void;
+  onPress?: () => void | Promise<void>;
   href?: string;
   style?: ViewStyle;
   children?: ReactNode;

@@ -5,7 +5,7 @@ import { SecondaryButton } from '@/components/Buttons';
 import { Chip, Field, Rating, Segmented } from '@/components/Inputs';
 import { ChipRow, Group, LogScreen, Note, SaveButton, goBackTo } from '@/components/LogKit';
 import { Txt } from '@/components/Txt';
-import { addLog, getLogs, updateLog } from '@/data/api';
+import { USE_MOCK_DATA, addLog, getLogs, updateLog } from '@/data/api';
 import { INJURY_KIND_LABEL, INJURY_PART_LABEL, injuryTitle } from '@/data/derived';
 import { useData } from '@/data/store';
 import type { InjuryData, InjuryPart } from '@/data/types';
@@ -43,7 +43,7 @@ export default function BodyInjury() {
     else if (side === 'center') setSide('left');
   };
 
-  const save = () => {
+  const save = async () => {
     if (!valid) return;
     const data: InjuryData = {
       bodyPart: part,
@@ -52,12 +52,12 @@ export default function BodyInjury() {
       severity,
       pain: pain!,
       description: desc.trim(),
-      photoUrl: photo ? 'local://injury-photo.jpg' : null,
+      photoUrl: USE_MOCK_DATA ? (photo ? 'local://injury-photo.jpg' : null) : e?.photoUrl ?? null,
       status,
       flaggedToGround: severity === 'severe',
     };
-    if (existing) updateLog<'injury'>(existing.id, data);
-    else addLog('injury', data);
+    if (existing) await updateLog<'injury'>(existing.id, data);
+    else await addLog('injury', data);
     goBackTo('/logs/body');
   };
 
@@ -116,7 +116,7 @@ export default function BodyInjury() {
         <Rating value={pain} onChange={setPain} minLabel="No pain" maxLabel="Worst pain" />
       </Group>
       <Field label="How did it happen?" value={desc} onChangeText={setDesc} multiline placeholder="Hit my hand on a cargo bag latch…" />
-      <SecondaryButton label={photo ? 'Photo added (simulated)' : 'Add a photo'} icon={photo ? 'check' : 'camera'} onPress={() => setPhoto(!photo)} />
+      <SecondaryButton disabled={!USE_MOCK_DATA} label={!USE_MOCK_DATA ? 'Photo upload coming soon' : photo ? 'Photo added (simulated)' : 'Add a photo'} icon={photo ? 'check' : 'camera'} onPress={() => setPhoto(!photo)} />
       <Note tone="danger">Severe injuries are flagged to the ground team right away and Orbi shows first-aid steps.</Note>
       {severity === 'severe' ? (
         <Txt weight="700" size={tokens.font.size.caption} color={C.danger}>

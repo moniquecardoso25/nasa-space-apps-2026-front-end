@@ -1,4 +1,8 @@
+import { session } from './session';
 import { getDb, setDb } from './store';
+import { remote, signInLive, stopLive } from './sync';
+import { ApiError, USE_MOCK_DATA, logout as logoutHttp } from './http';
+import { setTokens } from './backend';
 import type {
   Insight,
   InsightCategory,
@@ -77,12 +81,27 @@ export function findAstronautByCrewId(crewId: string): Astronaut | undefined {
   return getDb().astronauts.find((a) => a.crewId.toUpperCase() === id);
 }
 
-/** Mock login: any 4-digit PIN works for a known Crew ID. */
-export function signIn(crewId: string, pin: string): Astronaut | null {
+/** Mock login: any 4-digit PIN works for a known Crew ID. With the backend on, the login screen uses signInLive (sync.ts). */
+function signInMock(crewId: string, pin: string): Astronaut | null {
   const a = findAstronautByCrewId(crewId);
   if (!a || !/^\d{4}$/.test(pin)) return null;
   setDb((db) => ({ ...db, currentAstronautId: a.id }));
   return a;
+}
+
+/** Username/password authentication; only explicit mock mode uses the demo login. */
+export async function signIn(username: string, password: string): Promise<Astronaut | null> {
+  if (USE_MOCK_DATA) return signInMock(username, password);
+  const result = await signInLive(username, password);
+  if (!result.ok) throw new ApiError(result.message ?? (result.reason === 'credentials' ? 'Invalid username or password.' : 'Unable to load your mission. Check your connection and account access.'), result.reason === 'credentials' ? 401 : 0);
+  session.orbiFill = null;
+  lastSaved = null;
+  return result.role === 'ground' ? null : getAstronaut();
+}
+
+export async function logout() {
+  stopLive();
+  try { await logoutHttp(); } finally { setTokens(null); }
 }
 
 function updateAstronaut(id: string, fn: (a: Astronaut) => Astronaut) {
@@ -95,6 +114,7 @@ export function completeOnboarding(avatarName: string) {
     onboardingDone: true,
     avatar: { ...a.avatar, name: avatarName.trim() || 'Bolt' },
   }));
+  remote.onboardingDone(avatarName.trim() || 'Bolt', session.reminders);
 }
 
 export function firstName(a: Astronaut = getAstronaut()) {
@@ -178,6 +198,7 @@ export function addLog<T extends LogType>(type: T, data: LogDataMap[T], opts: Ad
       ),
     };
   });
+  remote.logCreated(created as Log);
   return created;
 }
 
@@ -190,6 +211,8 @@ export function updateLog<T extends LogType>(id: string, data: LogDataMap[T], op
       l.id === id ? ({ ...l, data, note: opts.note !== undefined ? opts.note : l.note } as Log) : l,
     ),
   }));
+  const updated = getDb().logs.find((l) => l.id === id);
+  if (updated) remote.logUpdated(updated);
 }
 
 /**
@@ -401,6 +424,7 @@ export function sendGroundMessage(text: string, urgent = false, attachments: str
     attachments,
   };
   setDb((db) => ({ ...db, ground_messages: [...db.ground_messages, msg] }));
+  remote.messageSent(text, urgent, attachments);
   return msg;
 }
 
@@ -443,6 +467,7 @@ export function buyItem(id: string): BuyResult {
     ...a,
     avatar: { ...a.avatar, coins: a.avatar.coins - item.price, owned: [...a.avatar.owned, id] },
   }));
+  remote.itemBought(id);
   return 'ok';
 }
 
@@ -450,6 +475,8 @@ export function buyItem(id: string): BuyResult {
 export function equipItem(id: string) {
   const item = getShopItem(id);
   if (!item) return;
+  const petOff = item.category === 'pet' && getAstronaut().avatar.equipped.pet === id;
+  remote.itemEquipped(petOff ? null : id, item.category);
   updateAstronaut(getCurrentAstronautId(), (a) => {
     const eq = { ...a.avatar.equipped, room: { ...a.avatar.equipped.room } };
     if (item.category === 'helmet') eq.helmet = id;
@@ -475,12 +502,19 @@ export function isEquipped(id: string) {
 export type LeaderboardMode = 'logs' | 'coins';
 export function getLeaderboard(mode: LeaderboardMode) {
   const db = getDb();
+  const me = db.currentAstronautId;
+  // Backend: an astronaut only has their own logs, so the crew's numbers come in `leaderboard`.
+  // The signed-in astronaut is always counted locally, so logs waiting to be sent show up at once.
+  const server = new Map((db.leaderboard ?? []).map((r) => [r.astronautId, r]));
   return db.astronauts
-    .map((a) => ({
-      astronaut: a,
-      logs: db.logs.filter((l) => l.astronautId === a.id).length,
-      coins: a.avatar.coins,
-    }))
+    .map((a) => {
+      const row = a.id === me || db.role === 'ground' ? undefined : server.get(a.id);
+      return {
+        astronaut: a,
+        logs: row ? row.logs : db.logs.filter((l) => l.astronautId === a.id).length,
+        coins: row ? row.coins : a.avatar.coins,
+      };
+    })
     .sort((x, y) => (mode === 'logs' ? y.logs - x.logs : y.coins - x.coins))
     .map((row, i) => ({ ...row, rank: i + 1, value: mode === 'logs' ? row.logs : row.coins }));
 }
@@ -515,3 +549,12 @@ export function getCalendar(astronautId: string = getCurrentAstronautId()): Cale
 }
 
 export const getEnvironmentReadings = () => getDb().environment_readings;
+
+
+export async function pairDevice(device: 'bpCuff' | 'wristBandPaired') {
+  updateAstronaut(getCurrentAstronautId(), (a) => ({ ...a, devices: device === 'bpCuff' ? { ...a.devices, bpCuff: true } : { ...a.devices, wristBand: { ...a.devices.wristBand, paired: true } } }));
+  remote.devicePaired(device);
+}
+
+export { getSessionRole, subscribeSession, USE_MOCK_DATA } from './http';
+export { getRefreshWarning, refreshData } from './remote';

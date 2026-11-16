@@ -11,6 +11,7 @@ import { CoinsPill } from '@/components/Pills';
 import { ItemArt, PetArt, Surface, WindowView, floorSpec, wallSpec } from '@/components/ShopArt';
 import { Txt } from '@/components/Txt';
 import { buyItem, equipItem, getAchievements, getAstronaut, getLogs, getShop, isEquipped, isOwned } from '@/data/api';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { formatCoins } from '@/data/format';
 import { boltColors } from '@/data/shopArt';
 import { useData } from '@/data/store';
@@ -103,6 +104,7 @@ function ItemCard({ item, onPress, wide }: { item: ShopItem; onPress: () => void
 /** Avatar & shop with tabs Helmet / Suit / Room / Pets (`?tab=`). */
 export default function Avatar() {
   const insets = useSafeAreaInsets();
+  const action = useAsyncAction();
   const params = useLocalSearchParams<{ tab?: Tab }>();
   const tab: Tab = TABS.some((t) => t.value === params.tab) ? (params.tab as Tab) : 'helmet';
   const [pending, setPending] = useState<ShopItem | null>(null);
@@ -120,18 +122,19 @@ export default function Avatar() {
   );
 
   const tap = (item: ShopItem) => {
+    if (action.busy) return;
     setNotice(null);
     if (isOwned(item.id)) {
-      equipItem(item.id);
+      void action.run(() => equipItem(item.id));
       return;
     }
     setPending(item);
   };
-  const confirmBuy = () => {
+  const confirmBuy = async () => {
     if (!pending) return;
-    const r = buyItem(pending.id);
+    const r = await buyItem(pending.id);
     if (r === 'ok') {
-      equipItem(pending.id);
+      await equipItem(pending.id);
       setNotice(`${pending.name} unlocked and equipped.`);
     } else if (r === 'no_coins') setNotice(`You need ${formatCoins(pending.price - me.avatar.coins)} more coins. Keep logging!`);
     setPending(null);
@@ -151,6 +154,7 @@ export default function Avatar() {
         <Stage />
         <View style={styles.main}>
           <Segmented items={TABS} selected={tab} onChange={(t) => router.setParams({ tab: t })} />
+          {action.error ? <Txt color={C.danger} accessibilityLiveRegion="polite">{action.error}</Txt> : null}
           {notice ? (
             <View style={styles.notice} accessibilityLiveRegion="polite">
               <Icon name="check" size={14} color={C.teal} strokeWidth={3} />

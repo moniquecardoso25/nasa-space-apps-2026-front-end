@@ -36,9 +36,9 @@ export default function BodyAdd() {
     parseHHMM(at) !== null &&
     (isBp ? Number(sys) > 50 && Number(dia) > 30 && Number(pulse) > 20 : value !== '' && Number.isFinite(num) && num > 0);
 
-  const save = () => {
+  const save = async () => {
     if (!valid) return;
-    addLog(
+    await addLog(
       'measurement',
       isBp
         ? { metric, cadence: 'daily', values: { systolic: Number(sys), diastolic: Number(dia), pulse: Number(pulse) } }
