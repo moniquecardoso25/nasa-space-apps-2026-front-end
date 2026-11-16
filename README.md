@@ -1,6 +1,6 @@
 ﻿<div align="center">
 
-<img src="assets/images/icon.png" width="96" alt="Orbi logo" />
+<img src="docs/screenshots/logo.png" width="96" alt="Orbi logo" />
 
 # Orbi
 
