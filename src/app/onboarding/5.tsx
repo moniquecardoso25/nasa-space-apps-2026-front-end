@@ -13,7 +13,7 @@ import { session } from '@/data/session';
 import { useData } from '@/data/store';
 import { C, tokens } from '@/theme/tokens';
 
-/** Onboarding 5 · Companion: Bolt preview + name. No color picker. */
+/** Onboarding 5 · Companion: Bolt preview + name, and what Orbi can / cannot do (privacy, medical support). */
 export default function Onb5() {
   const me = useData(() => getAstronaut());
   const [name, setName] = useState(me.avatar.name || 'Bolt');
@@ -43,10 +43,18 @@ export default function Onb5() {
         </View>
       </View>
       <Field label="Name" value={name} onChangeText={setName} maxLength={16} accessibilityLabel="Companion name" />
-      <InfoNote icon="orbi" iconColor={C.teal} size={tokens.font.size.caption}>
-        {b('Meet Orbi')}, your on-board AI. Talk in {b('Journal')} mode to keep a journal your medical team can see as summaries, or in{' '}
-        {b('Private')} mode when you just need to vent.
-      </InfoNote>
+      <View style={{ gap: 8 }}>
+        <InfoNote icon="orbi" iconColor={C.teal} size={tokens.font.size.caption}>
+          {b('Meet Orbi')}, your on-board assistant. It pre-fills your logs and explains your trends. It {b('does not diagnose')} and only
+          talks when you open it.
+        </InfoNote>
+        <InfoNote icon="lock" iconColor={C.teal} size={tokens.font.size.caption}>
+          {b('Journal')} mode shares summaries with your medical team. {b('Private')} mode saves nothing.
+        </InfoNote>
+        <InfoNote icon="heart" iconColor={C.teal} size={tokens.font.size.caption}>
+          Need a doctor? Open {b('Messages')} and tap {b('Request medical support')}.
+        </InfoNote>
+      </View>
     </OnboardingShell>
   );
 }

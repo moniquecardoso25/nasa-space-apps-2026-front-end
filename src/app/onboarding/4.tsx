@@ -12,15 +12,24 @@ import { Txt } from '@/components/Txt';
 import { getAstronaut, pairDevice } from '@/data/api';
 import { session } from '@/data/session';
 import { useData } from '@/data/store';
-import { C, tokens } from '@/theme/tokens';
+import { C, tokens, X } from '@/theme/tokens';
 
-function Connected() {
+type DeviceState = 'demo' | 'none';
+
+/**
+ * Honest device state for the hackathon: nothing talks to real hardware yet.
+ * "Demo" = simulated readings (with the last simulated sync), "Not available" = type values.
+ */
+function DeviceStatus({ state, sync }: { state: DeviceState; sync?: string }) {
+  const demo = state === 'demo';
   return (
-    <View style={styles.connected}>
-      <Icon name="check" size={14} color={C.holoOk} strokeWidth={3} />
-      <Txt weight="700" size={tokens.font.size.caption} color={C.holoOk}>
-        Connected
-      </Txt>
+    <View style={styles.status}>
+      <Badge label={demo ? 'Demo' : 'Not available'} color={demo ? C.gold : C.muted} bg={demo ? X.goldSoft : X.mutedSoft} />
+      {demo && sync ? (
+        <Txt size={tokens.font.size.tiny} color={C.muted}>
+          Last sync {sync}
+        </Txt>
+      ) : null}
     </View>
   );
 }
@@ -44,7 +53,7 @@ function DeviceRow({ icon, title, sub, right }: { icon: IconName; title: string;
   );
 }
 
-/** Onboarding 4 · Devices (pairing is simulated). */
+/** Onboarding 4 · Devices. States are Demo (simulated readings) or Not available; no real pairing. */
 export default function Onb4() {
   const me = useData(() => getAstronaut());
   const [paired, setPaired] = useState(me.devices.bpCuff || session.bpCuffPaired);
@@ -54,7 +63,7 @@ export default function Onb4() {
       step={4}
       stepLabel="Devices"
       title="Connect your devices"
-      intro="Your wrist band fills sleep data for you. Your dosimeter reading is copied in once a day."
+      intro="In this demo, readings are simulated: no real hardware is connected. Orbi pre-fills them and you only confirm."
       cta="Continue"
       onCta={() => {
         session.reminders = reminders;
@@ -65,20 +74,25 @@ export default function Onb4() {
           icon="band"
           title="ARCHeR wrist band"
           sub="Sleep, movement, light exposure"
-          right={me.devices.wristBand.paired ? <Connected /> : <PrimaryButton size="sm" label="Pair" onPress={() => pairDevice('wristBandPaired')} />}
+          right={me.devices.wristBand.paired ? <DeviceStatus state="demo" sync="06:02" /> : <PrimaryButton size="sm" label="Pair" onPress={() => pairDevice('wristBandPaired')} />}
         />
-        <DeviceRow icon="radiation" title="Personal dosimeter" sub={`Badge ID ${me.devices.dosimeterBadgeId}`} right={<Connected />} />
+        <DeviceRow
+          icon="radiation"
+          title="Personal dosimeter"
+          sub={`Badge ID ${me.devices.dosimeterBadgeId}`}
+          right={<DeviceStatus state="demo" sync="08:00" />}
+        />
         <DeviceRow
           icon="heart"
           title="Blood pressure cuff"
-          sub="Optional · or type values"
+          sub={paired ? 'Simulated readings' : 'Optional · or type values'}
           right={
             paired ? (
-              <Connected />
+              <DeviceStatus state="demo" sync="now" />
             ) : (
               <PrimaryButton
                 size="sm"
-                label="Pair"
+                label="Use demo"
                 onPress={async () => {
                   await pairDevice('bpCuff');
                   session.bpCuffPaired = true;
@@ -99,9 +113,6 @@ export default function Onb4() {
           </View>
           <Toggle value={reminders} onChange={setReminders} label="Daily reminders" />
         </Card>
-        <View style={{ alignItems: 'flex-start' }}>
-          <Badge label="Simulated for the hackathon" />
-        </View>
       </View>
     </OnboardingShell>
   );
@@ -110,5 +121,5 @@ export default function Onb4() {
 const styles = StyleSheet.create({
   device: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   iconTile: { width: 44, height: 44, borderRadius: tokens.radius.item, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  connected: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  status: { alignItems: 'flex-end', gap: 3 },
 });

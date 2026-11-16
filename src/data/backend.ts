@@ -118,7 +118,7 @@ export async function login(username: string, password: string): Promise<LoginOu
   const rawRole = result.user?.role ?? result.role;
   // The standard auth route names the ground team's roles medical/admin.
   const role = rawRole === 'medical' || rawRole === 'admin' ? 'ground' : rawRole;
-  if (role !== 'astronaut' && role !== 'ground') throw new HttpError(403, 'This account cannot access CosmoMedic.');
+  if (role !== 'astronaut' && role !== 'ground') throw new HttpError(403, 'This account cannot access Orbi.');
   return { accessToken: result.accessToken, refreshToken: result.refreshToken, role };
 }
 

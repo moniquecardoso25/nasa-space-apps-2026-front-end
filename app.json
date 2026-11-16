@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "CosmoMedic",
-    "slug": "cosmomedic",
+    "name": "Orbi",
+    "slug": "orbi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "cosmomedic",
+    "scheme": "orbi",
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon"
@@ -36,8 +36,8 @@
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "CosmoMedic uses the microphone so you can fill your health logs by voice with Orbi.",
-          "speechRecognitionPermission": "CosmoMedic turns your voice answers into log entries.",
+          "microphonePermission": "Orbi uses the microphone so you can fill your health logs by voice.",
+          "speechRecognitionPermission": "Orbi turns your voice answers into log entries.",
           "androidSpeechServicePackages": [
             "com.google.android.googlequicksearchbox"
           ]

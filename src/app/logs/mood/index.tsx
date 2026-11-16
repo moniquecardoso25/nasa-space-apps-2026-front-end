@@ -4,7 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Line, Polyline, Text as SvgText } from 'react-native-svg';
 
 import { LogStateButton } from '@/components/Buttons';
-import { Card, CardTitle, InfoNote, StatTile } from '@/components/Card';
+import { Card, CardTitle, StatTile } from '@/components/Card';
+import { InsightCard } from '@/components/InsightCard';
 import { Segmented } from '@/components/Inputs';
 import { LogScreen, SavedBanner } from '@/components/LogKit';
 import { MoodFace } from '@/components/Mood';
@@ -41,6 +42,12 @@ function MoodChart({ points }: { points: { label: string; level: number | null }
           {[5, 4, 3, 2, 1].map((lv) => (
             <Line key={lv} x1={8} y1={ROW(lv)} x2={w} y2={ROW(lv)} stroke={C.track} strokeWidth={1} />
           ))}
+          {/* days without a check-in: a dashed "not recorded" column, never a low mood */}
+          {points.map((p, i) =>
+            p.level === null && n <= 31 ? (
+              <Line key={`m${i}`} x1={x(i)} y1={ROW(5)} x2={x(i)} y2={ROW(1)} stroke={C.muted} strokeWidth={1} strokeDasharray="3 4" opacity={0.6} />
+            ) : null,
+          )}
           {valid.length > 1 ? (
             <Polyline
               points={valid.map((p) => `${x(p.i)},${ROW(p.level)}`).join(' ')}
@@ -137,20 +144,17 @@ export default function MoodOverview() {
           }
         />
         <MoodChart points={d.points} />
+        {d.checkins < d.total ? (
+          <Txt size={tokens.font.size.caption} color={C.muted}>
+            Dashed = not recorded ({d.total - d.checkins} day{d.total - d.checkins === 1 ? '' : 's'}). Mood check-ins are optional.
+          </Txt>
+        ) : null}
       </Card>
       <View style={styles.stats}>
         <StatTile value={d.checkins ? `${d.avg.toFixed(1)} / 5` : '—'} label="Average" />
         <StatTile value={d.best ? weekdayOfDay(d.best.missionDay) : '—'} label="Best day" />
         <StatTile value={`${d.checkins} / ${d.total}`} label="Check-ins" />
       </View>
-      <InfoNote onPress={() => router.push('/orbi')}>
-        <Txt weight="700" size={13}>
-          Orbi:{' '}
-        </Txt>
-        {d.sleepAlert
-          ? 'your mood dips after nights with low light exposure. Try the 21:00 wind-down.'
-          : 'your mood has been steady. Keep sharing how your day went.'}
-      </InfoNote>
       {d.voiceNotes.length ? (
         <Card padding={14} gap={12} shadow={false}>
           <CardTitle title="Your voice notes" />
@@ -204,6 +208,16 @@ export default function MoodOverview() {
           </View>
         ))}
       </Card>
+      <InsightCard
+        category="mood"
+        fallback={
+          !d.checkins
+            ? undefined
+            : d.sleepAlert
+              ? 'Your mood dips after nights with low light exposure. Try the 21:00 wind-down.'
+              : 'Your mood has been steady. Keep sharing how your day went.'
+        }
+      />
     </LogScreen>
   );
 }

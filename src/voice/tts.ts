@@ -39,6 +39,15 @@ export function ttsAvailable(): boolean {
 /** Strip things that sound bad when read aloud (emoji, symbols, curly quotes). */
 function forSpeech(text: string) {
   return text
+    // read units and numbers the way people say them
+    .replace(/(\d+)h (\d+)m\b/g, (_, h, m) => `${h} hours ${Number(m)} minutes`)
+    .replace(/(\d+)h\b/g, '$1 hours')
+    .replace(/µSv\/h/g, 'microsieverts per hour')
+    .replace(/µSv/g, 'microsieverts')
+    .replace(/\bmSv\b/g, 'millisieverts')
+    .replace(/\bkcal\b/g, 'calories')
+    .replace(/(\d{2,3})\/(\d{2,3})/g, '$1 over $2')
+    .replace(/(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/g, '$1 to $2')
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'")
     .replace(/[^\p{L}\p{N}\p{P}\s]/gu, ' ')

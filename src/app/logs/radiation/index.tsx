@@ -8,11 +8,11 @@ import { Icon } from '@/components/Icon';
 import { ListRow, LogScreen, SavedBanner } from '@/components/LogKit';
 import { Badge } from '@/components/Pills';
 import { Txt } from '@/components/Txt';
-import { getEnvironmentReadings, getLogs, getMission, getToday, isLoggedToday } from '@/data/api';
+import { getAstronaut, getEnvironmentReadings, getLogs, getMission, getToday, isLoggedToday } from '@/data/api';
 import { radiationTotalMsv } from '@/data/derived';
 import { hhmm, weekdayOfDay } from '@/data/format';
 import { useData } from '@/data/store';
-import { C, tokens } from '@/theme/tokens';
+import { C, tokens, X } from '@/theme/tokens';
 
 const NEUTRON_SHARE = 0.3; // CSA: neutrons ≈30% of ISS radiation
 
@@ -31,7 +31,11 @@ export default function RadiationOverview() {
     return {
       today,
       days,
-      values: days.map((day) => byDay.get(day) ?? 0),
+      // a day without a badge reading is unknown (null), not a zero dose
+      values: days.map((day) => byDay.get(day) ?? null),
+      todayDose: byDay.get(today) ?? null,
+      todayLog: personal.filter((l) => l.missionDay === today).at(-1),
+      badgeId: getAstronaut().devices.dosimeterBadgeId,
       total: radiationTotalMsv(),
       logged: isLoggedToday('radiation'),
       recent: getLogs({ type: 'radiation' }).slice(-3).reverse(),
@@ -39,7 +43,7 @@ export default function RadiationOverview() {
       envName: getMission().environments.find((e) => e.id === env)?.name ?? 'Lab module',
     };
   });
-  const max = Math.max(60, ...d.values) * 1.15;
+  const max = Math.max(60, ...d.values.map((v) => v ?? 0)) * 1.15;
   const dayText = (day: number) => (day === d.today ? 'Today' : day === d.today - 1 ? 'Yesterday' : weekdayOfDay(day));
 
   return (
@@ -47,22 +51,38 @@ export default function RadiationOverview() {
       title="Radiation"
       footer={<LogStateButton logged={d.logged} onLog={() => router.push('/logs/radiation/add')} onEdit={() => router.push('/logs/radiation/add')} />}>
       <SavedBanner types={['radiation']} />
+      <View style={styles.tiles}>
+        <Card gap={2} style={{ flex: 1 }}>
+          <Txt size={tokens.font.size.caption} color={C.muted}>
+            Mission total
+          </Txt>
+          <Txt heading weight="700" size={tokens.ext.fontSize.stat}>
+            {d.total.toFixed(2)} mSv
+          </Txt>
+          <Txt size={tokens.font.size.tiny} color={C.muted}>
+            Cumulative · personal badge · days 1–{d.today}
+          </Txt>
+        </Card>
+        <Card gap={2} style={{ flex: 1 }}>
+          <Txt size={tokens.font.size.caption} color={C.muted}>
+            Today
+          </Txt>
+          <Txt heading weight="700" size={tokens.ext.fontSize.stat} color={d.todayDose === null ? C.muted : C.text}>
+            {d.todayDose === null ? 'No reading' : `${d.todayDose} µSv`}
+          </Txt>
+          <Txt size={tokens.font.size.tiny} color={C.muted}>
+            {d.todayLog ? `Daily dose · badge ${d.badgeId} · ${hhmm(d.todayLog.timestamp)}` : `Daily dose · badge ${d.badgeId}`}
+          </Txt>
+        </Card>
+      </View>
       <Card gap={8}>
-        <CardTitle title="Mission total" right={<Badge label="Illustrative" />} />
-        <View style={styles.big}>
-          <Txt heading weight="700" size={tokens.ext.fontSize.hero}>
-            {d.total.toFixed(2)}
-          </Txt>
-          <Txt size={tokens.font.size.title} color={C.muted}>
-            mSv · {d.today} days
-          </Txt>
-        </View>
-        <Txt weight="600" size={tokens.font.size.small} color={C.muted}>
-          Daily dose this week (µSv)
+        <CardTitle title="Daily dose this week" right={<Badge label="Demo data" color={C.gold} bg={X.goldSoft} />} />
+        <Txt size={tokens.font.size.caption} color={C.muted}>
+          µSv per day · personal dosimeter · – = no reading
         </Txt>
-        <WeekBars values={d.values} labels={d.days.map(weekdayOfDay)} max={max} todayIndex={d.days.length - 1} colorFor={() => C.gold} />
+        <WeekBars values={d.values} labels={d.days.map(weekdayOfDay)} max={max} todayIndex={d.days.length - 1} colorFor={() => C.primary} />
         <Txt size={tokens.font.size.caption} color={C.muted} lh={1.4}>
-          NASA gives no fixed limits for long missions, so values here are illustrative.
+          NASA gives no fixed limits for long missions, so values here are illustrative and not colored as safe / unsafe.
         </Txt>
       </Card>
       {d.reading ? (
@@ -70,7 +90,7 @@ export default function RadiationOverview() {
           <View style={styles.row6}>
             <Icon name="planet" size={16} color={C.primary} />
             <Txt size={tokens.font.size.small} color={C.muted}>
-              Area monitor · where you are now
+              Dose rate · area monitor (the room, not your body)
             </Txt>
           </View>
           <Txt weight="700" size={tokens.ext.fontSize.stat}>
@@ -100,7 +120,7 @@ export default function RadiationOverview() {
               {dayText(l.missionDay)} {hhmm(l.timestamp)}
             </Txt>
             <Txt size={tokens.font.size.body} color={C.muted} style={{ flex: 1 }}>
-              {l.data.source === 'personal' ? 'Personal' : 'Area'}
+              {l.data.source === 'personal' ? 'Personal badge' : 'Area monitor'}
             </Txt>
             <Txt weight="700" size={tokens.font.size.body}>
               {l.data.value} {l.data.unit === 'uSv' ? 'µSv' : 'mSv'}
@@ -114,7 +134,7 @@ export default function RadiationOverview() {
 }
 
 const styles = StyleSheet.create({
-  big: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  tiles: { flexDirection: 'row', gap: 8 },
   row6: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   mix: { flexDirection: 'row', height: 10, borderRadius: tokens.radius.pill, overflow: 'hidden' },
   sq: { width: 10, height: 10 },

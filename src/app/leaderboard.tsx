@@ -1,88 +1,55 @@
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { Icon } from '@/components/Icon';
-import { Segmented } from '@/components/Inputs';
 import { LogScreen } from '@/components/LogKit';
-import { HelmetIcon } from '@/components/ShopArt';
 import { Txt } from '@/components/Txt';
-import { getCurrentAstronautId, getLeaderboard, type LeaderboardMode } from '@/data/api';
+import { getAchievements, getAstronaut } from '@/data/api';
 import { formatCoins } from '@/data/format';
-import { HELMET_COLOR } from '@/data/shopArt';
 import { useData } from '@/data/store';
 import { C, X, tokens } from '@/theme/tokens';
 
-const PODIUM_H = [120, 150, 95]; // 2nd, 1st, 3rd (AppLeaderboard)
-
-/** Leaderboard: Daily logs / Coins, podium top 3, list, how it counts. */
-export default function Leaderboard() {
-  const [mode, setMode] = useState<LeaderboardMode>('logs');
-  const { rows, me } = useData(() => ({ rows: getLeaderboard(mode), me: getCurrentAstronautId() }), [mode]);
-  const unit = (v: number) => (mode === 'logs' ? `${v} logs` : `${formatCoins(v)} coins`);
-  const name = (r: (typeof rows)[number]) => `${r.astronaut.name.split(' ')[0]}${r.astronaut.id === me ? ' (you)' : ''}`;
-  const podium = [rows[1], rows[0], rows[2]];
+/**
+ * Achievements (route kept as /leaderboard): personal and private progress.
+ * No public ranking of health logs: competing on medical records invites over-reporting
+ * or hiding symptoms, and a small crew is easy to re-identify.
+ */
+export default function Achievements() {
+  const { list, me } = useData(() => ({ list: getAchievements(), me: getAstronaut() }));
+  const got = list.filter((a) => a.done).length;
 
   return (
-    <LogScreen title="Leaderboard" backHref="/avatar" gap={16}>
-      <Segmented
-        items={[
-          { value: 'logs', label: 'Daily logs' },
-          { value: 'coins', label: 'Coins' },
-        ]}
-        selected={mode}
-        onChange={setMode}
-      />
-      <View style={styles.podium}>
-        {podium.map((r, i) =>
-          r ? (
-            <View key={r.astronaut.id} style={styles.col} accessibilityLabel={`#${r.rank} ${name(r)}, ${unit(r.value)}`}>
-              <HelmetIcon color={HELMET_COLOR[r.astronaut.avatar.equipped.helmet]} size={r.rank === 1 ? 44 : 38} />
-              <Txt weight="700" size={tokens.ext.fontSize.label} numberOfLines={1}>
-                {name(r)}
-              </Txt>
-              <View style={styles.row4}>
-                <Icon name={mode === 'logs' ? 'check' : 'coin'} size={14} color={mode === 'logs' ? C.teal : C.gold} strokeWidth={mode === 'logs' ? 2.5 : 2} />
-                <Txt size={tokens.font.size.small} color={C.muted}>
-                  {unit(r.value)}
-                </Txt>
-              </View>
-              <View style={[styles.block, { height: PODIUM_H[i] }, r.rank === 1 && styles.first]}>
-                <Txt heading weight="700" size={tokens.font.size.title} color={r.rank === 1 ? C.gold : C.text}>
-                  {r.rank}
-                </Txt>
-              </View>
+    <LogScreen title="Achievements" backHref="/avatar" gap={14}>
+      <Card gap={6}>
+        <Txt heading weight="700" size={tokens.ext.fontSize.stat}>
+          {got} of {list.length} unlocked
+        </Txt>
+        <Txt size={tokens.font.size.small} color={C.muted}>
+          Level {me.avatar.level} · {formatCoins(me.avatar.coins)} coins to spend in the shop
+        </Txt>
+      </Card>
+      <Card gap={0} padding={14} shadow={false}>
+        {list.map((a, i) => (
+          <View key={a.id} style={[styles.row, i > 0 && styles.sep]} accessibilityLabel={`${a.title}: ${a.done ? 'unlocked' : 'locked'}. ${a.text}`}>
+            <View style={[styles.badge, a.done && styles.badgeOn]}>
+              <Icon name={a.done ? a.icon : 'lock'} size={18} color={a.done ? C.gold : C.muted} />
             </View>
-          ) : (
-            <View key={i} style={styles.col} />
-          ),
-        )}
-      </View>
-      {rows.length > 3 ? (
-        <Card gap={0} padding={14} shadow={false}>
-          {rows.slice(3).map((r, i) => (
-            <View key={r.astronaut.id} style={[styles.listRow, i > 0 && styles.sep]}>
-              <Txt weight="700" size={tokens.font.size.body} color={C.muted} style={{ width: 22 }}>
-                {r.rank}
+            <View style={{ flex: 1, gap: 2 }}>
+              <Txt weight="700" size={tokens.font.size.body} color={a.done ? C.text : C.muted}>
+                {a.title}
               </Txt>
-              <HelmetIcon color={HELMET_COLOR[r.astronaut.avatar.equipped.helmet]} size={28} />
-              <Txt weight="600" size={tokens.font.size.body} style={{ flex: 1 }}>
-                {name(r)}
-              </Txt>
-              <Icon name={mode === 'logs' ? 'check' : 'coin'} size={14} color={mode === 'logs' ? C.teal : C.gold} />
-              <Txt size={tokens.font.size.small} color={C.muted}>
-                {unit(r.value)}
+              <Txt size={tokens.font.size.caption} color={C.muted}>
+                {a.text}
               </Txt>
             </View>
-          ))}
-        </Card>
-      ) : null}
+            {a.done ? <Icon name="check" size={16} color={C.holoOk} strokeWidth={2.5} /> : null}
+          </View>
+        ))}
+      </Card>
       <View style={styles.note}>
-        <Icon name="coin" size={12} color={C.gold} />
+        <Icon name="lock" size={14} color={C.teal} />
         <Txt size={tokens.font.size.small} lh={1.45} style={{ flex: 1 }}>
-          {mode === 'logs'
-            ? 'Ranked by logs completed (mood, sleep, radiation, body, meals, exercise). Every log also earns coins to spend in the shop.'
-            : 'Ranked by coins you have now. Every saved log earns +10; shop purchases spend them.'}
+          Private: only you see this. There is no crew ranking of health logs, and missing a day never costs you anything.
         </Txt>
       </View>
     </LogScreen>
@@ -90,22 +57,9 @@ export default function Leaderboard() {
 }
 
 const styles = StyleSheet.create({
-  podium: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 8 },
-  col: { flex: 1, alignItems: 'center', gap: 6 },
-  row4: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  block: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    paddingTop: 10,
-    borderTopLeftRadius: tokens.radius.card,
-    borderTopRightRadius: tokens.radius.card,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: C.border,
-  },
-  first: { backgroundColor: X.podiumGold, borderColor: C.gold },
-  listRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   sep: { borderTopWidth: 1, borderTopColor: C.track },
+  badge: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: X.mutedSoft },
+  badgeOn: { backgroundColor: X.goldSoft, borderWidth: 1, borderColor: C.gold },
   note: { flexDirection: 'row', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: tokens.radius.item, backgroundColor: C.primarySoft },
 });

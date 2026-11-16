@@ -3,12 +3,14 @@ import { StyleSheet, View } from 'react-native';
 
 import { LogStateButton } from '@/components/Buttons';
 import { Card, CardTitle } from '@/components/Card';
+import { InsightCard } from '@/components/InsightCard';
 import { ProgressBar, WeekBars } from '@/components/Charts';
 import { LogScreen, Note, SavedBanner, Stars } from '@/components/LogKit';
 import { Txt } from '@/components/Txt';
 import { getLogs, getMission, getToday, getTodayLogs } from '@/data/api';
 import { MACRO_GOALS, menuFatigue } from '@/data/derived';
 import { formatCoins, hhmm, weekdayOfDay } from '@/data/format';
+import { adherenceText } from '@/data/plans';
 import { useData } from '@/data/store';
 import { C, tokens } from '@/theme/tokens';
 
@@ -102,7 +104,16 @@ export default function MealsOverview() {
               <Txt weight="600" size={tokens.font.size.body} numberOfLines={1}>
                 {m.data.name}
               </Txt>
-              <Stars value={m.data.tasteRating} />
+              {adherenceText(m.data) || m.data.tasteRating ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  {adherenceText(m.data) ? (
+                    <Txt size={tokens.font.size.caption} color={m.data.adherence === 'followed' ? C.holoOk : C.gold}>
+                      {adherenceText(m.data)}
+                    </Txt>
+                  ) : null}
+                  {m.data.tasteRating ? <Stars value={m.data.tasteRating} /> : null}
+                </View>
+              ) : null}
             </View>
             <Txt weight="700" size={tokens.font.size.body}>
               {m.data.kcal}
@@ -130,6 +141,7 @@ export default function MealsOverview() {
         />
       </Card>
       {d.fatigue ? <Note tone="warning">{d.fatigue}</Note> : null}
+      <InsightCard category="meals" />
     </LogScreen>
   );
 }

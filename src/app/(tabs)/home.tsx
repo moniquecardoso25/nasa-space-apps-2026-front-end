@@ -15,12 +15,14 @@ import { Txt } from '@/components/Txt';
 import { BoltActor } from '@/avatar/BoltActor';
 import { deriveStatuses } from '@/avatar/status';
 import { firstName, getAstronaut, getDailySummary, getLastSaved, getMission, healthTag, isLoggedToday } from '@/data/api';
-import { orbiNudge } from '@/data/derived';
+import { statusSummary } from '@/data/derived';
 import { boltColors } from '@/data/shopArt';
 import { session } from '@/data/session';
 import { useData } from '@/data/store';
 import type { LogType } from '@/data/types';
 import { C, X, tokens } from '@/theme/tokens';
+
+const ORBI_TOP = 74;
 
 const MENU: { key: string; type: LogType | null; label: string; icon: LogMenuItem['icon']; href: string }[] = [
   { key: 'mood', type: 'mood', label: 'Mood check-in', icon: 'smile', href: '/logs/mood' },
@@ -38,6 +40,7 @@ export default function Home() {
   const focused = useIsFocused();
   const [dismissedAt, setDismissedAt] = useState(0);
   const [size, setSize] = useState({ w: 390, h: 764 });
+  const [orbiH, setOrbiH] = useState(112);
   const data = useData(() => {
     const me = getAstronaut();
     const summary = getDailySummary();
@@ -45,7 +48,8 @@ export default function Home() {
       me,
       summary,
       mission: getMission(),
-      nudge: orbiNudge(),
+      // Orbi's read of the recent status indicators (backend later)
+      nudge: statusSummary(),
       fill: session.orbiFill,
       statuses: deriveStatuses(),
       lastSavedAt: getLastSaved()?.at,
@@ -55,16 +59,18 @@ export default function Home() {
   const { me, summary, mission } = data;
   const tag = healthTag(summary.overallScore);
 
-  // Window shrinks on short screens so the floor never overlaps it.
-  const winH = Math.max(180, Math.min(WINDOW.height, size.h - 210 - WINDOW.top - 20));
+  // Orbi's note sits on top (highlighted); the window starts below it and shrinks
+  // on short screens so the floor never overlaps it.
+  const winTop = ORBI_TOP + orbiH + 12;
+  const winH = Math.max(150, Math.min(WINDOW.height - 40, size.h - 210 - winTop - 20));
   const winW = Math.min(WINDOW.width, size.w - WINDOW.left * 2 + 2);
-  const winBottom = WINDOW.top + winH;
+  const winBottom = winTop + winH;
 
   const open6 = MENU.filter((m) => m.type && !data.done[m.key]).length;
   const items: LogMenuItem[] = [
     {
       key: 'orbi-fill',
-      label: 'Fill with Orbi',
+      label: 'Daily check-in',
       icon: 'mic',
       href: '/logs/orbi-fill',
       state: 'special',
@@ -79,12 +85,14 @@ export default function Home() {
     })),
   ];
   const fill = data.fill && data.fill.at !== dismissedAt ? data.fill : null;
+  // before the check-in, Orbi only invites you to fill it (no health remarks yet); after it, its note
+  const orbiLine = data.nudge;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.scene} onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
         <StationWall wall={me.avatar.equipped.room.wall} width={size.w} height={size.h} />
-        <StationWindow height={winH} width={winW} view={me.avatar.equipped.room.window} />
+        <StationWindow height={winH} width={winW} top={winTop} view={me.avatar.equipped.room.window} />
         <StationProps floor={me.avatar.equipped.room.floor} width={size.w} />
         {me.avatar.equipped.pet ? (
           <View pointerEvents="none" style={styles.pet}>
@@ -92,18 +100,6 @@ export default function Home() {
           </View>
         ) : null}
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Orbi: ${data.nudge}`}
-          onPress={() => router.push('/orbi')}
-          style={[styles.bubble, { top: winBottom - 34 }]}>
-          <Txt size={tokens.font.size.caption} lh={1.4}>
-            <Txt weight="700" size={tokens.font.size.caption} color={C.teal}>
-              Orbi:{' '}
-            </Txt>
-            {data.nudge}
-          </Txt>
-        </Pressable>
         <View style={[styles.drone, { top: winBottom + 26 }]}>
           <OrbiDrone />
         </View>
@@ -132,7 +128,7 @@ export default function Home() {
               <ProgressBar value={mission.today / mission.lengthDays} width={60} />
             </View>
           </View>
-          <Pressable accessibilityRole="link" accessibilityLabel={`Crew status: ${tag.label}`} onPress={() => router.push('/status')} style={styles.stable}>
+          <Pressable accessibilityRole="link" accessibilityLabel={`My health: ${tag.label}`} onPress={() => router.push('/status')} style={styles.stable}>
             <StatusDot state={tag.level} size={8} />
             <Txt weight="600" size={tokens.font.size.small} color={levelColor(tag.level)}>
               {tag.label}
@@ -165,30 +161,66 @@ export default function Home() {
           <CoinsPill amount={me.avatar.coins} />
         </View>
 
-        {fill && !open ? (
-          <View style={styles.fillCard} accessibilityLiveRegion="polite">
-            <Icon name="check" size={18} color={C.holoOk} strokeWidth={3} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <Txt weight="700" size={tokens.font.size.small} color={C.holoOk}>
-                Orbi saved {fill.saved.length} log{fill.saved.length === 1 ? '' : 's'}
-              </Txt>
-              <Txt size={tokens.font.size.caption} color={C.muted} numberOfLines={2}>
-                {fill.saved.join(' · ')}
-              </Txt>
+        <View style={styles.orbiWrap} onLayout={(e) => setOrbiH(e.nativeEvent.layout.height)}>
+          {fill ? (
+            <View style={styles.fillCard} accessibilityLiveRegion="polite">
+              <Icon name="check" size={18} color={C.holoOk} strokeWidth={3} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Txt weight="700" size={tokens.font.size.small} color={C.holoOk}>
+                  Orbi saved {fill.saved.length} log{fill.saved.length === 1 ? '' : 's'}
+                </Txt>
+                <Txt size={tokens.font.size.caption} color={C.muted} numberOfLines={2}>
+                  {fill.saved.join(' · ')}
+                </Txt>
+              </View>
+              <View style={styles.coinsRow}>
+                <Txt weight="700" size={tokens.font.size.small}>
+                  +{fill.coins}
+                </Txt>
+                <CoinIcon size={16} />
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" hitSlop={8} onPress={() => setDismissedAt(fill.at)}>
+                <Txt weight="700" size={tokens.font.size.body} color={C.muted}>
+                  ×
+                </Txt>
+              </Pressable>
             </View>
-            <View style={styles.coinsRow}>
-              <Txt weight="700" size={tokens.font.size.small}>
-                +{fill.coins}
-              </Txt>
-              <CoinIcon size={16} />
+          ) : (
+            <View style={styles.orbiCard}>
+              <Pressable accessibilityRole="link" accessibilityLabel={`Orbi: ${orbiLine}. Open Orbi`} onPress={() => router.push('/orbi')} style={styles.orbiRow}>
+                <Icon name="orbi" size={20} color={C.teal} />
+                <Txt size={tokens.font.size.small} lh={1.4} style={{ flex: 1 }} numberOfLines={6}>
+                  <Txt weight="700" size={tokens.font.size.small} color={C.teal}>
+                    Orbi:{' '}
+                  </Txt>
+                  {orbiLine}
+                </Txt>
+              </Pressable>
+              {open6 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start daily check-in, under 2 minutes, ${open6} to go`}
+                  onPress={() => router.push('/logs/orbi-fill')}
+                  style={styles.checkinBtn}>
+                  <Icon name="mic" size={16} color={C.onPrimary} />
+                  <Txt weight="700" size={tokens.font.size.small} color={C.onPrimary}>
+                    Daily check-in · under 2 min
+                  </Txt>
+                  <Txt size={tokens.font.size.caption} color={C.onPrimary}>
+                    {open6} to go
+                  </Txt>
+                </Pressable>
+              ) : (
+                <View style={styles.orbiRow}>
+                  <Icon name="check" size={16} color={C.holoOk} strokeWidth={2.5} />
+                  <Txt weight="600" size={tokens.font.size.caption} color={C.holoOk}>
+                    Today&apos;s check-in is done
+                  </Txt>
+                </View>
+              )}
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" hitSlop={8} onPress={() => setDismissedAt(fill.at)}>
-              <Txt weight="700" size={tokens.font.size.body} color={C.muted}>
-                ×
-              </Txt>
-            </Pressable>
-          </View>
-        ) : null}
+          )}
+        </View>
 
         <View style={styles.menu} pointerEvents="box-none">
           <LogMenu open={open} items={items} onNavigate={() => setOpen(false)} />
@@ -237,12 +269,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   menu: { position: 'absolute', left: 16, top: 70, zIndex: 6 },
+  orbiWrap: { position: 'absolute', left: 16, right: 16, top: ORBI_TOP, zIndex: 3 },
+  orbiCard: {
+    gap: 10,
+    padding: 12,
+    borderRadius: tokens.radius.card,
+    backgroundColor: C.surfaceSolid,
+    borderWidth: 1,
+    borderColor: C.teal,
+    boxShadow: tokens.ext.shadow.menu,
+  },
+  orbiRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  checkinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minHeight: 40,
+    paddingHorizontal: 12,
+    borderRadius: tokens.radius.item,
+    backgroundColor: C.primary,
+  },
   fillCard: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    top: 74,
-    zIndex: 5,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -254,18 +301,6 @@ const styles = StyleSheet.create({
     boxShadow: tokens.ext.shadow.menu,
   },
   coinsRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  bubble: {
-    position: 'absolute',
-    right: 16,
-    width: 196, // 170 + padding + border (content-box in the source)
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: tokens.radius.item,
-    borderBottomRightRadius: 4,
-    backgroundColor: C.surfaceSolid,
-    borderWidth: 1,
-    borderColor: C.teal,
-  },
   drone: { position: 'absolute', left: 282 },
   pet: { position: 'absolute', right: 96, bottom: 132 },
   bottom: {

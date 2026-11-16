@@ -43,7 +43,9 @@ export default function Ground() {
   const d = useData(() => {
     const mission = getMission();
     const today = getToday();
-    const crew = getAstronauts().map((a) => {
+    const crew = getAstronauts()
+      .filter((a) => a.crewId !== 'TEST') // the test user is not real crew
+      .map((a) => {
       const mood = getLogs({ type: 'mood', astronautId: a.id }).at(-1);
       const sleep = getLogs({ type: 'sleep', astronautId: a.id }).at(-1);
       const week = getLogs({ type: 'sleep', astronautId: a.id, fromDay: today - 6 });
@@ -80,7 +82,7 @@ export default function Ground() {
         <View style={styles.brand}>
           <LogoMark size={36} />
           <Txt heading weight="700" size={tokens.font.size.screenTitle}>
-            CosmoMedic · Ground
+            Orbi · Ground
           </Txt>
         </View>
         <View style={[{ gap: 4 }, !wide && { flexDirection: 'row', flexWrap: 'wrap' }]}>

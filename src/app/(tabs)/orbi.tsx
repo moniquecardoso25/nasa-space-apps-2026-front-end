@@ -10,7 +10,7 @@ import { Chip, Segmented } from '@/components/Inputs';
 import { Txt } from '@/components/Txt';
 import { VoiceMode } from '@/components/VoiceMode';
 import { VoicePrep } from '@/components/VoicePrep';
-import { addAiMessage, addJournalEntry, dayOfDate, getAiMessages, getJournal, getTodayLogs } from '@/data/api';
+import { addAiMessage, addJournalEntry, dayOfDate, etaOf, getAiMessages, getAstronaut, getCriticalAlerts, getJournal, getTodayLogs, sendAlertReport } from '@/data/api';
 import { hhmm, relativeDay } from '@/data/format';
 import { journalSummary, orbiReply, type OrbiAction } from '@/data/orbi';
 import { useData } from '@/data/store';
@@ -44,11 +44,21 @@ export default function Orbi() {
     }));
   });
   const msgs: Msg[] = mode === 'journal' ? journalMsgs : privateMsgs;
+  const firstName = useData(() => getAstronaut().name.split(' ')[0]);
+  // critical alerts: the one case where Orbi speaks first (shown in the chat, never as a pop-up)
+  const critical = useData(() => getCriticalAlerts());
+  const [notNow, setNotNow] = useState(false);
+  const reportedAt = critical.find((a) => a.reportSentAt)?.reportSentAt;
+  // fixed intro at the top of the chat (not stored, not a notification: Orbi never starts a conversation by itself)
+  const intro =
+    mode === 'journal'
+      ? `Hi ${firstName}, I'm Orbi. Tell me how you feel, ask about your logs, or start your daily check-in. I don't diagnose: for medical questions, message your ground team.`
+      : `Private chat: nothing here is saved or shared. Say anything, ${firstName}.`;
   const actions: OrbiAction[] =
     lastActions ??
     (mode === 'journal'
       ? [
-          { label: "Fill today's logs", href: '/logs/orbi-fill' },
+          { label: 'Daily check-in', href: '/logs/orbi-fill' },
           { label: 'Make a wind-down plan', send: 'Make a wind-down plan' },
           { label: 'Log mood', href: '/logs/mood/add' },
           { label: 'Message ground team', href: '/messages' },
@@ -132,10 +142,42 @@ export default function Orbi() {
         </View>
       </View>
       <ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={styles.chat} onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: false })}>
-        {msgs.length === 0 ? (
-          <Txt size={tokens.font.size.small} color={C.muted} align="center" style={{ marginTop: 20 }}>
-            {mode === 'private' ? 'Say anything. This conversation is not stored.' : 'Say hi to Orbi.'}
-          </Txt>
+        <ChatBubble author="other" text={intro} />
+        {mode === 'journal' && critical.length ? (
+          <View style={{ gap: 10 }}>
+            <ChatBubble author="other" text={`${firstName}, I noticed something important in your recent records.`} />
+            <View style={styles.alertCard} accessibilityRole="alert">
+              <View style={styles.alertIcon}>
+                <Icon name="alert" size={22} color={C.danger} />
+              </View>
+              <View style={{ flex: 1, gap: 4 }}>
+                <Txt heading weight="700" size={tokens.font.size.body}>
+                  Health alert
+                </Txt>
+                {critical.map((a) => (
+                  <Txt key={a.id} size={tokens.font.size.small} lh={1.4}>
+                    {a.text}
+                  </Txt>
+                ))}
+              </View>
+            </View>
+            {reportedAt ? (
+              <View style={styles.sentNote}>
+                <Icon name="check" size={16} color={C.holoOk} />
+                <Txt size={tokens.font.size.caption} style={{ flex: 1 }}>
+                  Report sent to your medical team · arrives ~{hhmm(etaOf({ sentAt: reportedAt }))}. See Messages.
+                </Txt>
+              </View>
+            ) : notNow ? null : (
+              <>
+                <ChatBubble author="other" text="Want me to send a report with your recent data to the ground medical team?" />
+                <View style={styles.actions}>
+                  <Chip label="Send report to ground" onPress={() => sendAlertReport(critical.map((a) => a.id))} />
+                  <Chip label="Not now" onPress={() => setNotNow(true)} />
+                </View>
+              </>
+            )}
+          </View>
         ) : null}
         {msgs.map((m, i) => {
           const day = dayOfDate(m.timestamp);
@@ -240,6 +282,17 @@ const styles = StyleSheet.create({
     borderColor: C.teal,
   },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  alertCard: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
+    borderRadius: tokens.radius.item,
+    borderWidth: 1.5,
+    borderColor: C.danger,
+    backgroundColor: X.dangerNote,
+  },
+  alertIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: X.dangerIcon },
+  sentNote: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: tokens.radius.small, backgroundColor: C.primarySoft },
   composer: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingBottom: 10 },
   input: {
     flex: 1,

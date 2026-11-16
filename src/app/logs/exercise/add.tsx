@@ -1,63 +1,44 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 
-import { Chip, Rating } from '@/components/Inputs';
-import { ChipRow, Group, LogScreen, SaveButton, Stepper, goBackTo } from '@/components/LogKit';
-import { addLog } from '@/data/api';
-import type { ExerciseData } from '@/data/types';
+import { SecondaryButton } from '@/components/Buttons';
+import { Card, CardTitle } from '@/components/Card';
+import { LogScreen, SaveButton, goBackTo } from '@/components/LogKit';
+import { SessionChoices } from '@/components/PlanCards';
+import { Badge } from '@/components/Pills';
+import { Txt } from '@/components/Txt';
+import { openSessionChoices, saveSessionChoices, type SessionChoice } from '@/data/plans';
+import { C, tokens, X } from '@/theme/tokens';
 
-const EQUIPMENT: { v: ExerciseData['equipment']; label: string; modality: ExerciseData['modality'] }[] = [
-  { v: 'resistive_device', label: 'Resistive device', modality: 'resistive' },
-  { v: 'treadmill', label: 'Treadmill', modality: 'aerobic' },
-  { v: 'cycle', label: 'Cycle', modality: 'aerobic' },
-];
-
-/** Log a session: type, equipment, duration stepper, effort 1–5. */
+/** Confirm today's planned training sessions (from the schedule): done, changed minutes, or skipped. */
 export default function ExerciseAdd() {
-  const [modality, setModality] = useState<ExerciseData['modality']>('resistive');
-  const [equipment, setEquipment] = useState<ExerciseData['equipment']>('resistive_device');
-  const [minutes, setMinutes] = useState(30);
-  const [effort, setEffort] = useState<number | null>(3);
+  const [choices, setChoices] = useState<SessionChoice[]>(() => openSessionChoices());
+  const toSave = choices.filter((c) => c.status === 'done' || c.status === 'changed').length;
+  const answered = choices.filter((c) => c.status).length;
 
-  const pickType = (m: ExerciseData['modality']) => {
-    setModality(m);
-    setEquipment(m === 'resistive' ? 'resistive_device' : 'treadmill');
-  };
-
-  const save = async () => {
-    if (effort === null) return;
-    await addLog('exercise', { modality, equipment, durationMin: minutes, effort }, { environmentId: 'gym' });
+  const save = () => {
+    if (!answered) return;
+    saveSessionChoices(choices);
     goBackTo('/logs/exercise');
   };
 
   return (
-    <LogScreen title="Log a session" backHref="/logs/exercise" gap={16} footer={<SaveButton label="Save session" onPress={save} disabled={effort === null} />}>
-      <Group title="Type">
-        <ChipRow>
-          <Chip label="Resistive" selected={modality === 'resistive'} onPress={() => pickType('resistive')} />
-          <Chip label="Aerobic" selected={modality === 'aerobic'} onPress={() => pickType('aerobic')} />
-        </ChipRow>
-      </Group>
-      <Group title="Equipment">
-        <ChipRow>
-          {EQUIPMENT.map((e) => (
-            <Chip
-              key={e.v}
-              label={e.label}
-              selected={equipment === e.v}
-              onPress={() => {
-                setEquipment(e.v);
-                setModality(e.modality);
-              }}
-            />
-          ))}
-        </ChipRow>
-      </Group>
-      <Group title="Duration">
-        <Stepper value={minutes} onChange={setMinutes} />
-      </Group>
-      <Group title="How hard was it?">
-        <Rating value={effort} onChange={setEffort} minLabel="Very easy" maxLabel="Max effort" />
-      </Group>
+    <LogScreen
+      title="Today's training"
+      backHref="/logs/exercise"
+      gap={14}
+      footer={<SaveButton label={toSave ? `Confirm ${toSave} session${toSave === 1 ? '' : 's'}` : 'Confirm'} reward={toSave * 10} onPress={save} disabled={!answered} />}>
+      <Card gap={12}>
+        <CardTitle title="Training schedule" right={<Badge label="From your calendar · demo" color={C.gold} bg={X.goldSoft} />} />
+        {choices.length ? (
+          <SessionChoices choices={choices} onChange={setChoices} />
+        ) : (
+          <Txt size={tokens.font.size.small} color={C.muted}>
+            Nothing left on today&apos;s schedule.
+          </Txt>
+        )}
+      </Card>
+      <SecondaryButton label="Log a session not in the plan" icon="plus" onPress={() => router.push('/logs/exercise/extra')} />
     </LogScreen>
   );
 }

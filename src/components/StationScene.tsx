@@ -155,10 +155,13 @@ export function StationWindow({
   height = WINDOW.height,
   width = WINDOW.width,
   view = 'window-earth-day',
+  top = WINDOW.top,
 }: {
   height?: number;
   width?: number;
   view?: string;
+  /** distance from the top of the scene (Home moves it down under the Orbi card) */
+  top?: number;
 }) {
   const innerW = width - 16;
   const innerH = height - 16;
@@ -169,7 +172,7 @@ export function StationWindow({
       pointerEvents="none"
       style={{
         position: 'absolute',
-        top: WINDOW.top,
+        top,
         left: WINDOW.left,
         width,
         height,

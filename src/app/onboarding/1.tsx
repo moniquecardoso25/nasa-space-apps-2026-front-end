@@ -28,7 +28,7 @@ export default function Onb1() {
       step={1}
       stepLabel="Welcome"
       title={`Welcome aboard, ${firstName(me)}`}
-      intro="CosmoMedic tracks your health during the mission and compares it with how you were before launch."
+      intro="Orbi tracks your health during the mission and compares it with how you were before launch."
       cta="Confirm"
       onCta={() => router.push('/onboarding/2')}>
       <Card>

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { LogStateButton, SecondaryButton } from '@/components/Buttons';
 import { Card, CardTitle } from '@/components/Card';
+import { InsightCard } from '@/components/InsightCard';
 import { TrendLine } from '@/components/Charts';
 import { Icon } from '@/components/Icon';
 import { ListRow, LogScreen, SavedBanner } from '@/components/LogKit';
@@ -14,7 +15,7 @@ import { capitalize } from '@/data/format';
 import { useData } from '@/data/store';
 import { C, X, tokens } from '@/theme/tokens';
 
-function Trend({ label, points, delta }: { label: string; points: number[]; delta: number | null }) {
+function Trend({ label, points, labels, delta }: { label: string; points: number[]; labels: string[]; delta: number | null }) {
   const color = delta !== null && delta <= -5 ? C.warning : C.holoOk;
   return (
     <View style={{ gap: 4 }}>
@@ -26,7 +27,7 @@ function Trend({ label, points, delta }: { label: string; points: number[]; delt
           {delta !== null ? formatDelta(delta) : '—'}
         </Txt>
       </View>
-      {points.length ? <TrendLine points={points} threshold={-10} min={-11} max={0.5} color={color} /> : <Txt color={C.muted}>No data yet</Txt>}
+      {points.length ? <TrendLine points={points} labels={labels} threshold={-10} min={-11} max={0.5} color={color} /> : <Txt color={C.muted}>No data yet</Txt>}
     </View>
   );
 }
@@ -34,18 +35,23 @@ function Trend({ label, points, delta }: { label: string; points: number[]; delt
 export default function BodyOverview() {
   const d = useData(() => {
     const rows = BODY_METRICS.map((def) => ({ def, ...measurementStatus(def) }));
+    // weekly scans / tests only (not daily): one point per measurement, starting at the pre-flight exam
     const series = (metric: string) =>
-      getLogs({ type: 'measurement' })
-        .filter((l) => l.data.metric === metric && l.data.deltaVsBaselinePct != null)
-        .map((l) => l.data.deltaVsBaselinePct as number);
-    const bone = [0, ...series('bone_density')];
-    const aerobic = [0, ...series('aerobic')];
+      getLogs({ type: 'measurement' }).filter((l) => l.data.metric === metric && l.data.deltaVsBaselinePct != null);
+    const boneLogs = series('bone_density');
+    const aerobicLogs = series('aerobic');
+    const bone = [0, ...boneLogs.map((l) => l.data.deltaVsBaselinePct as number)];
+    const aerobic = [0, ...aerobicLogs.map((l) => l.data.deltaVsBaselinePct as number)];
+    const boneLabels = ['Pre-flight', ...boneLogs.map((l) => `D${l.missionDay}`)];
+    const aerobicLabels = ['Pre-flight', ...aerobicLogs.map((l) => `D${l.missionDay}`)];
     const injuries = getLogs({ type: 'injury' }).reverse();
     return {
       rows,
       upToDate: rows.filter((r) => r.upToDate).length,
       bone,
       aerobic,
+      boneLabels,
+      aerobicLabels,
       injuries,
       active: injuries.filter((i) => i.data.status !== 'resolved').length,
     };
@@ -115,8 +121,11 @@ export default function BodyOverview() {
             </Txt>
           }
         />
-        <Trend label="Bone density" points={d.bone} delta={d.bone.length > 1 ? d.bone.at(-1)! : null} />
-        <Trend label="Aerobic fitness" points={d.aerobic} delta={d.aerobic.length > 1 ? d.aerobic.at(-1)! : null} />
+        <Txt size={tokens.font.size.caption} color={C.muted}>
+          Weekly scans and tests vs. the pre-flight exam (demo data). Not measured daily.
+        </Txt>
+        <Trend label="Bone density" points={d.bone} labels={d.boneLabels} delta={d.bone.length > 1 ? d.bone.at(-1)! : null} />
+        <Trend label="Aerobic fitness" points={d.aerobic} labels={d.aerobicLabels} delta={d.aerobic.length > 1 ? d.aerobic.at(-1)! : null} />
       </Card>
       <Card gap={0} padding={14}>
         <CardTitle
@@ -153,6 +162,7 @@ export default function BodyOverview() {
           </Txt>
         </SecondaryButton>
       </Card>
+      <InsightCard category="body" />
     </LogScreen>
   );
 }

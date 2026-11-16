@@ -1,4 +1,4 @@
-# CosmoMedic · build progress
+# Orbi · build progress
 
 Living log of the app build (React Native + Expo SDK 58, expo-router). Each stage ends with: web run, typecheck, visual comparison with `screenshots/`, this file updated and a commit.
 
@@ -6,7 +6,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 1 · Base — done
+## Stage 1 · Base — done
 
 **Done**
 - expo-router with every route in `navigation.json` (`src/app/`): login, onboarding 1–5, tabs (home, status, orbi, messages, avatar), calendar, leaderboard, ground, logs/* (overview + add), logs/body/injury, logs/relax, dev/components.
@@ -36,7 +36,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 2 · Login and onboarding — done
+## Stage 2 · Login and onboarding — done
 
 **Done**
 - `/login`: Earth background, logo, Crew ID + PIN, Sign in (validates against `astronauts[].crewId`, PIN = any 4 digits), inline error.
@@ -54,7 +54,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 3 · Home and Crew status — done
+## Stage 3 · Home and Crew status — done
 
 **Done**
 - Home (`/(tabs)/home`): full station scene (window with stars + gradient Earth, land, clouds, night side, city lights; console; plant; teal floor), Orbi drone floating, Orbi speech bubble from the latest `ai_chat.alerts` entry (→ Orbi), Bolt walking left ↔ right (18 s loop, legs/arm swing, bob, flips at each end), greeting + mission day bar, "Stable 72" → Status, coins pill, calendar button.
@@ -75,7 +75,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 4 · Logs (overview → add) — done
+## Stage 4 · Logs (overview → add) — done
 
 **Done**
 - Shared kit `src/components/LogKit.tsx`: LogScreen (header + sticky footer), SavedBanner ("Saved · logged today +10" / "Changes saved", 5 s), ListRow, MetricTile, Stars (display + input), Note (info/warning/danger), ComingSoon, Greyed, Stepper, Group, ChipRow.
@@ -101,7 +101,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 5 · Orbi, Messages, Avatar & shop, Leaderboard, Calendar — done
+## Stage 5 · Orbi, Messages, Avatar & shop, Leaderboard, Calendar — done
 
 **Done**
 - Orbi AI (`/(tabs)/orbi`): header (on board, no delay), Journal/Private toggle + disclaimer, chat with day/time separators, "Saved to your journal (Shared with Orbi) · View" chip, quick replies, input, greyed mic, send.
@@ -124,7 +124,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 6 · Review — done
+## Stage 6 · Review — done
 
 **Done**
 - Swept every route in a headless browser (CDP, 390×844): `/`, `/login`, `/onboarding/1–5`, `/home`, `/status` (via tab), `/orbi`, `/messages`, `/avatar?tab=helmet|suit|room|pets`, `/calendar`, `/leaderboard`, `/ground`, all `/logs/*` overviews and forms, `/logs/body/injury?id=…`, `/logs/relax`, `/dev/components`. No console errors or warnings.
@@ -145,7 +145,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 7 · "Fill with Orbi" (voice-guided logging) — done
+## Stage 7 · "Fill with Orbi" (voice-guided logging) — done
 
 **Done**
 - New route `/logs/orbi-fill` in the Orbi chat style: header with Orbi, step chips (one per open category), chat bubbles, editable draft cards, composer with **active teal mic** + text + send, "Skip" and (for mood) "Use the slider".
@@ -154,19 +154,19 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - Every answer becomes an editable confirmation card (dashed teal border, "Orbi guessed: … Please check." for defaulted fields, Remove). Mood card: 5 faces + tags + "Use the slider instead" (vertical MoodSlider inline).
 - Nothing is saved until **Confirm & save N logs +N×10**: `saveDrafts` calls `addLog` / `saveDailyLog` per category (+10 each), so "Logged today" updates everywhere; then Home shows "Orbi saved N logs · … +N" (dismissable).
 - Voice: `expo-speech-recognition` via `src/voice/speech.ts` (native module in dev builds, Web Speech API on web). When it is unavailable (Expo Go, unsupported browser) the mic is hidden and only text is used. Permissions configured in `app.json`.
-- Parser isolated in `src/data/orbiParser.ts` behind `OrbiFillParser` (`parse(category, text, ctx) → { draft, understood, assumed, skipped }`); rule-based numbers, clock times, durations and EN/PT keywords ("bem", "cansado", "dormi 6 horas e meia", "125 por 82, pulso 70", "45 min on the treadmill, hard"). Swap `orbiParser` for an LLM later.
+- Parser isolated in `src/data/orbiParser.ts` behind `OrbiFillParser` (`parse(category, text, ctx) → { draft, understood, assumed, skipped }`); rule-based numbers, clock times, durations and English keywords ("good", "tired", "slept six and a half hours", "125 over 82, pulse 70", "45 min on the treadmill, hard"). Swap `orbiParser` for an LLM later.
 - Verified in the browser: Ana (3 open categories, one unclear answer → retry) → Confirm → Home 3/7 → 6/7, coins +30, summary card; Leo (all 6 open, one skipped) → 5 logs saved. Sleep parsing checked with 4 phrasings (6h30, 6h45, 7h, 8h).
 - Docs updated: SCREENS.md (new row), navigation.json (`OrbiFill` + links from Home/Orbi), data-model.json (`fillWithOrbi`).
 
 **Decisions**
 - "Body" in the interview = blood pressure (the daily measurement); weekly metrics stay in the Body form.
 - A category that already has a log today is never asked; mood answered here when it doesn't exist yet counts as the daily check-in (streak/+50 bonus rules apply).
-- Speech language is `en-US`; the parser also understands Portuguese keywords.
+- Speech language is `en-US`; the parser understands English only.
 - Voice needs a development build on phones (`npx expo run:android|ios`); Expo Go falls back to text.
 
 ---
 
-## Etapa 8 · Bolt animation state machine — done
+## Stage 8 · Bolt animation state machine — done
 
 **Done**
 - `src/avatar/` with a reducer state machine (`machine.ts`), catalogue (`animations.ts`: 14 idle, 11 status, 1 event), status derivation from data (`status.ts`) and the Reanimated runner `BoltActor.tsx`. Documented in `docs/design/ANIMATIONS.md`.
@@ -186,7 +186,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 9 · Injuries on the Crew status hologram — done
+## Stage 9 · Injuries on the Crew status hologram — done
 
 **Done**
 - `getDailySummary().areas` now merges injuries: every injury logged up to that day with status `active` or `healing` sets its area to `alert` (pink `holoAlert`). Mapping in `injuryAreas()` (`src/data/api.ts`): head/neck → head, back → torso, arm/hand → armL/armR by side, leg/knee/foot → legL/legR by side ("center" → both). Documented in data-model.json.
@@ -201,7 +201,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 10 · Final review — done
+## Stage 10 · Final review — done
 
 **Docs ↔ app consistency (fixed)**
 - README: lists `ANIMATIONS.md` and `PROGRESS.md`; Coming-soon note clarifies that voice is live only in Fill with Orbi (normal Orbi chat mic stays greyed); Orbi rule mentions Fill with Orbi.
@@ -224,7 +224,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 **Simplified**
 - In-memory data (no backend, no persistence, resets on reload); mock login (any 4-digit PIN).
-- Orbi replies and the Fill-with-Orbi parser are rule-based (EN/PT keywords), not an AI model.
+- Orbi replies and the Fill-with-Orbi parser are rule-based (English keywords), not an AI model.
 - Device pairing, badge scan and injury photo are simulated; shop items are SVG drawings; sleep stage bar is illustrative; meal macros are estimated from kcal; injury status has no history (past days use the current status).
 - Time inputs are masked text fields, not native pickers. Speech recognition language fixed to en-US.
 
@@ -306,6 +306,47 @@ User report: the page was very laggy while voice got ready; asked to download fi
 - Fill with Orbi with nothing left shows **"All caught up!"**: big check, the 6 categories "✓ Logged", "Come back tomorrow…", Back to Home / Talk to Orbi (was a single chat bubble). It doesn't start the voice download (nothing to say).
 - Tested: Ana 3/6 → filled BP, meal, exercise → confirm → ring 6/6, menu all Done, Fill shows All caught up, Status "6 of 6 logs done".
 
+## Follow-up · team review (plano de melhorias), least-invasive pass
+
+Only the items the user picked from the team's screen-by-screen review, done with the smallest change each:
+- **Onboarding 4 · Devices**: honest states instead of "Connected": **Demo** (simulated readings + last sync) or **Not available**; BP cuff "Use demo". Intro says nothing is connected to real hardware.
+- **Onboarding 5 · Companion**: what Orbi does / doesn't do (pre-fills and explains, does not diagnose, only talks when opened), Journal vs Private, and how to ask for a doctor (Messages → Request medical support).
+- **Home**: Orbi's note moved to the top as a highlighted card (window/Earth starts below it) with the **Daily check-in · about 2 min** button. Log menu row renamed "Daily check-in".
+- **Daily check-in** (`/logs/orbi-fill`, was "Fill with Orbi"): first a simulated device sync (wrist band → sleep, dosimeter → radiation, BP cuff → BP) and today's **meal plan** + **training schedule** arrive as pre-filled cards with their source; then Orbi asks only mood (optional), "meals as planned?" and "training as planned?" — "yes" is enough, or "half the lunch, skipped the snack" / "only 20 minutes on the cycle". Nothing saved before confirm.
+- **Meal plan / training plan** (`src/data/plans.ts`, demo data until the API has it): meals with nutrition filled in; confirm each as planned / part (25–75 %) / swap (pick from the station catalog) / skip. Sessions: done / changed minutes / skipped. Planned is never counted as eaten/done. Free-form forms moved to `/logs/meals/extra` and `/logs/exercise/extra`. `MealData` gained optional `planMealId`, `adherence`, `eatenPct` (tasteRating optional); `ExerciseData` gained `plannedId`.
+- **My health** (was "Crew status"): band sync time and sources line, body temperature (band, demo) and glucose (finger-stick, demo) tiles; the check-in card opens the daily check-in.
+- **Orbi chat** no longer starts conversations (removed the seeded "Good morning, how did you sleep?"). No medical-consultation button (user decision).
+- **Messages**: "Request medical support" fills a structured message (reason, since when, what I noticed, share last 7 days) and attaches today's logs; mic button for dictation (same speech engine and voice gate as the rest).
+- **Leaderboard → Achievements** (route kept): personal and private, no crew ranking of health logs.
+- **Mood** stays optional (check-in chip "Skip (optional)"); days without a check-in are a dashed "not recorded" column.
+- **Sleep**: removed the illustrative stages bar; week is a line chart with standard colors (green ≥ goal, yellow within 2 h, red below) and "no data" markers; sleep log is band-prefilled (read-only times + "Edit times"), you only rate how rested.
+- **Radiation**: separate cumulative dose, today's daily dose ("No reading" when missing, never 0) and area dose rate (the room, not your body); bars are neutral (no safe/unsafe colors) and missing days are "–"; log has source explanation, dose / unit / time, prefilled from the badge (demo).
+- **Body**: trend chart kept but labelled as weekly scans with the measurement day under each point (Pre-flight, D5, …).
+- New chart pieces: `WeekBars` shows `null` as a dashed "no data" box (future days stay empty); `WeekLine`; `TrendLine` labels.
+
+## Follow-up · check-in stepper, TEST user
+
+- **TEST user** (mock): Crew ID `TEST`, any 4-digit PIN, nothing logged, 999,999 coins, BP cuff on demo. Hidden from the ground dashboard. Meant for trying the full daily check-in and the shop.
+- **Check-in progress** (`CheckinSteps`): 6 connected dots (Sleep, Dose, BP, Mood, Meals, Training) with ✓ + value as each one fills ("reading…" spinner during the device sync, "your turn", "optional", "planned", "skipped"), plus a progress bar. Shown at the top of the check-in and, compact, inside the hands-free voice mode. Meals / training only get ✓ after you confirm them.
+- Clear notice: "Under 2 minutes. Orbi reads your band, dosimeter and plan, then asks N quick questions. Answer one at a time, or all hands-free." Hands-free button renamed "Answer everything by voice · hands-free"; Home button "Daily check-in · under 2 min".
+- **Say "OK" to each reading** (user request): every open log is one step, in order Sleep → Dose → BP → Mood → Meals → Training. Orbi reads back one device value at a time ("Sleep: your band read 7h 02m, 22:44 to 05:46, woke 1–2 times. Is that right?"); "OK / yes / correct" confirms it, a value corrects only that card ("slept six hours", "120 over 80, pulse 70") and asks for OK again, "skip" drops it. Chips "OK, that's right" / "OK, as planned" / "Skip".
+- The opening no longer says logs were pre-filled: "I read 3 values from your devices and loaded today's plan. Nothing is saved yet: let's check them one by one." No dot gets a ✓ before its step is answered (pending values show "7h 02m?", "planned", "optional").
+- **One card at a time** (user request): the device sync only fills the progress dots ("7h 02m?"); each card appears in the chat together with its question, and the next one only after "OK" (or a correction + "OK", or "skip").
+- **Shorter, spoken** (user request): every Orbi line in the check-in is short ("Sleep: 7h 02m, 22:44–05:46. Right?", "Got it.", "Meals as planned?") and read aloud (speaker toggle in the header; not doubled in voice mode; stops when the mic opens). TTS now says units naturally (µSv → microsieverts, 116/75 → 116 over 75, 7h 02m → 7 hours 2 minutes). Mood slider now waits for "Done" (it used to jump to Meals right away).
+- **Loader + summary** (user request): after you send or speak an answer, your bubble shows with "Orbi is checking…" (spinner, ~0.7 s) before the reply; tapping the mic to stop shows "Writing down what you said…" until the text arrives. Voice mode shows a summary card of the item being checked (values read from the device, or each planned meal / session with its status) above "Try saying", so "Meals as planned?" is never asked blind.
+- Home Orbi card: before the check-in it only invites ("ready for today's check-in? I read your devices first, you just confirm."); Orbi's health note (e.g. short sleep) shows only after the check-in is done.
+- Mood step no longer says "optional": Orbi asks "Great, good, okay, tired or stressed?" and shows those as chips (Skip still there; chip row wraps).
+- Orbi AI: fixed intro bubble at the top of the chat (what Orbi does, no diagnosis, ground team for medical questions). Not stored, not a notification.
+- Messages: "Request medical support" adds a SYSTEM note in the thread explaining what to fill in the template; taller box while it is open; the template line now says today's logs are attached.
+- Planned meals keep the 5-star taste rating (default 5, change only if needed) in the meal plan card (check-in and Meals → Log). Voice/text: "lunch was a 3", "3 stars", "didn't like the stew" (2), "loved the curry" (5); a meal can be named by slot or a word of the dish. Saved as `tasteRating`; Meals overview shows adherence + stars.
+- Orbi AI: critical alerts (level high) show in the Journal chat as a "Health alert" card (Orbi's only first-move), with "Send report to ground" (urgent ground message with the evidence logs attached; alert gets `reportSentAt`) or "Not now". Demo account: ORB3-LEO.
+- Messages: "Request medical support" no longer puts a template in the box; only the SYSTEM note explains what to say (mic or text) and the sent message gets the "Medical support request" header. Tapping the chip again cancels it.
+- Taste by voice/text in the check-in (both the chat and voice mode): the meal question says "Meals as planned, taste 5 stars? Say OK, or what to change." (only when a meal was already eaten); the voice-mode summary shows each eaten meal's stars (★★★★★); "lunch 3 stars" / "taste 3 for lunch" / "lunch was a three" is read back ("Got it. Lunch: 3 stars."); "change the taste" alone gets "Which meal, and how many stars?".
+- Taste stars are visible from the start on every planned meal (smaller, 5 by default; hidden only when skipped), in the card and in the voice-mode summary (shorter lines: time · dish · status · ★★★★★).
+- Home Orbi card: now Orbi's plain read of the recent status indicators (last 3 days: sleep, mood, BP, training yesterday + the main alert to watch), e.g. "your recent indicators: sleep 5h 18m (short), mood okay, BP 127/78 (normal), 92 min training yesterday. Keep an eye on: …". Up to 6 lines (card grows, window moves down). `statusSummary()` in derived.ts; to be replaced by a backend text.
+- "Orbi insight" card as the last item of Sleep, Mood, Body and Meals (`InsightCard`). Text from `insights` in mock-db.json (one per astronaut and area, backend later); fallback per screen, or "Not enough data yet…" for a new crew member (TEST). Mood's Orbi note and Sleep's ISS note became these fallbacks.
+- App renamed **CosmoMedic → Orbi** everywhere (app.json name/slug/scheme, package name, login logo, onboarding, mic permission texts, READMEs, AGENTS.md, design docs and tokens). The assistant inside the app is still Orbi too.
+- Everything in English: removed the Portuguese keywords from the answer parser (the recognizer is English only) and renamed the "Etapa" headings of this log to "Stage".
 
 ## Backend integration - username/password authentication
 
