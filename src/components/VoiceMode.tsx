@@ -12,6 +12,7 @@ import { prepareWhisper, whisperReady } from '@/voice/whisper';
 import { OrbiDrone } from './Astronaut';
 import { AudioBars } from './AudioBars';
 import { Icon } from './Icon';
+import { CheckinSteps, type StepItem } from './CheckinSteps';
 import { PrototypeTag } from './Pills';
 import { LOGIN_STARS, Stars } from './Space';
 import { Txt } from './Txt';
@@ -50,6 +51,10 @@ type Props = {
   normalize?: (text: string) => string;
   /** Turns what the astronaut said into Orbi's spoken answer. `end` closes the loop after speaking. */
   respond: (text: string) => VoiceReply | Promise<VoiceReply>;
+  /** Daily check-in: progress of the 6 logs, filling in as you answer. */
+  steps?: StepItem[];
+  /** Daily check-in: what is being checked right now (values Orbi read, or the plan), so the question is not "blind". */
+  summary?: { title: string; lines: string[] };
 };
 
 /**
@@ -65,7 +70,7 @@ export function VoiceMode(props: Props) {
   );
 }
 
-function VoiceSession({ onClose, title, intro, hint, normalize, respond }: Props) {
+function VoiceSession({ onClose, title, intro, hint, normalize, respond, steps, summary }: Props) {
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<Phase>('idle');
   const [hearing, setHearing] = useState<boolean | null>(null);
@@ -262,10 +267,16 @@ function VoiceSession({ onClose, title, intro, hint, normalize, respond }: Props
         </Pressable>
       </View>
 
+      {steps ? (
+        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+          <CheckinSteps items={steps} />
+        </View>
+      ) : null}
+
       <View style={styles.center}>
-        <OrbiDrone size={110} />
-        <View style={{ marginTop: 26 }}>
-          <AudioBars level={level} color={barColor} bars={26} height={64} barWidth={6} />
+        <OrbiDrone size={summary ? 56 : steps ? 80 : 110} />
+        <View style={{ marginTop: summary ? 12 : 26 }}>
+          <AudioBars level={level} color={barColor} bars={26} height={summary ? 44 : 64} barWidth={6} />
         </View>
         <View style={[styles.status, busy(phase) && styles.statusBusy]}>
           {busy(phase) ? <ActivityIndicator size="small" color={C.teal} /> : null}
@@ -294,6 +305,18 @@ function VoiceSession({ onClose, title, intro, hint, normalize, respond }: Props
           <Txt size={tokens.font.size.caption} color={C.warning} align="center">
             {note}
           </Txt>
+        ) : null}
+        {summary ? (
+          <View style={styles.summary} accessibilityLabel={`${summary.title}: ${summary.lines.join(', ')}`}>
+            <Txt weight="700" size={tokens.font.size.caption} color={C.teal}>
+              {summary.title}
+            </Txt>
+            {summary.lines.map((l, i) => (
+              <Txt key={i} size={tokens.font.size.small} numberOfLines={2}>
+                {l}
+              </Txt>
+            ))}
+          </View>
         ) : null}
         {hint ? (
           <View style={styles.hint} accessibilityLabel={`Try saying: ${hint}`}>
@@ -348,6 +371,7 @@ const styles = StyleSheet.create({
   close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   status: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, minHeight: 36, paddingHorizontal: 14, borderRadius: tokens.radius.pill },
+  summary: { alignSelf: 'stretch', gap: 4, paddingVertical: 10, paddingHorizontal: 12, borderRadius: tokens.radius.item, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   hint: { alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 12, borderRadius: tokens.radius.item, backgroundColor: X.tealSoft, borderWidth: 1, borderColor: C.teal },
   statusBusy: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border },
   transcript: { gap: 10, minHeight: 120, justifyContent: 'flex-end', paddingHorizontal: 8, marginBottom: 16 },

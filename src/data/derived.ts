@@ -231,7 +231,7 @@ export function menuFatigue(): string | null {
       if (days.has(d)) run++;
       else if (d !== today) break;
     }
-    const ratings = meals.filter((m) => m.data.name === name).slice(-3).map((m) => m.data.tasteRating);
+    const ratings = meals.filter((m) => m.data.name === name).slice(-3).map((m) => m.data.tasteRating).filter((r): r is number => r !== undefined);
     const low = ratings.length > 0 && ratings.reduce((a, b) => a + b, 0) / ratings.length <= 3;
     if (run >= 3 && low) return `${name} ${run} days in a row and ratings are dropping. Try something new to avoid menu fatigue.`;
   }

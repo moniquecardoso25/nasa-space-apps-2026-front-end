@@ -41,6 +41,12 @@ function MoodChart({ points }: { points: { label: string; level: number | null }
           {[5, 4, 3, 2, 1].map((lv) => (
             <Line key={lv} x1={8} y1={ROW(lv)} x2={w} y2={ROW(lv)} stroke={C.track} strokeWidth={1} />
           ))}
+          {/* days without a check-in: a dashed "not recorded" column, never a low mood */}
+          {points.map((p, i) =>
+            p.level === null && n <= 31 ? (
+              <Line key={`m${i}`} x1={x(i)} y1={ROW(5)} x2={x(i)} y2={ROW(1)} stroke={C.muted} strokeWidth={1} strokeDasharray="3 4" opacity={0.6} />
+            ) : null,
+          )}
           {valid.length > 1 ? (
             <Polyline
               points={valid.map((p) => `${x(p.i)},${ROW(p.level)}`).join(' ')}
@@ -137,6 +143,11 @@ export default function MoodOverview() {
           }
         />
         <MoodChart points={d.points} />
+        {d.checkins < d.total ? (
+          <Txt size={tokens.font.size.caption} color={C.muted}>
+            Dashed = not recorded ({d.total - d.checkins} day{d.total - d.checkins === 1 ? '' : 's'}). Mood check-ins are optional.
+          </Txt>
+        ) : null}
       </Card>
       <View style={styles.stats}>
         <StatTile value={d.checkins ? `${d.avg.toFixed(1)} / 5` : '—'} label="Average" />

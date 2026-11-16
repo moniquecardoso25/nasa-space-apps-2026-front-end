@@ -395,6 +395,24 @@ export function sendGroundMessage(text: string, urgent = false, attachments: str
   return msg;
 }
 
+/** Critical alerts (level high) of the astronaut: Orbi shows them in the chat with an offer to report. */
+export function getCriticalAlerts(astronautId: string = getCurrentAstronautId()) {
+  return getAlerts(astronautId).filter((a) => a.level === 'high');
+}
+
+/** Sends an urgent report to the medical team with the alerts' evidence logs attached, and marks them reported. */
+export function sendAlertReport(alertIds: string[]): GroundMessage {
+  const alerts = getAlerts().filter((a) => alertIds.includes(a.id));
+  const text = ['Health report (from Orbi)', ...alerts.map((a) => `• ${a.text}`), 'Recent logs attached. Please advise.'].join('\n');
+  const evidence = [...new Set(alerts.flatMap((a) => a.evidence))].filter((id) => getDb().logs.some((l) => l.id === id));
+  const msg = sendGroundMessage(text, true, evidence);
+  setDb((db) => ({
+    ...db,
+    ai_chat: { ...db.ai_chat, alerts: db.ai_chat.alerts.map((a) => (alertIds.includes(a.id) ? { ...a, reportSentAt: msg.sentAt } : a)) },
+  }));
+  return msg;
+}
+
 // ---------------------------------------------------------------- shop / avatar
 
 export function getShop(category?: ShopCategory): ShopItem[] {
@@ -456,6 +474,29 @@ export function getLeaderboard(mode: LeaderboardMode) {
     }))
     .sort((x, y) => (mode === 'logs' ? y.logs - x.logs : y.coins - x.coins))
     .map((row, i) => ({ ...row, rank: i + 1, value: mode === 'logs' ? row.logs : row.coins }));
+}
+
+/**
+ * Personal, private progress (replaces the public leaderboard: ranking crew members by
+ * health logs would push people to over-report or hide symptoms).
+ */
+export function getAchievements(astronautId: string = getCurrentAstronautId()) {
+  const db = getDb();
+  const a = getAstronaut(astronautId);
+  const logs = db.logs.filter((l) => l.astronautId === astronautId);
+  const days = new Map<number, Set<LogType>>();
+  logs.forEach((l) => days.set(l.missionDay, (days.get(l.missionDay) ?? new Set()).add(l.type)));
+  const fullDay = [...days.values()].some((t) => COUNTED_TYPES.every((c) => t.has(c)));
+  const roomItems = a.avatar.owned.filter((id) => id.startsWith('window-') || id.startsWith('wall-') || id.startsWith('floor-')).length;
+  const streak = getCheckinStreak(astronautId);
+  return [
+    { id: 'first-log', title: 'First log', text: 'Saved your first log', icon: 'check' as const, done: logs.length > 0 },
+    { id: 'week-streak', title: '7-day streak', text: `Check-ins 7 days in a row (now ${streak})`, icon: 'flame' as const, done: streak >= 7 },
+    { id: 'full-day', title: 'Full day', text: 'All 6 logs in one day', icon: 'star' as const, done: fullDay },
+    { id: 'logs-50', title: 'Steady logger', text: `50 logs this mission (${Math.min(logs.length, 50)}/50)`, icon: 'journal' as const, done: logs.length >= 50 },
+    { id: 'decorator', title: 'Decorator', text: `3 room items (${Math.min(roomItems, 3)}/3)`, icon: 'home' as const, done: roomItems >= 3 },
+    { id: 'pet', title: 'Best friend', text: 'Adopted a pet', icon: 'heart' as const, done: !!a.avatar.equipped.pet || a.avatar.owned.some((id) => id.startsWith('pet-')) },
+  ];
 }
 
 export function getCalendar(astronautId: string = getCurrentAstronautId()): CalendarEvent[] {

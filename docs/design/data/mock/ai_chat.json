@@ -1,14 +1,6 @@
 {
   "messages": [
     {
-      "id": "msg-001",
-      "astronautId": "ast-01",
-      "author": "orbi",
-      "text": "Good morning, Ana. How did you sleep?",
-      "timestamp": "2026-11-14T08:12:00Z",
-      "mode": "journal"
-    },
-    {
       "id": "msg-002",
       "astronautId": "ast-01",
       "author": "astronaut",

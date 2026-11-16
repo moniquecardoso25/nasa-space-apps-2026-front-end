@@ -126,13 +126,21 @@ export interface MealData {
   proteinG: number;
   carbsG: number;
   fatG: number;
-  tasteRating: number;
+  /** 1–5, optional (menu fatigue signal). */
+  tasteRating?: number;
+  /** Meal plan confirmation: which planned meal, and what happened to it. */
+  planMealId?: string;
+  adherence?: 'followed' | 'partial' | 'swapped' | 'skipped';
+  /** % of the planned meal eaten (100 as planned, 0 skipped). */
+  eatenPct?: number;
 }
 export interface ExerciseData {
   modality: 'resistive' | 'aerobic';
   equipment: 'resistive_device' | 'treadmill' | 'cycle';
   durationMin: number;
   effort: number;
+  /** Set when the session was confirmed from the training plan. */
+  plannedId?: string;
 }
 export interface MeditationData {
   session: string;
@@ -215,6 +223,8 @@ export interface Alert {
   evidence: string[];
   timestamp: ISO;
   sentToGround: boolean;
+  /** When the astronaut sent a data report about it from the Orbi chat. */
+  reportSentAt?: ISO;
 }
 export interface AiChat {
   messages: AiMessage[];

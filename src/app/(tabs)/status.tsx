@@ -24,11 +24,12 @@ import {
   type CalloutSpec,
 } from '@/components/Hologram';
 import { Icon } from '@/components/Icon';
-import { CoinsPill, HealthTag, Legend } from '@/components/Pills';
+import { CoinsPill, HealthTag, Legend, levelColor } from '@/components/Pills';
 import { Txt } from '@/components/Txt';
 import { firstName, getAstronaut, getCheckinStreak, getDailySummary, getOpenInjuries, getToday, healthTag, injuryAreas, isLoggedToday } from '@/data/api';
 import { dayVitals, injuryTitle, lastSyncIso } from '@/data/derived';
 import { hhmm } from '@/data/format';
+import { extraVitals } from '@/data/plans';
 import { useData } from '@/data/store';
 import type { Level } from '@/data/types';
 import { C, X, tokens } from '@/theme/tokens';
@@ -112,13 +113,14 @@ export default function Status() {
       checkedIn: isLoggedToday('mood'),
       sync: lastSyncIso(sel),
       injuries: getOpenInjuries(sel),
+      extra: extraVitals(sel),
     };
   }, [sel, today]);
 
   const { me, summary, vitals } = d;
   const tag = healthTag(summary.overallScore);
   const isToday = sel === today;
-  const dayLabel = isToday ? `Today, Day ${sel}${d.sync ? ` · synced ${hhmm(d.sync)}` : ''}` : `Day ${sel} · past day`;
+  const dayLabel = isToday ? `Today, Day ${sel}${d.sync ? ` · band synced ${hhmm(d.sync)}` : ''}` : `Day ${sel} · past day`;
   const go = (href: string) => () => router.push(href as never);
   const dots = d.streak % 7 === 0 && d.streak > 0 ? 7 : d.streak % 7;
 
@@ -160,7 +162,7 @@ export default function Status() {
         <View style={styles.header}>
           <View style={{ gap: 2, flex: 1 }}>
             <Txt heading weight="700" size={tokens.font.size.title} accessibilityRole="header">
-              Crew status
+              My health
             </Txt>
             <Txt size={tokens.font.size.small} color={C.muted}>
               {firstName(me)} · {dayLabel}
@@ -181,7 +183,7 @@ export default function Status() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Daily check-in ${d.checkedIn ? 'done' : 'open'}, ${d.streak}-day streak`}
-            onPress={go(d.checkedIn ? '/logs/mood' : '/logs/mood/add')}
+            onPress={go('/logs/orbi-fill')}
             style={styles.checkin}>
             <View style={styles.row6}>
               {d.checkedIn ? <Icon name="check" size={18} color={C.onGold} strokeWidth={2.5} /> : null}
@@ -232,8 +234,42 @@ export default function Status() {
           </View>
         </View>
 
-        <View style={{ marginTop: 18 }}>
+        <View style={styles.extra}>
+          <View style={styles.extraTile} accessibilityLabel={`Body temperature ${d.extra.temp.value} degrees`}>
+            <Icon name="thermometer" size={18} color={levelColor(d.extra.temp.level)} />
+            <View style={{ flex: 1 }}>
+              <Txt size={tokens.font.size.caption} color={C.muted}>
+                Body temp
+              </Txt>
+              <Txt weight="700" size={tokens.font.size.body} color={levelColor(d.extra.temp.level)}>
+                {d.extra.temp.value.toFixed(1)} °C
+              </Txt>
+              <Txt size={tokens.font.size.tiny} color={C.muted}>
+                Wrist band · demo
+              </Txt>
+            </View>
+          </View>
+          <View style={styles.extraTile} accessibilityLabel={`Blood glucose ${d.extra.glucose.value} milligrams per deciliter`}>
+            <Icon name="zap" size={18} color={levelColor(d.extra.glucose.level)} />
+            <View style={{ flex: 1 }}>
+              <Txt size={tokens.font.size.caption} color={C.muted}>
+                Glucose
+              </Txt>
+              <Txt weight="700" size={tokens.font.size.body} color={levelColor(d.extra.glucose.level)}>
+                {d.extra.glucose.value} mg/dL
+              </Txt>
+              <Txt size={tokens.font.size.tiny} color={C.muted}>
+                Finger-stick · demo
+              </Txt>
+            </View>
+          </View>
+        </View>
+
+        <View style={{ marginTop: 14, gap: 6 }}>
           <Legend note="· vs. pre-mission baseline" />
+          <Txt size={tokens.font.size.tiny} color={C.muted} align="center" style={{ paddingHorizontal: 16 }}>
+            Sources: your logs, wrist band and dosimeter (demo data). A summary for navigation, not a diagnosis.
+          </Txt>
         </View>
       </ScrollView>
     </View>
@@ -276,6 +312,18 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: X.streakEmpty },
   dotOn: { backgroundColor: C.onGold, borderColor: C.onGold },
   scrubber: { gap: 8, paddingHorizontal: 16, marginBottom: 4 },
+  extra: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 12 },
+  extraTile: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: tokens.radius.card,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
   scrubHead: { flexDirection: 'row', justifyContent: 'space-between' },
   stageWrap: { alignItems: 'center', overflow: 'hidden' },
   stage: { width: STAGE_W, height: STAGE_H },

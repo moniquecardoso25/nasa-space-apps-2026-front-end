@@ -10,7 +10,7 @@ import { Segmented } from '@/components/Inputs';
 import { CoinsPill } from '@/components/Pills';
 import { ItemArt, PetArt, Surface, WindowView, floorSpec, wallSpec } from '@/components/ShopArt';
 import { Txt } from '@/components/Txt';
-import { buyItem, equipItem, getAstronaut, getLeaderboard, getLogs, getShop, isEquipped, isOwned } from '@/data/api';
+import { buyItem, equipItem, getAchievements, getAstronaut, getLogs, getShop, isEquipped, isOwned } from '@/data/api';
 import { formatCoins } from '@/data/format';
 import { boltColors } from '@/data/shopArt';
 import { useData } from '@/data/store';
@@ -111,10 +111,10 @@ export default function Avatar() {
     () => ({
       me: getAstronaut(),
       items: getShop(),
-      rank: {
-        logs: getLeaderboard('logs').find((r) => r.astronaut.id === getAstronaut().id)?.rank,
-        coins: getLeaderboard('coins').find((r) => r.astronaut.id === getAstronaut().id)?.rank,
-      },
+      rank: (() => {
+        const a = getAchievements();
+        return { got: a.filter((x) => x.done).length, total: a.length };
+      })(),
     }),
     [],
   );
@@ -190,10 +190,10 @@ export default function Avatar() {
             </View>
             <View style={{ flex: 1, gap: 2 }}>
               <Txt weight="700" size={tokens.ext.fontSize.label}>
-                Leaderboard
+                Achievements
               </Txt>
               <Txt size={tokens.font.size.caption} color={C.muted}>
-                #{rank.logs} in daily logs · #{rank.coins} in coins
+                {rank.got} of {rank.total} unlocked · private, no ranking
               </Txt>
             </View>
             <Icon name="chevronRight" size={18} color={C.muted} />

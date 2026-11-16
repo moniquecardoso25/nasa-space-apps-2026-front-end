@@ -1,83 +1,47 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
+import { SecondaryButton } from '@/components/Buttons';
 import { Card, CardTitle } from '@/components/Card';
-import { Chip, Field } from '@/components/Inputs';
-import { ChipRow, LogScreen, SaveButton, Stars, goBackTo } from '@/components/LogKit';
+import { LogScreen, Note, SaveButton, goBackTo } from '@/components/LogKit';
+import { MealChoices } from '@/components/PlanCards';
+import { Badge } from '@/components/Pills';
 import { Txt } from '@/components/Txt';
-import { addLog, getNow, getToday } from '@/data/api';
-import { estimateMacros, MEAL_PICKS } from '@/data/derived';
-import { hhmm, isoAt, maskTime, parseHHMM } from '@/data/format';
-import { C, tokens } from '@/theme/tokens';
+import { openMealChoices, saveMealChoices, type MealChoice } from '@/data/plans';
+import { C, tokens, X } from '@/theme/tokens';
 
-/** Log a meal: what you ate + quick picks, kcal, time, taste 1–5 stars. */
+/**
+ * Confirm today's meal plan. The medical team planned each meal with its nutrition,
+ * so the astronaut only taps "As planned" (default for meals already due) or says what changed.
+ */
 export default function MealsAdd() {
-  const [name, setName] = useState('');
-  const [picks, setPicks] = useState<string[]>([]);
-  const [kcal, setKcal] = useState('');
-  const [kcalTouched, setKcalTouched] = useState(false);
-  const [time, setTime] = useState(hhmm(getNow()));
-  const [taste, setTaste] = useState(0);
-  const valid = name.trim().length > 1 && Number(kcal) > 0 && parseHHMM(time) !== null && taste > 0;
-
-  const togglePick = (p: string) => {
-    const next = picks.includes(p) ? picks.filter((x) => x !== p) : [...picks, p];
-    setPicks(next);
-    setName(next.join(' + '));
-    if (!kcalTouched) {
-      const sum = next.reduce((s, n) => s + (MEAL_PICKS.find((m) => m.name === n)?.kcal ?? 0), 0);
-      setKcal(sum ? String(sum) : '');
-    }
-  };
+  const [choices, setChoices] = useState<MealChoice[]>(() => openMealChoices());
+  const answered = choices.filter((c) => c.status && (c.status !== 'swapped' || c.swapTo)).length;
 
   const save = () => {
-    if (!valid) return;
-    const k = Number(kcal);
-    addLog(
-      'meal',
-      {
-        name: name.trim(),
-        items: picks.length ? picks.map((p) => p.toLowerCase()) : name.split('+').map((s) => s.trim().toLowerCase()),
-        kcal: k,
-        ...estimateMacros(k),
-        tasteRating: taste,
-      },
-      { timestamp: isoAt(getToday(), time), environmentId: 'galley' },
-    );
+    if (!answered) return;
+    saveMealChoices(choices.filter((c) => c.status !== 'swapped' || c.swapTo));
     goBackTo('/logs/meals');
   };
 
   return (
-    <LogScreen title="Log a meal" backHref="/logs/meals" gap={14} footer={<SaveButton label="Save meal" onPress={save} disabled={!valid} />}>
-      <Field label="What did you eat?" value={name} onChangeText={setName} placeholder="Beef stew + tortilla" />
-      <ChipRow>
-        {MEAL_PICKS.slice(0, 6).map((p) => (
-          <Chip key={p.name} label={p.name} selected={picks.includes(p.name)} onPress={() => togglePick(p.name)} />
-        ))}
-      </ChipRow>
-      <View style={styles.two}>
-        <Field
-          label="Calories"
-          value={kcal}
-          unit="kcal"
-          onChangeText={(t) => {
-            setKcalTouched(true);
-            setKcal(t.replace(/\D/g, '').slice(0, 4));
-          }}
-          keyboardType="number-pad"
-          style={styles.flex}
-        />
-        <Field label="Time" value={time} onChangeText={(t) => setTime(maskTime(t))} keyboardType="number-pad" style={styles.flex} />
-      </View>
-      <Card gap={10}>
-        <CardTitle title="How did it taste?" />
-        <Stars value={taste} onChange={setTaste} size={32} gap={4} />
-        <Txt size={tokens.font.size.caption} color={C.muted}>
-          Taste ratings help spot menu fatigue.
-        </Txt>
+    <LogScreen
+      title="Today's meals"
+      backHref="/logs/meals"
+      gap={14}
+      footer={<SaveButton label={`Confirm ${answered} meal${answered === 1 ? '' : 's'}`} reward={answered * 10} onPress={save} disabled={!answered} />}>
+      <Card gap={12}>
+        <CardTitle title="Meal plan" right={<Badge label="From your medical team · demo" color={C.gold} bg={X.goldSoft} />} />
+        {choices.length ? (
+          <MealChoices choices={choices} onChange={setChoices} />
+        ) : (
+          <Txt size={tokens.font.size.small} color={C.muted}>
+            Every planned meal is confirmed for today.
+          </Txt>
+        )}
       </Card>
+      <Note tone="muted">Nutrition comes from the plan. Only what you confirm is counted: a planned meal is not a meal eaten.</Note>
+      <SecondaryButton label="Ate something not in the plan" icon="plus" onPress={() => router.push('/logs/meals/extra')} />
     </LogScreen>
   );
 }
-
-const styles = StyleSheet.create({ two: { flexDirection: 'row', gap: 10 }, flex: { flex: 1 } });

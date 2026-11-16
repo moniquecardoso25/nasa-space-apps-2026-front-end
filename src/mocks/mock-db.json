@@ -269,6 +269,61 @@
         "state": "sleepy"
       },
       "onboardingDone": true
+    },
+    {
+      "id": "ast-test",
+      "name": "Test Pilot",
+      "crewId": "TEST",
+      "role": "astronaut",
+      "$story": "test user: nothing logged yet, lots of coins (try the daily check-in and the shop)",
+      "profile": {
+        "age": 38,
+        "heightCm": 168,
+        "weightKg": 60,
+        "foodPreferences": [
+          "no restrictions"
+        ]
+      },
+      "baseline": {
+        "boneDensity": 1.2,
+        "muscleMassKg": 27.0,
+        "strengthScore": 100,
+        "aerobicScore": 100,
+        "bodyFatPct": 22,
+        "restingHr": 66,
+        "restingBp": "118/76",
+        "usualSleepH": 7.5,
+        "usualBedtime": "23:00"
+      },
+      "devices": {
+        "wristBand": {
+          "model": "ARCHeR-style actigraphy",
+          "paired": true
+        },
+        "dosimeterBadgeId": "CPD-0413",
+        "bpCuff": true
+      },
+      "avatar": {
+        "name": "Bolt",
+        "level": 1,
+        "coins": 999999,
+        "owned": [
+          "helmet-classic",
+          "suit-standard"
+        ],
+        "equipped": {
+          "helmet": "helmet-classic",
+          "suit": "suit-standard",
+          "pet": null,
+          "room": {
+            "window": "window-earth-day",
+            "wall": "wall-lilac",
+            "floor": "floor-teal"
+          }
+        },
+        "state": "idle"
+      },
+      "onboardingDone": true
     }
   ],
   "logs": [
@@ -8751,14 +8806,6 @@
   ],
   "ai_chat": {
     "messages": [
-      {
-        "id": "msg-001",
-        "astronautId": "ast-01",
-        "author": "orbi",
-        "text": "Good morning, Ana. How did you sleep?",
-        "timestamp": "2026-11-14T08:12:00Z",
-        "mode": "journal"
-      },
       {
         "id": "msg-002",
         "astronautId": "ast-01",

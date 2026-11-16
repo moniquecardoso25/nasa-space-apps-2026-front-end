@@ -1,12 +1,25 @@
-/** "Fill with Orbi": which categories are still open today, and saving the confirmed drafts. */
+/** Daily check-in ("Fill with Orbi"): which categories are still open today, and saving the confirmed drafts. */
 import { addLog, getAstronaut, getLogs, getNow, getToday, getTodayLogs, isLoggedToday, saveDailyLog } from './api';
 import { estimateMacros } from './derived';
 import { hhmm, isoAt, parseHHMM } from './format';
 import { draftSleepMinutes, type DraftMap, type FillCategory, type ParseContext } from './orbiParser';
+import { saveMealChoices, saveSessionChoices, type MealChoice, type SessionChoice } from './plans';
 import { session } from './session';
 import { setDb } from './store';
 
 export const FILL_ORDER: FillCategory[] = ['mood', 'sleep', 'radiation', 'body', 'meal', 'exercise'];
+
+/** Read automatically from the devices (demo): no question, the astronaut only checks the card. */
+export const AUTO_FILLED: FillCategory[] = ['sleep', 'radiation', 'body'];
+
+/** Where each auto-filled card comes from. */
+export const SOURCE_LABEL: Partial<Record<FillCategory, string>> = {
+  sleep: 'From your ARCHeR wrist band · demo',
+  radiation: 'From your personal dosimeter badge · demo',
+  body: 'From the blood pressure cuff · demo',
+  meal: 'From your meal plan (medical team) · demo',
+  exercise: 'From your training schedule · demo',
+};
 
 export const FILL_LABEL: Record<FillCategory, string> = {
   mood: 'Mood',
@@ -18,12 +31,12 @@ export const FILL_LABEL: Record<FillCategory, string> = {
 };
 
 export const FILL_QUESTION: Record<FillCategory, { q: string; hint: string }> = {
-  mood: { q: 'How are you feeling today?', hint: 'e.g. “good, a bit tired” or “four out of five, focused”' },
-  sleep: { q: 'How did you sleep last night? Hours or bed/wake times both work.', hint: 'e.g. “slept six and a half hours, woke twice” or “bed at eleven thirty, up at six”' },
-  radiation: { q: 'What does your dosimeter badge read today?', hint: 'e.g. “38 microsieverts” or “forty point five microsieverts”' },
-  body: { q: 'Blood pressure time. What were your numbers?', hint: 'e.g. “118 over 76, pulse 64”' },
-  meal: { q: 'What did you eat today, and how did it taste?', hint: 'e.g. “beef stew and tortilla, 600 calories, bland”' },
-  exercise: { q: 'Any exercise today? Tell me what and for how long.', hint: 'e.g. “45 min on the treadmill, hard”' },
+  mood: { q: 'How are you feeling? Great, good, okay, tired or stressed?', hint: 'You can add how: “good, focused” or “tired, homesick”' },
+  sleep: { q: 'How did you sleep?', hint: 'e.g. “slept six and a half hours, woke twice” or “bed at eleven thirty, up at six”' },
+  radiation: { q: 'What does your badge read?', hint: 'e.g. “38 microsieverts” or “forty point five microsieverts”' },
+  body: { q: 'Your blood pressure?', hint: 'e.g. “118 over 76, pulse 64”' },
+  meal: { q: 'Meals as planned, taste 5 stars? Say OK, or what to change.', hint: '“OK” · “half the lunch” · “lunch was 3 stars” · “didn’t like the stew”' },
+  exercise: { q: 'Training as planned?', hint: 'e.g. “yes” or “only 20 minutes on the treadmill”' },
 };
 
 /** Categories with no log today, in interview order. */
@@ -54,7 +67,7 @@ export type Drafts = Partial<{ [K in FillCategory]: DraftMap[K] }>;
 const MOOD_LABEL = { 5: 'great', 4: 'good', 3: 'okay', 2: 'tired', 1: 'stressed' } as const;
 
 /** Saves every confirmed draft with addLog (+10 each) and records a summary for Home. */
-export function saveDrafts(drafts: Drafts) {
+export function saveDrafts(drafts: Drafts, plan: { meals?: MealChoice[]; sessions?: SessionChoice[] } = {}) {
   const today = getToday();
   const saved: string[] = [];
   let coins = 0;
@@ -116,6 +129,20 @@ export function saveDrafts(drafts: Drafts) {
     );
     coins += 10;
     saved.push('Meal');
+  }
+  if (plan.meals?.length) {
+    const n = saveMealChoices(plan.meals.filter((c) => c.status !== 'swapped' || c.swapTo));
+    if (n) {
+      coins += n * 10;
+      saved.push(n === 1 ? 'Meal' : `${n} meals`);
+    }
+  }
+  if (plan.sessions?.length) {
+    const n = saveSessionChoices(plan.sessions);
+    if (n) {
+      coins += n * 10;
+      saved.push(n === 1 ? 'Exercise' : `${n} sessions`);
+    }
   }
   if (drafts.exercise) {
     const d = drafts.exercise;

@@ -30,18 +30,24 @@ type CardProps<C extends FillCategory> = {
   onRemove: () => void;
   /** Mood only: start with the vertical slider open. */
   initialSlider?: boolean;
+  /** Where the values came from ("Wrist band · demo"), shown under the title. */
+  source?: string;
+  /** Custom body (plan cards: meals / training to confirm). */
+  children?: React.ReactNode;
 };
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const num = (t: string, max = 999) => Math.min(max, Number(t.replace(/[^\d.]/g, '')) || 0);
 
 /** Editable confirmation card for one parsed answer. */
-export function DraftCard<C extends FillCategory>({ category, draft, assumed, onChange, onRemove, initialSlider }: CardProps<C>) {
+export function DraftCard<C extends FillCategory>({ category, draft, assumed, onChange, onRemove, initialSlider, source, children }: CardProps<C>) {
   const [slider, setSlider] = useState(!!initialSlider);
   const set = (patch: object) => onChange({ ...draft, ...patch } as DraftMap[C]);
 
   let body: React.ReactNode = null;
-  if (category === 'mood') {
+  if (children) {
+    body = children;
+  } else if (category === 'mood') {
     const d = draft as DraftMap['mood'];
     body = (
       <>
@@ -179,6 +185,11 @@ export function DraftCard<C extends FillCategory>({ category, draft, assumed, on
           </Txt>
         </Pressable>
       </View>
+      {source ? (
+        <Txt size={tokens.font.size.tiny} color={C.teal}>
+          {source}
+        </Txt>
+      ) : null}
       {assumed.length ? (
         <Txt size={tokens.font.size.tiny} color={C.gold}>
           Orbi guessed: {assumed.join(', ')}. Please check.
