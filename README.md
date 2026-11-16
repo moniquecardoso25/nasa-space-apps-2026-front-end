@@ -1,80 +1,166 @@
-﻿# nasa-space-apps-2026-front-end
+﻿<div align="center">
 
-**Orbi**: health monitoring app for astronauts (NASA Space Apps 2026 · "Create Health Monitoring Software for Astronauts on Space Missions"). React Native + Expo (SDK 58), runs on phone and web. Visual style: Nebula Glass.
+<img src="assets/images/icon.png" width="96" alt="Orbi logo" />
 
-## Run
+# Orbi
+
+**Your on-board health companion: a daily health check-in in under two minutes, made for life far from Earth.**
+
+NASA Space Apps Challenge 2026 · *Create Health Monitoring Software for Astronauts on Space Missions*
+
+**[▶ Open the live app](https://nasa-space-apps-2026-front-end-murex.vercel.app)** · demo login: `TEST` or `ORB3-ANA`, any 4-digit PIN
+
+</div>
+
+<p align="center">
+  <img src="docs/screenshots/home.png" width="200" alt="Home with Orbi's summary of the recent indicators" />
+  <img src="docs/screenshots/checkin.png" width="200" alt="Daily check-in: one reading at a time" />
+  <img src="docs/screenshots/status.png" width="200" alt="My health: eight indicators on the body" />
+  <img src="docs/screenshots/alert.png" width="200" alt="Critical alert with a report to the medical team" />
+</p>
+
+## The problem
+
+On a long mission, astronauts deal with radiation, isolation, altered gravity and a closed environment, while their days are packed to the minute. Their health data is spread over several devices and forms. Help from Earth arrives with a communication delay, and on missions beyond the Moon it can take many minutes each way.
+
+Health logging has to be **fast**, it has to **work without a link to Earth**, and it should turn the data into something the astronaut and the medical team can act on.
+
+## The solution
+
+**Orbi** is a mobile app (phone and web) with an on-board assistant, also called Orbi:
+
+- **Daily check-in in under 2 minutes.** Orbi reads the devices first: sleep from the wrist band, dose from the personal dosimeter, blood pressure from the cuff. It also loads today's meal and training plan. Then it goes through one item at a time, and the astronaut says **"OK"** or corrects the value ("slept six hours", "120 over 80, pulse 70"). This works by voice or text, or fully hands-free in voice mode. Nothing is saved until the astronaut confirms.
+- **Meal and training plans instead of forms.** The medical team's plan is already filled in. Each meal is confirmed as planned, part, swapped or skipped, with a 5-star taste rating to catch *menu fatigue*. Training sessions come from the schedule.
+- **My health at a glance.** Eight indicators on a body hologram: mood, stress, blood pressure, radiation, muscle, sleep, exercise and bone density, compared with the pre-flight baseline. The app shows a status tag ("Doing well", "Attention", "Alert") instead of a score.
+- **Insights and alerts.** Orbi summarizes the recent indicators on Home and adds a short insight to Sleep, Mood, Body and Meals. Critical alerts appear in the chat with **"Send report to ground"**, an urgent message with the evidence logs attached.
+- **Messages that respect the delay.** Each message shows when it arrives on Earth. "Request medical support" guides a structured request, and it can be dictated.
+- **Journal and Private.** In Journal mode, conversations with Orbi feed the journal the medical team sees. In Private mode nothing is stored.
+- **Works offline.** Every change is saved on the device first and synchronized when the link comes back.
+- **Motivation without pressure.** Coins, an avatar (Bolt) with a shop, and **private** achievements, with no crew ranking of health data.
+
+<p align="center">
+  <img src="docs/screenshots/meals.png" width="200" alt="Meal plan with taste stars" />
+  <img src="docs/screenshots/voice.png" width="200" alt="Hands-free voice mode" />
+  <img src="docs/screenshots/login.png" width="200" alt="Login" />
+</p>
+
+## How Orbi answers the challenge
+
+| Hazard (NASA HRP) | What Orbi does |
+|---|---|
+| **Space radiation** | Daily personal dose from the dosimeter badge, the mission total, and the area dose rate (the room, not the body). NASA sets no fixed limit for long missions, so values are shown as illustrative and are not coloured as safe or unsafe. |
+| **Isolation and confinement** | Quick mood check-in with tags (homesick, lonely, anxious…), a Journal shared with the medical team, a Private mode, and alerts for several low-mood days. |
+| **Distance from Earth** | Orbi runs on board and replies with no Earth delay. The app is offline-first. Messages show the arrival time on Earth, and alerts are packed into one report for the ground team. |
+| **Gravity fields** | Bone density, strength and aerobic fitness compared with the pre-flight baseline (HRP averages as reference). The training plan uses the station equipment: ARED, cycle and treadmill. |
+| **Hostile and closed environments** | Sleep with light exposure and cabin noise from the band (crews see 16 sunrises a day), an area radiation monitor, and a meal plan to keep calories on target and avoid menu fatigue. |
+
+## Safety and responsible design
+
+- **Orbi does not diagnose.** It reads data, explains it and points to the medical team.
+- **Confirm before save.** Every value read or guessed by Orbi is shown to the astronaut, who can correct it.
+- **Private means private.** Private conversations never leave the device and never enter the sync queue.
+- **Honest labels.** Simulated devices are marked *demo*, missing days show as "no data" (never as 0), and radiation values are marked illustrative.
+- **No ranking of health.** Achievements are personal. Nobody is compared with the crew.
+
+## Orbi today and next
+
+**Today, Orbi is rule-based, not an AI model**, so it works on board, offline and predictably:
+
+1. **Speech → text:** the phone or browser recognizer, or an on-device model (Moonshine via transformers.js) when the browser has none. Audio never leaves the device.
+2. **Text → action by rules:** `src/data/orbiParser.ts` reads numbers (in digits or words), clock times, durations and keywords. Whatever it cannot read is marked "Orbi guessed" for the astronaut to check.
+
+**Next:** a language model behind the same two interfaces (`OrbiFillParser` and the backend's `/app/me/orbi/chat`), so the screens do not change. It must run on board as a small local model, or tolerate the Earth delay. The "confirm before save" and "Private stores nothing" guarantees stay.
+
+## Try it
+
+**Live:** https://nasa-space-apps-2026-front-end-murex.vercel.app
+
+| Demo Crew ID (any 4-digit PIN) | What to look at |
+|---|---|
+| `TEST` | Nothing logged yet: run the whole **daily check-in** (and spend 999,999 coins in the shop). |
+| `ORB3-ANA` | A typical astronaut: short sleep after low light exposure. |
+| `ORB3-LEO` | **Critical alert** in Orbi AI (short sleep, high stress, fitness drop) and a knee injury. |
+| `ORB3-MIKA` | Low mood and menu fatigue. |
+| `ORB3-RAJ` | Steady, everything in range. |
+
+The app signs in on the real backend (Crew Health API on Azure). The demo Crew IDs fall back to built-in demo data when the server does not know them, shown by the "Demo data · not connected to the server" line. Real accounts never fall back.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  A[Astronaut] -- voice / text --> O[Orbi<br/>rules, on board]
+  D[Wrist band · dosimeter · BP cuff<br/>simulated] --> O
+  O --> C[Cards to confirm]
+  C -- confirm --> L[(Local copy +<br/>offline queue)]
+  L <-- sync when there is a link --> API[Crew Health API<br/>Azure]
+  API --> G[Ground / medical team<br/>dashboard]
+```
+
+- **App:** React Native + Expo SDK 58 (one codebase for Android, iOS and web), Expo Router, TypeScript.
+- **Data:** a reactive local copy of the server snapshot. Writes go to an offline queue with one operation ID each, so every change is applied once.
+- **Voice:** `expo-speech` (Orbi speaks), the system or browser recognizer, Moonshine on-device as fallback, and `expo-audio` for mood voice notes.
+- **Backend:** Crew Health API (separate repository), with username/password login, a snapshot and sync.
+
+## Run locally
 
 ```bash
 npm install
-npm run web          # browser (phone-width frame)
+npm run web          # browser, phone-width frame
 npx expo start       # Expo Go / emulator
 ```
 
-- Sign in with a valid backend **username and password** (`POST /api/v1/auth/login`). No credentials are prefilled. Astronaut accounts open the app; ground accounts open `/ground`.
-- **Voice** (Orbi chat voice mode, Fill with Orbi, mood voice notes):
-  - Orbi talks with `expo-speech` (system / browser voices).
-  - Listening: phone → system recognizer (needs a development build: `npx expo run:android` / `run:ios`); Chrome / Edge / Safari → the browser's speech recognition; **Firefox** (or when the browser recognizer fails) → **on-device recognizer** (Moonshine base via transformers.js, ~63 MB, downloaded once from jsDelivr + Hugging Face and cached by the browser; audio never leaves the device; free and open source, no API key).
-  - Mood voice notes are recorded with `expo-audio`, uploaded to `/app/me/uploads`, and linked to the saved log.
-- The app loads the authenticated `/api/v1/app/snapshot` into a reactive local cache. Writes update the cache and enter the existing offline queue; the sync banner distinguishes queued changes from server synchronization. The queue, snapshot and rotated tokens persist in localStorage on web and in memory on phones.
-- Dev catalogue of components and the Bolt animation lab: `/dev/components`. Ground team dashboard (web): `/ground`.
-
-## API configuration
-
-Copy `.env.example` to `.env.local` if you need to override the defaults:
+By default the app uses the deployed backend. To use only the demo data, create `.env.local`:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=https://crew-health-api-univesp.azurewebsites.net/api/v1
-EXPO_PUBLIC_USE_MOCK_DATA=false
+EXPO_PUBLIC_USE_MOCK_DATA=true
 ```
 
-Restart/reload Expo after changing the environment. These variables are public configuration; never put passwords or tokens in them. `EXPO_PUBLIC_USE_MOCK_DATA=true` explicitly restores the original demo (use `ORB3-ANA` and any four-digit PIN in the username/password fields).
+Checks:
 
-- `/auth/login` accepts `{ username, password }`. The separate `/app/auth/login` endpoint accepts `{ crewId, pin }`; the app uses the first contract.
-- Access tokens are sent as Bearer credentials. Backend roles `medical` and `admin` map to the ground dashboard, as defined by the server. A 401 triggers one shared `/auth/refresh` request; an invalid refresh ends the session. Sign out revokes the refresh token using `/auth/logout`.
-- `src/data/api.ts` remains the screen data boundary. It handles onboarding, device pairing, log create/edit, audio uploads, Orbi chat, ground messages and avatar purchases/equipment through `/app/me/*`.
-- The existing `src/data/sync.ts` queue sends logs, edits, ground messages and Journal exchanges through `/app/me/sync`. Shop, onboarding and device settings use queued REST calls. The snapshot (including crew leaderboard counts) refreshes after sync and every 60 seconds; failed sends retry after 15 seconds. The sync banner shows pending changes and errors.
-- Queued operations retain their operation ID and original timestamp across connection failures, so `/sync` applies each at most once. Confirmed Fill-with-Orbi cards are removed individually so a partial failure can retry the remaining cards.
-- Backend roles and permissions control the snapshot: astronaut accounts see their own health records; ground accounts see the crew dashboard. The frontend also guards navigation.
-- Photos, hardware access, calendar and relaxation content retain prototype limitations. The simulated injury-photo button is disabled with a real backend; existing photo URLs are preserved. Device pairing records the backend setting, without implementing Bluetooth.
-- The remote branch's offline queue and storage are preserved. No demo fallback occurs on a failed real login. Native persistence across app restarts, hardware telemetry and meal-plan screens remain future work.
+```bash
+npm test             # HTTP, sync and offline-queue tests (no real API calls)
+npx tsc --noEmit
+npx expo lint
+```
 
-Authenticated integration testing requires an actual account provisioned in the backend. The tests under `tests/` mock HTTP responses and do not write health data to the deployed API.
-
-## Orbi today (rules) and next (LLM)
-
-**Today Orbi is not an AI model.** Two simple pieces:
-
-1. **Speech → text**: the phone / browser recognizer, or the on-device Moonshine model (only transcribes, understands nothing).
-2. **Text → action, by rules**:
-   - `src/data/orbiParser.ts` fills the *Fill with Orbi* cards from **predefined answers and numbers**: numbers in digits or words ("one hundred eighteen over seventy-six, pulse sixty-four", "six and a half hours", `src/data/spokenNumbers.ts`), clock times ("bed at eleven thirty"), and keywords (moods, tags, foods, equipment, "hard", "easy", "skip"). Anything it can't read is filled with a default and marked "Orbi guessed", and nothing is saved before the astronaut confirms.
-   - `src/data/orbi.ts` answers locally, including without a connection. Journal exchanges enter the `/app/me/sync` queue; Private conversations never leave the device or enter the queue.
-
-**Next: a real LLM behind the same two interfaces**, so the screens don't change:
-
-- `OrbiFillParser.parse(category, text, ctx)` → an LLM with structured (JSON) output matching `DraftMap`: understands any phrasing, mixes categories in one sentence, asks a follow-up when something is missing.
-- `/app/me/orbi/chat` can switch to an LLM on the backend without changing the app screens.
-- Mission constraints to keep: it must run **on board** (small local model) or tolerate the Earth communication delay; "confirm before save" and the **Private mode never stores anything** guarantees stay.
-
-## Deploy (Vercel)
-
-`vercel.json` builds the static web app (`npx expo export -p web` → `dist/`) and rewrites every route to `index.html`, so deep links like `/status` work. Import the repo in Vercel and deploy the `ui-orbi` branch; no settings needed.
-
-## Structure
+## Project structure
 
 | Path | What |
 |---|---|
-| `src/app/` | expo-router routes (login, onboarding, tabs, logs, calendar, leaderboard, ground, dev) |
-| `src/components/` | Shared UI (tokens-based) |
-| `src/data/` | Types, HTTP transport, reactive server snapshot, data API (`api.ts`), derived values, Fill-with-Orbi parser |
+| `src/app/` | Screens (Expo Router): login, onboarding, tabs, logs, daily check-in, ground dashboard |
+| `src/components/` | Shared UI, built on the design tokens |
+| `src/data/` | Data API, sync and offline queue, Orbi's parser, plans, derived values |
+| `src/voice/` | Speech recognition and text-to-speech |
 | `src/avatar/` | Bolt's animation state machine |
-| `src/theme/` | Design tokens and fonts |
-| `docs/design/` | Design handoff: README, SCREENS, COMPONENTS, navigation, data model, tokens, ANIMATIONS, PROGRESS |
+| `src/mocks/` | Demo data |
+| `docs/design/` | Design handoff: screens, components, data model, tokens, animations, build log |
 
-## Checks
+## Known limitations
 
-```bash
-npm test
-npx tsc --noEmit
-npx expo lint
-npx expo-doctor
-```
+- Devices (wrist band, dosimeter, BP cuff) are **simulated**. Pairing is recorded in the backend, with no Bluetooth yet.
+- Meal and training plans and the insights are demo data until the API provides them.
+- Speech recognition in the browser is temporary, and a better on-device model is planned.
+- Injury photos, the calendar and relaxation content are still prototypes.
+
+## Sources
+
+From the challenge page and the resources it links:
+
+- **Space Apps Challenge 2026:** *Create Health Monitoring Software for Astronauts on Space Missions*.
+- **NASA Human Research Program (HRP):**
+  - Hazards: Space Radiation, Isolation and Confinement, Distance from Earth, Gravity Fields, Hostile and Closed Environments;
+  - HRP Risks and Ongoing HRP Research;
+  - ARCHeR (Artemis II);
+  - Standard Measures;
+  - the sleep, behavioral health, nutrition, fitness and bone loss risks;
+  - NASA's space radiation page;
+  - the HERA article on communication delay.
+- **Canadian Space Agency (CSA):**
+  - *Monitoring radiation and astronaut health*;
+  - *Why do we conduct science experiments in space?*;
+  - the infographic on the effects of space on the body.
+
+## License
+
+[MIT](LICENSE)
