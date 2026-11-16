@@ -9,7 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ConnectionStatus } from '@/components/ConnectionStatus';
-import { getSessionRole, subscribeSession, USE_MOCK_DATA } from '@/data/api';
+import { getSessionRole, isDemoSession, subscribeSession, USE_MOCK_DATA } from '@/data/api';
 
 import { fontAssets } from '@/theme/fonts';
 import { C } from '@/theme/tokens';
@@ -52,6 +52,8 @@ export default function RootLayout() {
   const [loaded, error] = useFonts(fontAssets);
   const pathname = usePathname();
   const role = useSyncExternalStore(subscribeSession, getSessionRole, () => null);
+  // demo Crew IDs fall back to the bundled demo data (see signIn)
+  const demo = useSyncExternalStore(subscribeSession, isDemoSession, () => false);
   const ready = loaded || !!error;
 
   useEffect(() => {
@@ -79,10 +81,10 @@ export default function RootLayout() {
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="login" />
-              <Stack.Protected guard={USE_MOCK_DATA || role === 'astronaut'} redirectTo={role === 'ground' ? '/ground' : '/login'}>
+              <Stack.Protected guard={USE_MOCK_DATA || demo || role === 'astronaut'} redirectTo={role === 'ground' ? '/ground' : '/login'}>
                 {ASTRONAUT_ROUTES.map((name) => <Stack.Screen key={name} name={name} />)}
               </Stack.Protected>
-              <Stack.Protected guard={USE_MOCK_DATA || role === 'ground'} redirectTo={role === 'astronaut' ? '/home' : '/login'}>
+              <Stack.Protected guard={USE_MOCK_DATA || demo || role === 'ground'} redirectTo={role === 'astronaut' ? '/home' : '/login'}>
                 <Stack.Screen name="ground" />
               </Stack.Protected>
             </Stack>

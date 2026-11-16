@@ -19,7 +19,13 @@ export default function Login() {
 
   const submit = async () => {
     setError(null);
-    const a = await signIn(username, password);
+    let a: Awaited<ReturnType<typeof signIn>>;
+    try {
+      a = await signIn(username, password);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to sign in.');
+      return;
+    }
     if (getSessionRole() === 'ground') { router.replace('/ground'); return; }
     if (!a) { setError('Invalid username or password.'); return; }
     router.replace(a.onboardingDone ? '/home' : '/onboarding/1');
@@ -65,6 +71,9 @@ export default function Login() {
               </Txt>
             ) : null}
             <PrimaryButton label="Sign in" onPress={submit} disabled={!username.trim() || !password} />
+            <Txt size={tokens.font.size.caption} color={C.muted} align="center">
+              No account? Demo: TEST or ORB3‑ANA, any 4‑digit PIN.
+            </Txt>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

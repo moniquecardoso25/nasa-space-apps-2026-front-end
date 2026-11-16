@@ -19,6 +19,18 @@ const tokenListeners = new Set<() => void>();
 export const getSessionTokens = () => tokens;
 export function subscribeTokenChanges(listener: () => void) { tokenListeners.add(listener); return () => { tokenListeners.delete(listener); }; }
 export const getSessionRole = () => role;
+
+/**
+ * Demo session: a demo Crew ID (TEST, ORB3-…) signed in on the bundled demo data
+ * because the server did not accept it or could not be reached. Nothing is sent.
+ */
+let demo = false;
+export const isDemoSession = () => demo;
+export function setDemoSession(on: boolean) {
+  if (demo === on) return;
+  demo = on;
+  listeners.forEach((listener) => listener());
+}
 export const getSessionVersion = () => sessionVersion;
 export function subscribeSession(listener: () => void) {
   listeners.add(listener);

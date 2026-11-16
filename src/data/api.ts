@@ -1,7 +1,7 @@
 import { session } from './session';
-import { getDb, setDb } from './store';
+import { getDb, isDemoCrewId, resetDb, setDb } from './store';
 import { remote, signInLive, stopLive } from './sync';
-import { ApiError, USE_MOCK_DATA, logout as logoutHttp } from './http';
+import { ApiError, USE_MOCK_DATA, logout as logoutHttp, setDemoSession } from './http';
 import { setTokens } from './backend';
 import type {
   Insight,
@@ -89,10 +89,25 @@ function signInMock(crewId: string, pin: string): Astronaut | null {
   return a;
 }
 
-/** Username/password authentication; only explicit mock mode uses the demo login. */
+/**
+ * Username/password authentication. Explicit mock mode uses the demo login only.
+ * With the backend on, a demo Crew ID (TEST, ORB3-…) + any 4-digit PIN falls back to the
+ * bundled demo data when the server refuses it or cannot be reached. Real accounts never do.
+ */
 export async function signIn(username: string, password: string): Promise<Astronaut | null> {
   if (USE_MOCK_DATA) return signInMock(username, password);
+  setDemoSession(false);
   const result = await signInLive(username, password);
+  if (!result.ok && isDemoCrewId(username) && /^\d{4}$/.test(password)) {
+    resetDb();
+    const a = signInMock(username, password);
+    if (a) {
+      setDemoSession(true);
+      session.orbiFill = null;
+      lastSaved = null;
+      return a;
+    }
+  }
   if (!result.ok) throw new ApiError(result.message ?? (result.reason === 'credentials' ? 'Invalid username or password.' : 'Unable to load your mission. Check your connection and account access.'), result.reason === 'credentials' ? 401 : 0);
   session.orbiFill = null;
   lastSaved = null;
@@ -100,6 +115,7 @@ export async function signIn(username: string, password: string): Promise<Astron
 }
 
 export async function logout() {
+  setDemoSession(false);
   stopLive();
   try { await logoutHttp(); } finally { setTokens(null); }
 }
@@ -556,5 +572,5 @@ export async function pairDevice(device: 'bpCuff' | 'wristBandPaired') {
   remote.devicePaired(device);
 }
 
-export { getSessionRole, subscribeSession, USE_MOCK_DATA } from './http';
+export { getSessionRole, isDemoSession, subscribeSession, USE_MOCK_DATA } from './http';
 export { getRefreshWarning, refreshData } from './remote';

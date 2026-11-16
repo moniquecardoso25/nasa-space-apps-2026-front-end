@@ -86,6 +86,19 @@ test('invalid credentials clear the session without loading demo data', async ()
   assert.equal(calls.length, 1);
 });
 
+test('demo Crew IDs fall back to the bundled demo data when the server refuses them', async () => {
+  handler = () => json({ detail: 'Invalid username or password' }, 401);
+  const a = await api.signIn('orb3-leo', '1234');
+  assert.equal(a.crewId, 'ORB3-LEO');
+  assert.equal(http.isDemoSession(), true);
+  assert.equal(http.getSessionRole(), null);
+  assert.equal(sync.getSyncStatus().mode, 'mock');
+  // a real account with a wrong password still fails, and a demo ID needs a 4-digit PIN
+  await assert.rejects(api.signIn('ana', '1234'), /Invalid username/);
+  assert.equal(http.isDemoSession(), false);
+  await assert.rejects(api.signIn('ORB3-LEO', 'not-a-pin'), /Invalid username/);
+});
+
 test('accounts without a CosmoMedic profile retain the server error and cannot navigate', async () => {
   snapshotStatus = 403;
   await assert.rejects(api.signIn('ana', 'password'), /no CosmoMedic profile/);
