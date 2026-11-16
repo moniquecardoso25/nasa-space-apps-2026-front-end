@@ -95,6 +95,37 @@ export function dayVitals(day: number) {
   } satisfies Record<string, Vital>;
 }
 
+/**
+ * Orbi's plain-language read of the recent status indicators (Home card).
+ * Will come from the backend; built from the last 3 days of logs meanwhile.
+ * "your recent indicators: sleep 5h 18m (short), mood okay, BP 127/78 (normal), 45 min training yesterday. Keep an eye on: …"
+ */
+export function statusSummary(): string {
+  const today = getToday();
+  const from = today - 3;
+  const sleep = getLogs({ type: 'sleep', fromDay: from }).at(-1);
+  const mood = getLogs({ type: 'mood', fromDay: from }).at(-1);
+  const bp = getLogs({ type: 'measurement', fromDay: from })
+    .filter((l) => l.data.metric === 'blood_pressure')
+    .at(-1);
+  const trainedYesterday = exerciseMinutes(today - 1);
+  const parts: string[] = [];
+  if (sleep) {
+    const lvl = sleepLevel(sleep.data.durationMin);
+    parts.push(`sleep ${formatDuration(sleep.data.durationMin)}${lvl === 'alert' ? ' (too short)' : lvl === 'warn' ? ' (short)' : ' (good)'}`);
+  }
+  if (mood) parts.push(`mood ${MOOD_TITLE[mood.data.level].toLowerCase()}`);
+  if (bp) {
+    const v = bp.data.values as { systolic: number; diastolic: number };
+    parts.push(`BP ${v.systolic}/${v.diastolic} (${v.systolic >= 140 || v.diastolic >= 90 ? 'high' : v.systolic >= 130 ? 'a bit high' : 'normal'})`);
+  }
+  if (trainedYesterday) parts.push(`${trainedYesterday} min training yesterday`);
+  if (!parts.length) return 'no recent data yet. Your first daily check-in starts your status.';
+  const watch = getAlerts().find((a) => a.level !== 'low');
+  const tail = watch ? ` Keep an eye on: ${watch.text.charAt(0).toLowerCase()}${watch.text.slice(1)}` : ' Everything looks steady.';
+  return `your recent indicators: ${parts.join(', ')}.${tail}`;
+}
+
 /** Short friendly line from Orbi for the Home speech bubble (latest alert). */
 export function orbiNudge(): string {
   const a = getAlerts()[0];

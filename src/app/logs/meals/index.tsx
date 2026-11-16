@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { LogStateButton } from '@/components/Buttons';
 import { Card, CardTitle } from '@/components/Card';
+import { InsightCard } from '@/components/InsightCard';
 import { ProgressBar, WeekBars } from '@/components/Charts';
 import { LogScreen, Note, SavedBanner, Stars } from '@/components/LogKit';
 import { Txt } from '@/components/Txt';
@@ -140,6 +141,7 @@ export default function MealsOverview() {
         />
       </Card>
       {d.fatigue ? <Note tone="warning">{d.fatigue}</Note> : null}
+      <InsightCard category="meals" />
     </LogScreen>
   );
 }

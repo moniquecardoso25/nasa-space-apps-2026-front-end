@@ -15,7 +15,7 @@ import { Txt } from '@/components/Txt';
 import { BoltActor } from '@/avatar/BoltActor';
 import { deriveStatuses } from '@/avatar/status';
 import { firstName, getAstronaut, getDailySummary, getLastSaved, getMission, healthTag, isLoggedToday } from '@/data/api';
-import { orbiNudge } from '@/data/derived';
+import { statusSummary } from '@/data/derived';
 import { boltColors } from '@/data/shopArt';
 import { session } from '@/data/session';
 import { useData } from '@/data/store';
@@ -48,7 +48,8 @@ export default function Home() {
       me,
       summary,
       mission: getMission(),
-      nudge: orbiNudge(),
+      // Orbi's read of the recent status indicators (backend later)
+      nudge: statusSummary(),
       fill: session.orbiFill,
       statuses: deriveStatuses(),
       lastSavedAt: getLastSaved()?.at,
@@ -85,7 +86,7 @@ export default function Home() {
   ];
   const fill = data.fill && data.fill.at !== dismissedAt ? data.fill : null;
   // before the check-in, Orbi only invites you to fill it (no health remarks yet); after it, its note
-  const orbiLine = open6 ? `ready for today's check-in? I read your devices first, you just confirm.` : data.nudge;
+  const orbiLine = data.nudge;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -188,7 +189,7 @@ export default function Home() {
             <View style={styles.orbiCard}>
               <Pressable accessibilityRole="link" accessibilityLabel={`Orbi: ${orbiLine}. Open Orbi`} onPress={() => router.push('/orbi')} style={styles.orbiRow}>
                 <Icon name="orbi" size={20} color={C.teal} />
-                <Txt size={tokens.font.size.small} lh={1.4} style={{ flex: 1 }} numberOfLines={3}>
+                <Txt size={tokens.font.size.small} lh={1.4} style={{ flex: 1 }} numberOfLines={6}>
                   <Txt weight="700" size={tokens.font.size.small} color={C.teal}>
                     Orbi:{' '}
                   </Txt>

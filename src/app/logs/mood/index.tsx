@@ -4,7 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Line, Polyline, Text as SvgText } from 'react-native-svg';
 
 import { LogStateButton } from '@/components/Buttons';
-import { Card, CardTitle, InfoNote, StatTile } from '@/components/Card';
+import { Card, CardTitle, StatTile } from '@/components/Card';
+import { InsightCard } from '@/components/InsightCard';
 import { Segmented } from '@/components/Inputs';
 import { LogScreen, SavedBanner } from '@/components/LogKit';
 import { MoodFace } from '@/components/Mood';
@@ -154,14 +155,6 @@ export default function MoodOverview() {
         <StatTile value={d.best ? weekdayOfDay(d.best.missionDay) : '—'} label="Best day" />
         <StatTile value={`${d.checkins} / ${d.total}`} label="Check-ins" />
       </View>
-      <InfoNote onPress={() => router.push('/orbi')}>
-        <Txt weight="700" size={13}>
-          Orbi:{' '}
-        </Txt>
-        {d.sleepAlert
-          ? 'your mood dips after nights with low light exposure. Try the 21:00 wind-down.'
-          : 'your mood has been steady. Keep sharing how your day went.'}
-      </InfoNote>
       {d.voiceNotes.length ? (
         <Card padding={14} gap={12} shadow={false}>
           <CardTitle title="Your voice notes" />
@@ -215,6 +208,16 @@ export default function MoodOverview() {
           </View>
         ))}
       </Card>
+      <InsightCard
+        category="mood"
+        fallback={
+          !d.checkins
+            ? undefined
+            : d.sleepAlert
+              ? 'Your mood dips after nights with low light exposure. Try the 21:00 wind-down.'
+              : 'Your mood has been steady. Keep sharing how your day went.'
+        }
+      />
     </LogScreen>
   );
 }

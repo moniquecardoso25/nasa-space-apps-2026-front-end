@@ -261,6 +261,16 @@ export interface CalendarEvent {
   linkedScreen: string;
 }
 
+/** Orbi's read of one area (shown at the end of Sleep, Mood, Body, Meals). Comes from the backend later. */
+export type InsightCategory = 'sleep' | 'mood' | 'body' | 'meals';
+export interface Insight {
+  id: string;
+  astronautId: string;
+  category: InsightCategory;
+  text: string;
+  timestamp: ISO;
+}
+
 export interface Db {
   currentAstronautId: string;
   mission: Mission;
@@ -272,4 +282,5 @@ export interface Db {
   ground_messages: GroundMessage[];
   shop: ShopItem[];
   calendar: CalendarEvent[];
+  insights?: Insight[];
 }

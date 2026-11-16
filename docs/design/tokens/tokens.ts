@@ -1,4 +1,4 @@
-// CosmoMedic · Nebula Glass design tokens
+// Orbi · Nebula Glass design tokens
 // Fonts: npx expo install @expo-google-fonts/sora @expo-google-fonts/inter expo-font
 // Mirrors src/theme/tokens.ts (the app copy). `ext` holds values taken from source/*.dc.html
 // that were not in the first token file (scene colors, alpha variants, a few sizes).

@@ -1,4 +1,4 @@
-# CosmoMedic — design handoff
+# Orbi — design handoff
 
 Health monitoring app for astronauts (NASA Space Apps 2026 · "Create Health Monitoring Software for Astronauts on Space Missions").
 Stack: **React Native + Expo** (runs on phone and web). Visual style: **Nebula Glass** (dark space, glass cards, lilac/teal/gold).

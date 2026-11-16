@@ -1,5 +1,7 @@
 import { getDb, setDb } from './store';
 import type {
+  Insight,
+  InsightCategory,
   AiMessage,
   Areas,
   BodyArea,
@@ -363,6 +365,13 @@ export function getAlerts(astronautId: string = getCurrentAstronautId()) {
   return getDb()
     .ai_chat.alerts.filter((a) => a.astronautId === astronautId)
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
+
+/** Latest Orbi insight for one area, or undefined (the screen shows its own fallback). */
+export function getInsight(category: InsightCategory, astronautId: string = getCurrentAstronautId()): Insight | undefined {
+  return (getDb().insights ?? [])
+    .filter((i) => i.astronautId === astronautId && i.category === category)
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
 }
 
 // ---------------------------------------------------------------- ground messages

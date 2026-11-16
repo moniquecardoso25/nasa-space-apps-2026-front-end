@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { LogStateButton, SecondaryButton } from '@/components/Buttons';
 import { Card, CardTitle } from '@/components/Card';
+import { InsightCard } from '@/components/InsightCard';
 import { TrendLine } from '@/components/Charts';
 import { Icon } from '@/components/Icon';
 import { ListRow, LogScreen, SavedBanner } from '@/components/LogKit';
@@ -161,6 +162,7 @@ export default function BodyOverview() {
           </Txt>
         </SecondaryButton>
       </Card>
+      <InsightCard category="body" />
     </LogScreen>
   );
 }

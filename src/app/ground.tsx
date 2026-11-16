@@ -81,7 +81,7 @@ export default function Ground() {
         <View style={styles.brand}>
           <LogoMark size={36} />
           <Txt heading weight="700" size={tokens.font.size.screenTitle}>
-            CosmoMedic · Ground
+            Orbi · Ground
           </Txt>
         </View>
         <View style={[{ gap: 4 }, !wide && { flexDirection: 'row', flexWrap: 'wrap' }]}>

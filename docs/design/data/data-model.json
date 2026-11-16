@@ -1,5 +1,5 @@
 {
-  "$comment": "CosmoMedic data model v1. camelCase, ISO-8601 UTC timestamps. Each top-level key is one local JSON file in data/mock/ (or one table/collection later). Values marked illustrative have no official NASA limit.",
+  "$comment": "Orbi data model v1. camelCase, ISO-8601 UTC timestamps. Each top-level key is one local JSON file in data/mock/ (or one table/collection later). Values marked illustrative have no official NASA limit.",
   "conventions": {
     "ids": "string with prefix, e.g. ast-01, log-0001",
     "timestamps": "ISO-8601 UTC string",

@@ -6,7 +6,7 @@ Base size 390×844. Route names are the expo-router routes used by the app (`src
 
 | Screen | Route | PNG | Content | Data | Goes to |
 |---|---|---|---|---|---|
-| Login | `/login` | AppLogin | Earth background, CosmoMedic logo, Crew ID + PIN, Sign in | `astronauts[].crewId` | Onboarding 1 (first time) or Home |
+| Login | `/login` | AppLogin | Earth background, Orbi logo, Crew ID + PIN, Sign in | `astronauts[].crewId` | Onboarding 1 (first time) or Home |
 | Onboarding 1 · Welcome | `/onboarding/1` | AppOnb1 | Name, crew ID, mission, start, length, language. **Read-only** fields + note "filled by medical team" | `astronaut`, `mission` | Confirm → 2 |
 | Onboarding 2 · Body | `/onboarding/2` | AppOnb2 | Height, weight, age, bone density, muscle mass, strength, aerobic, body fat (read-only) | `astronaut.profile`, `.baseline` | Confirm → 3 |
 | Onboarding 3 · Vitals & habits | `/onboarding/3` | AppOnb3 | Resting HR, resting BP, usual sleep, bedtime, kcal goal, exercise goal, food prefs (read-only) | `baseline`, `mission.goals` | Confirm → 4 |

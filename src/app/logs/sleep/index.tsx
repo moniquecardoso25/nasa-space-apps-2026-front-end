@@ -3,8 +3,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { LogStateButton } from '@/components/Buttons';
 import { Card, CardTitle } from '@/components/Card';
+import { InsightCard } from '@/components/InsightCard';
 import { WeekLine } from '@/components/Charts';
-import { Grid, LogScreen, MetricTile, Note, SavedBanner } from '@/components/LogKit';
+import { Grid, LogScreen, MetricTile, SavedBanner } from '@/components/LogKit';
 import { Badge, levelColor } from '@/components/Pills';
 import { Txt } from '@/components/Txt';
 import { getLogs, getMission, getToday, getTodayLogs } from '@/data/api';
@@ -139,7 +140,7 @@ export default function SleepOverview() {
           </Grid>
         </View>
       ) : null}
-      <Note>On the ISS crews see 16 sunrises a day, which can shift sleep. Cabin lights dim at 21:00 tonight.</Note>
+      <InsightCard category="sleep" fallback={night ? 'On the ISS crews see 16 sunrises a day, which can shift sleep. Cabin lights dim at 21:00 tonight.' : undefined} />
     </LogScreen>
   );
 }

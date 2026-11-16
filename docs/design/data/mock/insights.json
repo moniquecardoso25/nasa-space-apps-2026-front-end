@@ -1,0 +1,114 @@
+[
+  {
+    "id": "ins-01-sleep",
+    "astronautId": "ast-01",
+    "category": "sleep",
+    "text": "Your last two nights were 5h 18m, about an hour less than your average. Both followed evenings with low light exposure; the 21:00 wind-down usually helps.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-01-mood",
+    "astronautId": "ast-01",
+    "category": "mood",
+    "text": "Your mood holds at good or okay, and dips a little after short nights.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-01-body",
+    "astronautId": "ast-01",
+    "category": "body",
+    "text": "Aerobic fitness is 9% below baseline and strength 6%. That is within the usual range for week two; keep the 45-minute cycle sessions.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-01-meals",
+    "astronautId": "ast-01",
+    "category": "meals",
+    "text": "You followed the meal plan on most days and hit about 92% of your calorie target. Breakfast is the meal you skip most.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-02-sleep",
+    "astronautId": "ast-02",
+    "category": "sleep",
+    "text": "Steady 7 to 7.5 hours every night this week. Your bedtime moves less than 20 minutes from day to day.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-02-mood",
+    "astronautId": "ast-02",
+    "category": "mood",
+    "text": "Mostly great or good this week. Your best days come after morning training sessions.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-02-body",
+    "astronautId": "ast-02",
+    "category": "body",
+    "text": "Strength is 3% and aerobic fitness 4% below baseline, better than the crew average for this point in the mission.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-02-meals",
+    "astronautId": "ast-02",
+    "category": "meals",
+    "text": "You are on the plan and on target. Taste ratings stay high; the beef stew is your favourite.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-03-sleep",
+    "astronautId": "ast-03",
+    "category": "sleep",
+    "text": "Sleep is close to 6h 15m on average, a bit under the 7-hour goal. Wake-ups are rare, so earlier bedtimes would help most.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-03-mood",
+    "astronautId": "ast-03",
+    "category": "mood",
+    "text": "Mood went from okay to tired over the last 3 days, and your notes mention missing family. A call slot is free on Thursday.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-03-body",
+    "astronautId": "ast-03",
+    "category": "body",
+    "text": "Strength is 7% below baseline and bone density 1.3% below. Keep the resistive sessions on the ARED.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-03-meals",
+    "astronautId": "ast-03",
+    "category": "meals",
+    "text": "The same lunch 4 days in a row, with taste ratings going down. Swap it for another catalog item to avoid menu fatigue.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-04-sleep",
+    "astronautId": "ast-04",
+    "category": "sleep",
+    "text": "Below 5h for the last 3 nights, and getting shorter. Short sleep together with high stress is flagged to your medical team.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-04-mood",
+    "astronautId": "ast-04",
+    "category": "mood",
+    "text": "Stressed or tired on 4 of the last 5 days. Talking it through with Orbi or the ground team can help.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-04-body",
+    "astronautId": "ast-04",
+    "category": "body",
+    "text": "Aerobic fitness is 11% below baseline, the top of the expected range, and the right knee strain is still active. Low-impact cycle sessions are the safest option.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  },
+  {
+    "id": "ins-04-meals",
+    "astronautId": "ast-04",
+    "category": "meals",
+    "text": "Fewer meals logged this week, and lunch was often skipped. Under-eating can slow recovery from the knee strain.",
+    "timestamp": "2026-11-15T06:00:00Z"
+  }
+]

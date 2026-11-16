@@ -1,4 +1,4 @@
-// CosmoMedic · Nebula Glass design tokens
+// Orbi · Nebula Glass design tokens
 // Copied from docs/design/tokens/tokens.ts (keep in sync).
 // The `ext` block below holds values that appear in docs/design/source/*.dc.html
 // but are not part of the original token file (scene/illustration colors, alpha

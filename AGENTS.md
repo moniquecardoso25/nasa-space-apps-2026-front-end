@@ -40,6 +40,6 @@ Docs: https://docs.expo.dev/eas/index.md
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
 
-## CosmoMedic UI
+## Orbi UI
 
 UI work: follow docs/design/README.md, SCREENS.md and src/theme/tokens.ts (copied from docs/design/tokens/tokens.ts). Screens read data only through src/data/api.ts (seeded from src/mocks/mock-db.json until the backend exists). Build log: docs/design/PROGRESS.md.

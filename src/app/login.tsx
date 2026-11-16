@@ -40,7 +40,7 @@ export default function Login() {
               <LogoMark alive />
             </View>
             <Txt heading weight="700" size={tokens.ext.fontSize.brand}>
-              CosmoMedic
+              Orbi
             </Txt>
             <Txt size={tokens.ext.fontSize.label} color={C.muted}>
               Health monitoring for space missions

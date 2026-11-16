@@ -1,4 +1,4 @@
-# CosmoMedic · build progress
+# Orbi · build progress
 
 Living log of the app build (React Native + Expo SDK 58, expo-router). Each stage ends with: web run, typecheck, visual comparison with `screenshots/`, this file updated and a commit.
 
@@ -6,7 +6,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 1 · Base — done
+## Stage 1 · Base — done
 
 **Done**
 - expo-router with every route in `navigation.json` (`src/app/`): login, onboarding 1–5, tabs (home, status, orbi, messages, avatar), calendar, leaderboard, ground, logs/* (overview + add), logs/body/injury, logs/relax, dev/components.
@@ -36,7 +36,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 2 · Login and onboarding — done
+## Stage 2 · Login and onboarding — done
 
 **Done**
 - `/login`: Earth background, logo, Crew ID + PIN, Sign in (validates against `astronauts[].crewId`, PIN = any 4 digits), inline error.
@@ -54,7 +54,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 3 · Home and Crew status — done
+## Stage 3 · Home and Crew status — done
 
 **Done**
 - Home (`/(tabs)/home`): full station scene (window with stars + gradient Earth, land, clouds, night side, city lights; console; plant; teal floor), Orbi drone floating, Orbi speech bubble from the latest `ai_chat.alerts` entry (→ Orbi), Bolt walking left ↔ right (18 s loop, legs/arm swing, bob, flips at each end), greeting + mission day bar, "Stable 72" → Status, coins pill, calendar button.
@@ -75,7 +75,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 4 · Logs (overview → add) — done
+## Stage 4 · Logs (overview → add) — done
 
 **Done**
 - Shared kit `src/components/LogKit.tsx`: LogScreen (header + sticky footer), SavedBanner ("Saved · logged today +10" / "Changes saved", 5 s), ListRow, MetricTile, Stars (display + input), Note (info/warning/danger), ComingSoon, Greyed, Stepper, Group, ChipRow.
@@ -101,7 +101,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 5 · Orbi, Messages, Avatar & shop, Leaderboard, Calendar — done
+## Stage 5 · Orbi, Messages, Avatar & shop, Leaderboard, Calendar — done
 
 **Done**
 - Orbi AI (`/(tabs)/orbi`): header (on board, no delay), Journal/Private toggle + disclaimer, chat with day/time separators, "Saved to your journal (Shared with Orbi) · View" chip, quick replies, input, greyed mic, send.
@@ -124,7 +124,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 6 · Review — done
+## Stage 6 · Review — done
 
 **Done**
 - Swept every route in a headless browser (CDP, 390×844): `/`, `/login`, `/onboarding/1–5`, `/home`, `/status` (via tab), `/orbi`, `/messages`, `/avatar?tab=helmet|suit|room|pets`, `/calendar`, `/leaderboard`, `/ground`, all `/logs/*` overviews and forms, `/logs/body/injury?id=…`, `/logs/relax`, `/dev/components`. No console errors or warnings.
@@ -145,7 +145,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 7 · "Fill with Orbi" (voice-guided logging) — done
+## Stage 7 · "Fill with Orbi" (voice-guided logging) — done
 
 **Done**
 - New route `/logs/orbi-fill` in the Orbi chat style: header with Orbi, step chips (one per open category), chat bubbles, editable draft cards, composer with **active teal mic** + text + send, "Skip" and (for mood) "Use the slider".
@@ -154,19 +154,19 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 - Every answer becomes an editable confirmation card (dashed teal border, "Orbi guessed: … Please check." for defaulted fields, Remove). Mood card: 5 faces + tags + "Use the slider instead" (vertical MoodSlider inline).
 - Nothing is saved until **Confirm & save N logs +N×10**: `saveDrafts` calls `addLog` / `saveDailyLog` per category (+10 each), so "Logged today" updates everywhere; then Home shows "Orbi saved N logs · … +N" (dismissable).
 - Voice: `expo-speech-recognition` via `src/voice/speech.ts` (native module in dev builds, Web Speech API on web). When it is unavailable (Expo Go, unsupported browser) the mic is hidden and only text is used. Permissions configured in `app.json`.
-- Parser isolated in `src/data/orbiParser.ts` behind `OrbiFillParser` (`parse(category, text, ctx) → { draft, understood, assumed, skipped }`); rule-based numbers, clock times, durations and EN/PT keywords ("bem", "cansado", "dormi 6 horas e meia", "125 por 82, pulso 70", "45 min on the treadmill, hard"). Swap `orbiParser` for an LLM later.
+- Parser isolated in `src/data/orbiParser.ts` behind `OrbiFillParser` (`parse(category, text, ctx) → { draft, understood, assumed, skipped }`); rule-based numbers, clock times, durations and English keywords ("good", "tired", "slept six and a half hours", "125 over 82, pulse 70", "45 min on the treadmill, hard"). Swap `orbiParser` for an LLM later.
 - Verified in the browser: Ana (3 open categories, one unclear answer → retry) → Confirm → Home 3/7 → 6/7, coins +30, summary card; Leo (all 6 open, one skipped) → 5 logs saved. Sleep parsing checked with 4 phrasings (6h30, 6h45, 7h, 8h).
 - Docs updated: SCREENS.md (new row), navigation.json (`OrbiFill` + links from Home/Orbi), data-model.json (`fillWithOrbi`).
 
 **Decisions**
 - "Body" in the interview = blood pressure (the daily measurement); weekly metrics stay in the Body form.
 - A category that already has a log today is never asked; mood answered here when it doesn't exist yet counts as the daily check-in (streak/+50 bonus rules apply).
-- Speech language is `en-US`; the parser also understands Portuguese keywords.
+- Speech language is `en-US`; the parser understands English only.
 - Voice needs a development build on phones (`npx expo run:android|ios`); Expo Go falls back to text.
 
 ---
 
-## Etapa 8 · Bolt animation state machine — done
+## Stage 8 · Bolt animation state machine — done
 
 **Done**
 - `src/avatar/` with a reducer state machine (`machine.ts`), catalogue (`animations.ts`: 14 idle, 11 status, 1 event), status derivation from data (`status.ts`) and the Reanimated runner `BoltActor.tsx`. Documented in `docs/design/ANIMATIONS.md`.
@@ -186,7 +186,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 9 · Injuries on the Crew status hologram — done
+## Stage 9 · Injuries on the Crew status hologram — done
 
 **Done**
 - `getDailySummary().areas` now merges injuries: every injury logged up to that day with status `active` or `healing` sets its area to `alert` (pink `holoAlert`). Mapping in `injuryAreas()` (`src/data/api.ts`): head/neck → head, back → torso, arm/hand → armL/armR by side, leg/knee/foot → legL/legR by side ("center" → both). Documented in data-model.json.
@@ -201,7 +201,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 ---
 
-## Etapa 10 · Final review — done
+## Stage 10 · Final review — done
 
 **Docs ↔ app consistency (fixed)**
 - README: lists `ANIMATIONS.md` and `PROGRESS.md`; Coming-soon note clarifies that voice is live only in Fill with Orbi (normal Orbi chat mic stays greyed); Orbi rule mentions Fill with Orbi.
@@ -224,7 +224,7 @@ How to run: `npm run web` (or `npx expo start`). Dev catalogue of components: `/
 
 **Simplified**
 - In-memory data (no backend, no persistence, resets on reload); mock login (any 4-digit PIN).
-- Orbi replies and the Fill-with-Orbi parser are rule-based (EN/PT keywords), not an AI model.
+- Orbi replies and the Fill-with-Orbi parser are rule-based (English keywords), not an AI model.
 - Device pairing, badge scan and injury photo are simulated; shop items are SVG drawings; sleep stage bar is illustrative; meal macros are estimated from kcal; injury status has no history (past days use the current status).
 - Time inputs are masked text fields, not native pickers. Speech recognition language fixed to en-US.
 
@@ -343,3 +343,7 @@ Only the items the user picked from the team's screen-by-screen review, done wit
 - Messages: "Request medical support" no longer puts a template in the box; only the SYSTEM note explains what to say (mic or text) and the sent message gets the "Medical support request" header. Tapping the chip again cancels it.
 - Taste by voice/text in the check-in (both the chat and voice mode): the meal question says "Meals as planned, taste 5 stars? Say OK, or what to change." (only when a meal was already eaten); the voice-mode summary shows each eaten meal's stars (★★★★★); "lunch 3 stars" / "taste 3 for lunch" / "lunch was a three" is read back ("Got it. Lunch: 3 stars."); "change the taste" alone gets "Which meal, and how many stars?".
 - Taste stars are visible from the start on every planned meal (smaller, 5 by default; hidden only when skipped), in the card and in the voice-mode summary (shorter lines: time · dish · status · ★★★★★).
+- Home Orbi card: now Orbi's plain read of the recent status indicators (last 3 days: sleep, mood, BP, training yesterday + the main alert to watch), e.g. "your recent indicators: sleep 5h 18m (short), mood okay, BP 127/78 (normal), 92 min training yesterday. Keep an eye on: …". Up to 6 lines (card grows, window moves down). `statusSummary()` in derived.ts; to be replaced by a backend text.
+- "Orbi insight" card as the last item of Sleep, Mood, Body and Meals (`InsightCard`). Text from `insights` in mock-db.json (one per astronaut and area, backend later); fallback per screen, or "Not enough data yet…" for a new crew member (TEST). Mood's Orbi note and Sleep's ISS note became these fallbacks.
+- App renamed **CosmoMedic → Orbi** everywhere (app.json name/slug/scheme, package name, login logo, onboarding, mic permission texts, READMEs, AGENTS.md, design docs and tokens). The assistant inside the app is still Orbi too.
+- Everything in English: removed the Portuguese keywords from the answer parser (the recognizer is English only) and renamed the "Etapa" headings of this log to "Stage".
