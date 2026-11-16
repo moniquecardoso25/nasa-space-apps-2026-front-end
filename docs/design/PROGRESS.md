@@ -359,3 +359,9 @@ Only the items the user picked from the team's screen-by-screen review, done wit
 - Async controls prevent duplicate taps and show errors. Fill with Orbi confirms each local save separately; the sync banner identifies changes awaiting server acknowledgment.
 - Validation: 12 automated HTTP/queue tests cover login, ground roles, missing profiles, invalid credentials, concurrent refresh, expired sessions, synchronization, offline replay, rejections, audio uploads, privacy and rankings. TypeScript, Expo lint and web export are checked before publication.
 - Public backend source documents a dedicated demo test account. Live authentication and snapshot reads were validated without writing health data. Real native-device testing remains pending.
+
+## Follow-up · demo fallback on the backend build
+
+- With the backend on (default), a **demo Crew ID** (`TEST`, `ORB3-ANA`, `ORB3-RAJ`, `ORB3-MIKA`, `ORB3-LEO`) + any 4-digit PIN signs in on the bundled demo data when the server refuses it or cannot be reached (`isDemoSession()` in http.ts; route guards allow it; the "Demo data · not connected to the server" banner shows; nothing is queued or sent). Real accounts never fall back: wrong credentials still fail.
+- Login screen now shows sign-in errors (the thrown `ApiError` was not caught) and a one-line demo hint.
+- Test added: demo Crew IDs fall back; a real account with a wrong password and a demo ID without a 4-digit PIN still fail (13/13).

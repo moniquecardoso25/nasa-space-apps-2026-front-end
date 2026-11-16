@@ -35,6 +35,12 @@ export function onDbChange(l: () => void) {
   return subscribe(l);
 }
 
+/** True for the Crew IDs of the bundled demo crew (TEST, ORB3-ANA, …). */
+export function isDemoCrewId(id: string) {
+  const want = id.trim().toUpperCase();
+  return (raw as unknown as Db).astronauts.some((a) => a.crewId.toUpperCase() === want);
+}
+
 /** Test/dev helper: restore the original mock. */
 export function resetDb() {
   setDb(() => structuredClone(raw as unknown as Db));
